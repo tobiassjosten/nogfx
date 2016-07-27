@@ -1,13 +1,9 @@
 package main
 
 import (
-	// "bufio"
-	"fmt"
+	"bufio"
 	"github.com/tobiassjosten/nogfx-cli/tui"
-	// "net"
-	// "os"
-	"strconv"
-	"time"
+	"net"
 )
 
 func main() {
@@ -15,38 +11,29 @@ func main() {
 	screen := tui.NewScreen(userInput)
 	go screen.Main()
 
-	// conn, err := net.Dial("tcp", "achaea.com:23")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
-	// defer conn.Close()
+	conn, err := net.Dial("tcp", "localhost:4000")
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 
 	serverOutput := make(chan string)
-	// go func() {
-	// 	connbuf := bufio.NewReader(conn)
-	// 	for {
-	// 		str, err := connbuf.ReadString('\n')
-	// 		if err != nil {
-	// 			break
-	// 		}
-	// 		serverOutput <- str
-	// 	}
-	// }()
 	go func() {
-		x := 1
+		connbuf := bufio.NewReader(conn)
 		for {
-			time.Sleep(1500 * time.Millisecond)
-			x++
-			serverOutput <- strconv.Itoa(x)
+			str, err := connbuf.ReadString('\n')
+			if err != nil {
+				break
+			}
+			serverOutput <- str
 		}
 	}()
 
 	for {
 		select {
 		case input := <-userInput:
-			fmt.Println(" > ", input)
-			// conn.Write([]byte(input))
+			conn.Write([]byte(input))
+			screen.Add(input)
 		case output := <-serverOutput:
 			screen.Add(output)
 		}

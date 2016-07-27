@@ -23,7 +23,9 @@ func (inputBox *InputBox) Remove() {
 }
 
 func (inputBox *InputBox) Get() string {
-	return inputBox.written
+	written := inputBox.written
+	inputBox.written = ""
+	return written
 }
 
 func (inputBox *InputBox) Draw() {

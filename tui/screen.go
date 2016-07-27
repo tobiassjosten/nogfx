@@ -16,6 +16,7 @@ func NewScreen(userInput chan string) *Screen {
 	screen := new(Screen)
 	screen.outputBox = OutputBox{screen: screen}
 	screen.inputBox = InputBox{screen: screen}
+	screen.userInput = userInput
 	screen.Width, screen.Height = termbox.Size()
 	return screen
 }
@@ -52,12 +53,13 @@ mainloop:
 			case termbox.KeyEsc, termbox.KeyCtrlD:
 				close(screen.userInput)
 				break mainloop
-			case termbox.KeyEnter:
-				screen.userInput <- screen.inputBox.Get()
 			case termbox.KeyBackspace:
 				screen.inputBox.Remove()
 			default:
 				screen.inputBox.Add(ev.Ch)
+				if ev.Key == termbox.KeyEnter {
+					screen.userInput <- screen.inputBox.Get()
+				}
 			}
 		case termbox.EventError:
 			panic(ev.Err)
