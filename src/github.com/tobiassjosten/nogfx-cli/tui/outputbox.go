@@ -14,7 +14,7 @@ func (outputBox *OutputBox) SetScreen(screen *Screen) {
 }
 
 func (outputBox *OutputBox) Add(line string) {
-	outputBox.buffer[len(outputBox.buffer)] = line
+	outputBox.buffer = append(outputBox.buffer, line)
 }
 
 func (outputBox *OutputBox) Draw() {
