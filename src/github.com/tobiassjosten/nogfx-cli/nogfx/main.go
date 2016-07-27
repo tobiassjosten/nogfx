@@ -6,6 +6,7 @@ import (
 	"github.com/tobiassjosten/nogfx-cli/tui"
 	// "net"
 	// "os"
+	"strconv"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func main() {
 		for {
 			time.Sleep(1500 * time.Millisecond)
 			x++
-			serverOutput <- string(x)
+			serverOutput <- strconv.Itoa(x)
 		}
 	}()
 

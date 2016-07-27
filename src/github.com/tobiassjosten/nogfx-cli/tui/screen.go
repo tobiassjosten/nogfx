@@ -22,10 +22,12 @@ func NewScreen(userInput chan string) *Screen {
 
 func (screen *Screen) Add(line string) {
 	screen.outputBox.Add(line)
+	termbox.Interrupt()
 }
 
 func (screen *Screen) Draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+	screen.outputBox.Draw()
 	screen.inputBox.Draw()
 	termbox.Flush()
 }
@@ -39,6 +41,7 @@ func (screen *Screen) Main() {
 
 mainloop:
 	for {
+		screen.Draw()
 		ev := termbox.PollEvent()
 		switch ev.Type {
 		case termbox.EventResize:
@@ -59,6 +62,5 @@ mainloop:
 		case termbox.EventError:
 			panic(ev.Err)
 		}
-		screen.Draw()
 	}
 }
