@@ -2,7 +2,7 @@ package main
 
 import (
 	// "bufio"
-	// "fmt"
+	"fmt"
 	"github.com/tobiassjosten/nogfx-cli/tui"
 	// "net"
 	// "os"
@@ -42,13 +42,10 @@ func main() {
 		}
 	}()
 
-mainloop:
 	for {
 		select {
-		case input, ok := <-userInput:
-			if !ok || "q" == input {
-				break mainloop
-			}
+		case input := <-userInput:
+			fmt.Println(" > ", input)
 			// conn.Write([]byte(input))
 		case output := <-serverOutput:
 			screen.Add(output)
