@@ -4,14 +4,30 @@ import (
 	"bufio"
 	"github.com/tobiassjosten/nogfx-cli/tui"
 	"net"
+	"os"
 )
+
+func address() (address string) {
+	host := "achaea.com"
+	port := "23"
+
+	switch {
+	case len(os.Args) >= 3:
+		port = os.Args[2]
+		fallthrough
+	case len(os.Args) >= 2:
+		host = os.Args[1]
+	}
+
+	return host + ":" + port
+}
 
 func main() {
 	userInput := make(chan string)
 	screen := tui.NewScreen(userInput)
 	go screen.Main()
 
-	conn, err := net.Dial("tcp", "localhost:4000")
+	conn, err := net.Dial("tcp", address())
 	if err != nil {
 		panic(err)
 	}
