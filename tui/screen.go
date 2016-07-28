@@ -17,7 +17,6 @@ func NewScreen(userInput chan string) *Screen {
 	screen.outputBox = OutputBox{screen: screen}
 	screen.inputBox = InputBox{screen: screen}
 	screen.userInput = userInput
-	screen.Width, screen.Height = termbox.Size()
 	return screen
 }
 
@@ -28,8 +27,8 @@ func (screen *Screen) Add(line string) {
 
 func (screen *Screen) Draw() {
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-	screen.outputBox.Draw()
-	screen.inputBox.Draw()
+	screen.outputBox.Draw(0, 0, screen.Width-1, screen.Height-2)
+	screen.inputBox.Draw(0, screen.Height-1, screen.Width-1, screen.Height-1)
 	termbox.Flush()
 }
 
@@ -39,6 +38,8 @@ func (screen *Screen) Main() {
 		panic(err)
 	}
 	defer termbox.Close()
+
+	screen.Width, screen.Height = termbox.Size()
 
 mainloop:
 	for {
@@ -55,11 +56,10 @@ mainloop:
 				break mainloop
 			case termbox.KeyBackspace:
 				screen.inputBox.Remove()
+			case termbox.KeyEnter:
+				screen.userInput <- screen.inputBox.Get()
 			default:
 				screen.inputBox.Add(ev.Ch)
-				if ev.Key == termbox.KeyEnter {
-					screen.userInput <- screen.inputBox.Get()
-				}
 			}
 		case termbox.EventError:
 			panic(ev.Err)

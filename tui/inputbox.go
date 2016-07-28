@@ -10,10 +10,6 @@ type InputBox struct {
 	written string
 }
 
-func (inputBox *InputBox) SetScreen(screen *Screen) {
-	inputBox.screen = screen
-}
-
 func (inputBox *InputBox) Add(ch rune) {
 	inputBox.written += string(ch)
 }
@@ -28,16 +24,15 @@ func (inputBox *InputBox) Get() string {
 	return written
 }
 
-func (inputBox *InputBox) Draw() {
-	x := 0
+func (inputBox *InputBox) Draw(x int, y int, X int, Y int) {
 	for _, c := range []rune(inputBox.written) {
-		termbox.SetCell(x, inputBox.screen.Height-1, c, termbox.ColorWhite, termbox.ColorDefault)
+		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
 		x += runewidth.RuneWidth(c)
 	}
 
-	termbox.SetCursor(x, inputBox.screen.Height-1)
+	termbox.SetCursor(x, y)
 
-	for i := len(inputBox.written); i < inputBox.screen.Width; i++ {
-		termbox.SetCell(i, inputBox.screen.Height-1, '_', termbox.ColorWhite, termbox.ColorDefault)
+	for ; x < X; x++ {
+		termbox.SetCell(x, y, '_', termbox.ColorWhite, termbox.ColorDefault)
 	}
 }

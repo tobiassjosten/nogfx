@@ -23,6 +23,7 @@ func main() {
 		for {
 			str, err := connbuf.ReadString('\n')
 			if err != nil {
+				screen.Add(err.Error())
 				break
 			}
 			serverOutput <- str
@@ -32,8 +33,8 @@ func main() {
 	for {
 		select {
 		case input := <-userInput:
-			conn.Write([]byte(input))
-			screen.Add(input)
+			conn.Write(append(append([]byte(input), '\r'), '\n'))
+			screen.Add(" > " + input)
 		case output := <-serverOutput:
 			screen.Add(output)
 		}
