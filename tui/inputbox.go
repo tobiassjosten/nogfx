@@ -18,10 +18,12 @@ func (inputBox *InputBox) Remove() {
 	inputBox.written = inputBox.written[0 : len(inputBox.written)-1]
 }
 
-func (inputBox *InputBox) Get() string {
-	written := inputBox.written
+func (inputBox *InputBox) Clear() {
 	inputBox.written = ""
-	return written
+}
+
+func (inputBox *InputBox) Get() string {
+	return inputBox.written
 }
 
 func (inputBox *InputBox) Draw(x int, y int, X int, Y int) {

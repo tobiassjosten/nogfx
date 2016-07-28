@@ -41,6 +41,8 @@ func (screen *Screen) Main() {
 
 	screen.Width, screen.Height = termbox.Size()
 
+	sentInput := false
+
 mainloop:
 	for {
 		screen.Draw()
@@ -58,7 +60,12 @@ mainloop:
 				screen.inputBox.Remove()
 			case termbox.KeyEnter:
 				screen.userInput <- screen.inputBox.Get()
+				sentInput = true
 			default:
+				if sentInput {
+					screen.inputBox.Clear()
+					sentInput = false
+				}
 				screen.inputBox.Add(ev.Ch)
 			}
 		case termbox.EventError:
