@@ -6,29 +6,44 @@ import (
 )
 
 type InputBox struct {
-	screen  *Screen
-	written string
+	screen *Screen
+	buffer string
+	kept   bool
 }
 
 func (inputBox *InputBox) Add(ch rune) {
-	inputBox.written += string(ch)
+	if inputBox.kept {
+		inputBox.Clear()
+	}
+	inputBox.buffer += string(ch)
 }
 
 func (inputBox *InputBox) Remove() {
-	inputBox.written = inputBox.written[0 : len(inputBox.written)-1]
+	if inputBox.kept {
+		inputBox.Clear()
+	} else if 0 < len(inputBox.buffer) {
+		inputBox.buffer = inputBox.buffer[0 : len(inputBox.buffer)-1]
+	}
 }
 
 func (inputBox *InputBox) Clear() {
-	inputBox.written = ""
+	inputBox.buffer = ""
+	inputBox.kept = false
 }
 
 func (inputBox *InputBox) Get() string {
-	return inputBox.written
+	inputBox.kept = true
+	return inputBox.buffer
 }
 
 func (inputBox *InputBox) Draw(x int, y int, X int, Y int) {
-	for _, c := range []rune(inputBox.written) {
-		termbox.SetCell(x, y, c, termbox.ColorWhite, termbox.ColorDefault)
+	fg := termbox.ColorWhite
+	if inputBox.kept {
+		fg = termbox.ColorCyan
+	}
+
+	for _, c := range []rune(inputBox.buffer) {
+		termbox.SetCell(x, y, c, fg, termbox.ColorDefault)
 		x += runewidth.RuneWidth(c)
 	}
 

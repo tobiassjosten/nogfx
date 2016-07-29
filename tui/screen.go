@@ -41,11 +41,10 @@ func (screen *Screen) Main() {
 
 	screen.Width, screen.Height = termbox.Size()
 
-	sentInput := false
-
 mainloop:
 	for {
 		screen.Draw()
+
 		ev := termbox.PollEvent()
 		switch ev.Type {
 		case termbox.EventResize:
@@ -56,16 +55,11 @@ mainloop:
 			case termbox.KeyEsc, termbox.KeyCtrlD:
 				close(screen.userInput)
 				break mainloop
-			case termbox.KeyBackspace:
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
 				screen.inputBox.Remove()
 			case termbox.KeyEnter:
 				screen.userInput <- screen.inputBox.Get()
-				sentInput = true
 			default:
-				if sentInput {
-					screen.inputBox.Clear()
-					sentInput = false
-				}
 				screen.inputBox.Add(ev.Ch)
 			}
 		case termbox.EventError:
