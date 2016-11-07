@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"github.com/tobiassjosten/nogfx-cli/tui"
-	"net"
 	"os"
 )
 
@@ -27,29 +25,13 @@ func main() {
 	screen := tui.NewScreen(userInput)
 	go screen.Main()
 
-	conn, err := net.Dial("tcp", address())
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-
-	serverOutput := make(chan string)
-	go func() {
-		connbuf := bufio.NewReader(conn)
-		for {
-			str, err := connbuf.ReadString('\n')
-			if err != nil {
-				screen.Add(err.Error())
-				break
-			}
-			serverOutput <- str
-		}
-	}()
+	telnet, serverOutput := NewTelnet()
+	go telnet.Main(address())
 
 	for {
 		select {
 		case input := <-userInput:
-			conn.Write(append(append([]byte(input), '\r'), '\n'))
+			telnet.Send(input)
 			screen.Add(" > " + input)
 		case output := <-serverOutput:
 			screen.Add(output)
