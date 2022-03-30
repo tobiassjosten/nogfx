@@ -1,26 +1,54 @@
 package main
 
 import (
-	"github.com/tobiassjosten/nogfx-cli"
-	"os"
+	"bufio"
+	"log"
+
+	"github.com/tobiassjosten/nogfx"
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
+	"github.com/tobiassjosten/nogfx/pkg/tui"
 )
 
-func address() (address string) {
-	host := "achaea.com"
-	port := "23"
+func main() {
+	world := nogfx.NewWorld()
 
-	switch {
-	case len(os.Args) >= 3:
-		port = os.Args[2]
-		fallthrough
-	case len(os.Args) >= 2:
-		host = os.Args[1]
+	ui := tui.NewTUI(world)
+	go ui.Run()
+
+	stream, err := telnet.Dial("tcp", "achaea.com:23")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return host + ":" + port
-}
+	// err = stream.Do(telnet.GMCP)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-func main() {
-	engine := nogfx.NewEngine()
-	engine.Run(address())
+	serverOutput := make(chan []byte)
+	go func(serverOutput chan []byte) {
+		scanner := bufio.NewScanner(stream)
+
+		for scanner.Scan() {
+			serverOutput <- scanner.Bytes()
+		}
+
+		err := scanner.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(serverOutput)
+
+	for {
+		select {
+		case output := <-serverOutput:
+			ui.ServerOutput <- []rune(string(output))
+
+		case input := <-ui.UserInput:
+			_, err = stream.Write([]byte(string(input) + "\n"))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 }
