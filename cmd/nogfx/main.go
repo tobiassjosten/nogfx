@@ -26,11 +26,6 @@ func main() {
 	serverOutput := make(chan []byte)
 	serverDone := make(chan struct{})
 
-	// err = stream.Do(telnet.GMCP)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
 	go func(stream *telnet.Stream, serverOutput chan<- []byte) {
 		scanner := bufio.NewScanner(stream)
 
@@ -54,8 +49,9 @@ func main() {
 main:
 	for {
 		select {
-		case command := <-serverCommands:
-			fmt.Println("{", command, "}")
+		case _ = <-serverDone:
+			break main
+
 		case output := <-serverOutput:
 			fmt.Println(`>`, string(output))
 
@@ -72,9 +68,14 @@ main:
 				}
 				quit = true
 			}
-		case _ = <-serverDone:
-			fmt.Println("DONE LOOPING")
-			break main
+
+		case command, ok := <-serverCommands:
+			if !ok {
+				continue
+			}
+
+			fmt.Println("{", command, "}")
+			fmt.Println("{", string(command), "}")
 		}
 	}
 }

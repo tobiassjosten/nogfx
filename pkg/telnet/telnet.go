@@ -4,36 +4,30 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 )
 
-// från achaea
-// WILL 25
-// WILL 200
-// WILL 201 (GMCP)
-// WILL 86
-// WILL 24 ("terminal type"?)
-
 const (
-	ECHO byte = 1
-	LF   byte = 10
-	CR   byte = 13
-	GMCP byte = 201
-	SE   byte = 240
-	GA   byte = 249
-	SB   byte = 250
-	WILL byte = 251
-	WONT byte = 252
-	DO   byte = 253
-	DONT byte = 254
-	IAC  byte = 255
+	ECHO  byte = 1
+	LF    byte = 10
+	CR    byte = 13
+	MCCP  byte = 85
+	MCCP2 byte = 86
+	ATCP  byte = 200
+	GMCP  byte = 201
+	SE    byte = 240
+	GA    byte = 249
+	SB    byte = 250
+	WILL  byte = 251
+	WONT  byte = 252
+	DO    byte = 253
+	DONT  byte = 254
+	IAC   byte = 255
 )
-
-// okända kommandon DO/DONT -> WONT?
 
 // implementera:
 // ECHO (1): http://pcmicro.com/NetFoss/RFC857.html
-// SUPRESS GO-AHEAD (3): http://pcmicro.com/NetFoss/RFC858.html
 // STATUS (5): http://pcmicro.com/NetFoss/RFC859.html
 // NAOCRD (10): https://www.ietf.org/rfc/rfc652.txt:w
 // LOGOUT (18)?: https://www.ietf.org/rfc/rfc727.txt
@@ -47,7 +41,6 @@ const (
 // http://pcmicro.com/NetFoss/telnet.html
 // https://www.ironrealms.com/gmcp-doc
 // https://tintin.sourceforge.io/protocols/mssp/
-// MCCP?
 // http://www.mushclient.com/mushclient/mxp.htm
 // https://wiki.mudlet.org/w/Manual:Supported_Protocols
 
@@ -55,6 +48,9 @@ type Stream struct {
 	data     io.ReadWriter
 	reader   *bufio.Reader
 	commands chan []byte
+
+	enabled map[byte]struct{}
+	accepts map[byte]struct{}
 }
 
 // NewStream wraps a given reader and returns a new Stream.
@@ -65,25 +61,30 @@ func NewStream(data io.ReadWriter) (*Stream, <-chan []byte) {
 		data:     data,
 		reader:   bufio.NewReader(data),
 		commands: commands,
+		accepts: map[byte]struct{}{
+			ATCP: {},
+			GMCP: {},
+		},
+		enabled: map[byte]struct{}{},
 	}, commands
 }
 
-func (stream *Stream) Will(command byte) error {
+func (stream *Stream) will(command byte) error {
 	_, err := stream.data.Write([]byte{IAC, WILL, command})
 	return err
 }
 
-func (stream *Stream) Wont(command byte) error {
+func (stream *Stream) wont(command byte) error {
 	_, err := stream.data.Write([]byte{IAC, WONT, command})
 	return err
 }
 
-func (stream *Stream) Do(command byte) error {
+func (stream *Stream) do(command byte) error {
 	_, err := stream.data.Write([]byte{IAC, DO, command})
 	return err
 }
 
-func (stream *Stream) Dont(command byte) error {
+func (stream *Stream) dont(command byte) error {
 	_, err := stream.data.Write([]byte{IAC, DONT, command})
 	return err
 }
@@ -142,24 +143,47 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 
 	switch command[1] {
 	case WILL:
-		if command[2] == 123 {
-			if err := stream.Wont(132); err != nil {
-				// log.Warnf("invalid command sequence: %s", command)
+		_, enabled := stream.enabled[command[2]]
+		_, accepts := stream.accepts[command[2]]
+
+		switch {
+		case enabled:
+			fmt.Printf("[WILL] %d (%X) enabled\n", command[2], command[2])
+			stream.enabled[command[2]] = struct{}{}
+
+		case accepts:
+			if err := stream.do(command[2]); err != nil {
+				// log.Warnf("failed accepting option: %d (%X)", command[2], command[2])
 			}
+			fmt.Printf("[WILL] %d (%X) accepted\n", command[2], command[2])
+			stream.enabled[command[2]] = struct{}{}
+
+		default:
+			if err := stream.dont(command[2]); err != nil {
+				// log.Warnf("failed rejecting option: %d (%X)", command[2], command[2])
+			}
+			fmt.Printf("[WILL] %d (%X) rejected\n", command[2], command[2])
 		}
 
 		stream.commands <- command
 		return []byte{}, 0
 
 	case WONT:
+		fmt.Printf("[WONT] %d (%X)\n", command[2], command[2])
 		stream.commands <- command
 		return []byte{}, 0
 
 	case DO:
+		if err := stream.wont(command[2]); err != nil {
+			// log.Warnf("failed rejecting option: %d (%X)", command[2], command[2])
+		}
+		fmt.Printf("[DO] %d (%X) rejected\n", command[2], command[2])
+
 		stream.commands <- command
 		return []byte{}, 0
 
 	case DONT:
+		fmt.Printf("[DONT] %d (%X)\n", command[2], command[2])
 		stream.commands <- command
 		return []byte{}, 0
 
