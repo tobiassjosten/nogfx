@@ -92,12 +92,10 @@ func (stream *Stream) Write(buffer []byte) (int, error) {
 	return stream.data.Write(buffer)
 }
 
-func (stream *Stream) Read(readBuffer []byte) (count int, err error) {
-	readLength := len(readBuffer)
-
+func (stream *Stream) Read(buffer []byte) (count int, err error) {
 	command := []byte{}
 
-	for count < readLength {
+	for bufferlen := len(buffer); count < bufferlen; {
 		b, err := stream.reader.ReadByte()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -114,7 +112,7 @@ func (stream *Stream) Read(readBuffer []byte) (count int, err error) {
 			}
 		}
 
-		readBuffer[count] = b
+		buffer[count] = b
 		count++
 
 		// Achaea skickar ibland CR CR LN, ibland CR LN. Kanske kan vi
@@ -128,15 +126,6 @@ func (stream *Stream) Read(readBuffer []byte) (count int, err error) {
 }
 
 func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
-	if len(command) == 0 {
-		return []byte{}, 0
-	}
-
-	if command[0] != IAC {
-		// @todo Log warning about invalid command sequence.
-		return []byte{}, 0
-	}
-
 	if bytes.Equal(command, []byte{IAC, IAC}) {
 		return []byte{}, IAC
 	}
@@ -159,19 +148,19 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 			}
 		}
 
-		stream.relayCommand(command)
+		stream.commands <- command
 		return []byte{}, 0
 
 	case WONT:
-		stream.relayCommand(command)
+		stream.commands <- command
 		return []byte{}, 0
 
 	case DO:
-		stream.relayCommand(command)
+		stream.commands <- command
 		return []byte{}, 0
 
 	case DONT:
-		stream.relayCommand(command)
+		stream.commands <- command
 		return []byte{}, 0
 
 	default:
@@ -184,18 +173,10 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 
 	if bytes.Equal(command[:2], []byte{IAC, SB}) {
 		if bytes.Equal(command[len(command)-2:], []byte{IAC, SE}) {
-			stream.relayCommand(command)
-			return []byte{}, GA
+			stream.commands <- command
+			return []byte{}, 0
 		}
 	}
 
 	return command, 0
-}
-
-func (stream *Stream) relayCommand(command []byte) {
-	// We can't trust that consumers are listening to our channel, so we
-	// spawn goroutines so as to let Go handle buffering for us.
-	go func(command []byte) {
-		stream.commands <- command
-	}(command)
 }

@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
@@ -29,6 +29,7 @@ func (mock MockData) Write(p []byte) (int, error) {
 
 func TestAsdf(t *testing.T) {
 	assert := assert.New(t)
+	require := require.New(t)
 
 	tcs := []struct {
 		data     []byte
@@ -53,6 +54,11 @@ func TestAsdf(t *testing.T) {
 			output:   []byte{'x', 'y'},
 			commands: [][]byte{{telnet.IAC, telnet.WILL, telnet.GMCP}},
 		},
+		{
+			data:     []byte{'x', telnet.IAC, telnet.SB, 'z', telnet.IAC, telnet.SE, 'y'},
+			output:   []byte{'x', 'y'},
+			commands: [][]byte{{telnet.IAC, telnet.SB, 'z', telnet.IAC, telnet.SE}},
+		},
 	}
 
 	for i, tc := range tcs {
@@ -62,35 +68,25 @@ func TestAsdf(t *testing.T) {
 				&strings.Builder{},
 			}
 
-			stream, commands := telnet.NewStream(data)
+			stream, commandChan := telnet.NewStream(data)
+
+			var commands [][]byte
+			go func(commandChan <-chan []byte) {
+				for command := range commandChan {
+					commands = append(commands, command)
+				}
+			}(commandChan)
 
 			output, err := ioutil.ReadAll(stream)
 
-			if assert.Equal(tc.err, err) {
-				assert.Equal(tc.output, output)
-			}
-
-			if tc.commands == nil {
+			if tc.err != nil {
+				assert.Equal(tc.err, err)
 				return
 			}
 
-		main:
-			for i := 0; ; {
-				select {
-				case command := <-commands:
-					if assert.LessOrEqual(i+1, len(tc.commands)) {
-						assert.Equal(tc.commands[i], command)
-					}
-
-				case <-time.After(1 * time.Second):
-					assert.Fail("channel failed to close")
-					break main
-				}
-
-				if commands == nil {
-					break
-				}
-			}
+			require.Nil(err)
+			assert.Equal(tc.output, output)
+			assert.Equal(commands, tc.commands)
 		})
 	}
 }
