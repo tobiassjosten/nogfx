@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"os"
 
 	// "github.com/tobiassjosten/nogfx"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
@@ -12,6 +14,12 @@ import (
 )
 
 func main() {
+	log.SetOutput(ioutil.Discard)
+	fileFlags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	f, err := os.OpenFile("nogfx.log", fileFlags, 0644)
+	defer f.Close()
+	log.SetOutput(f)
+
 	// world := nogfx.NewWorld()
 
 	// ui := tui.NewTUI(world)

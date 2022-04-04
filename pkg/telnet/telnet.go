@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
+	"log"
 )
 
 const (
 	ECHO  byte = 1
 	LF    byte = 10
 	CR    byte = 13
+	TTYPE byte = 24
 	MCCP  byte = 85
 	MCCP2 byte = 86
 	ATCP  byte = 200
@@ -25,24 +26,6 @@ const (
 	DONT  byte = 254
 	IAC   byte = 255
 )
-
-// implementera:
-// ECHO (1): http://pcmicro.com/NetFoss/RFC857.html
-// STATUS (5): http://pcmicro.com/NetFoss/RFC859.html
-// NAOCRD (10): https://www.ietf.org/rfc/rfc652.txt:w
-// LOGOUT (18)?: https://www.ietf.org/rfc/rfc727.txt
-// TERMINAL-TYPE (24): http://pcmicro.com/NetFoss/RFC1091.html
-// NAWS (31): http://pcmicro.com/NetFoss/RFC1073.html
-// CHARSET (42): https://www.ietf.org/rfc/rfc2066.txt
-// Telnet Suppress Local Echo (45)?
-
-// http://mud-dev.wikidot.com/telnet:negotiation
-// https://blog.ikeran.org/?p=129
-// http://pcmicro.com/NetFoss/telnet.html
-// https://www.ironrealms.com/gmcp-doc
-// https://tintin.sourceforge.io/protocols/mssp/
-// http://www.mushclient.com/mushclient/mxp.htm
-// https://wiki.mudlet.org/w/Manual:Supported_Protocols
 
 type Stream struct {
 	data     io.ReadWriter
@@ -148,42 +131,36 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 
 		switch {
 		case enabled:
-			fmt.Printf("[WILL] %d (%X) enabled\n", command[2], command[2])
 			stream.enabled[command[2]] = struct{}{}
 
 		case accepts:
 			if err := stream.do(command[2]); err != nil {
-				// log.Warnf("failed accepting option: %d (%X)", command[2], command[2])
+				log.Printf("failed accepting WILL %d", command[2])
 			}
-			fmt.Printf("[WILL] %d (%X) accepted\n", command[2], command[2])
 			stream.enabled[command[2]] = struct{}{}
 
 		default:
 			if err := stream.dont(command[2]); err != nil {
-				// log.Warnf("failed rejecting option: %d (%X)", command[2], command[2])
+				log.Printf("failed rejecting WILL %d", command[2])
 			}
-			fmt.Printf("[WILL] %d (%X) rejected\n", command[2], command[2])
 		}
 
 		stream.commands <- command
 		return []byte{}, 0
 
 	case WONT:
-		fmt.Printf("[WONT] %d (%X)\n", command[2], command[2])
 		stream.commands <- command
 		return []byte{}, 0
 
 	case DO:
 		if err := stream.wont(command[2]); err != nil {
-			// log.Warnf("failed rejecting option: %d (%X)", command[2], command[2])
+			log.Printf("failed rejecting DO %d", command[2])
 		}
-		fmt.Printf("[DO] %d (%X) rejected\n", command[2], command[2])
 
 		stream.commands <- command
 		return []byte{}, 0
 
 	case DONT:
-		fmt.Printf("[DONT] %d (%X)\n", command[2], command[2])
 		stream.commands <- command
 		return []byte{}, 0
 
