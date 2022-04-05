@@ -1,144 +1,122 @@
 package tui
 
 import (
-	"log"
+	"os"
 
-	"github.com/gdamore/tcell"
-	"github.com/tobiassjosten/nogfx"
+	"github.com/gdamore/tcell/v2"
 )
 
 type TUI struct {
 	screen tcell.Screen
-	world  *nogfx.World
-
-	input struct {
-		buffer []rune
-		sent   bool
-	}
-	// output []struct {
-	// 	lines int
-	// 	raw   []rune
-	// }
-
-	width  int
-	height int
-
-	UserInput    chan []rune
-	ServerOutput chan []rune
-	Quit         chan bool
+	input  []rune
+	inputs chan []byte
 }
 
-func NewTUI(world *nogfx.World) *TUI {
+func NewTUI() (*TUI, <-chan []byte, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
-	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)
-	screen.SetStyle(style)
+	inputs := make(chan []byte)
 
-	return &TUI{
-		screen:       screen,
-		world:        world,
-		UserInput:    make(chan []rune),
-		ServerOutput: make(chan []rune),
+	tui := &TUI{
+		screen: screen,
+		inputs: inputs,
 	}
+
+	if err := tui.screen.Init(); err != nil {
+		return nil, nil, err
+	}
+
+	// 16777216 == tui.screen.Colors() // 24 bit
+
+	return tui, inputs, nil
 }
 
-func (t *TUI) Run() {
-	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
+func (tui *TUI) Run(outputs <-chan []byte) {
+	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 
-	err := t.screen.Init()
-	if err != nil {
-		log.Fatal(err)
+	tui.screen.SetStyle(defStyle)
+	tui.screen.Clear()
+
+	tui.drawInputBox()
+
+	quit := func() {
+		tui.screen.Fini()
+		os.Exit(0) // @todo Move this to main loop.
 	}
-	defer t.screen.Fini()
 
-	t.width, t.height = t.screen.Size()
-
-	t.screen.Clear()
-
-	interactions := make(chan tcell.Event)
+	inputs := make(chan []byte)
 	go func() {
 		for {
-			interactions <- t.screen.PollEvent()
+			tui.screen.Show()
+
+			switch ev := tui.screen.PollEvent().(type) {
+			case *tcell.EventResize:
+				tui.screen.Sync()
+
+			case *tcell.EventKey:
+				switch ev.Key() {
+				case tcell.KeyESC, tcell.KeyCtrlC:
+					quit()
+
+				case tcell.KeyCtrlL:
+					tui.screen.Sync()
+
+				case tcell.KeyEnter:
+					inputs <- []byte(string(tui.input))
+					tui.input = []rune{}
+					tui.drawInputBox()
+
+				case tcell.KeyRune:
+					tui.input = append(tui.input, ev.Rune())
+					tui.drawInputBox()
+				}
+			}
 		}
 	}()
 
-Loop:
 	for {
 		select {
-		case <-t.Quit:
-			break Loop
+		case input := <-inputs:
+			tui.inputs <- input
 
-		case <-t.ServerOutput:
-			// @todo calculate lines
-			// commented out because of type mismatch with t.output
-			// case output := <-t.ServerOutput:
-			// t.output = append(t.output, output)
-			t.draw()
-
-		case interaction := <-interactions:
-			switch interaction := interaction.(type) {
-			case *tcell.EventKey:
-				_ = interaction.Modifiers()
-
-				switch interaction.Key() {
-				case tcell.KeyESC, tcell.KeyCtrlC, tcell.KeyCtrlD:
-					log.Fatal("ESC")
-
-				case tcell.KeyEnter:
-					t.UserInput <- t.input.buffer
-					t.input.sent = true
-					t.draw()
-
-				case tcell.KeyRune:
-					if t.input.sent {
-						t.input.buffer = []rune{}
-						t.input.sent = false
-					}
-					t.input.buffer = append(t.input.buffer, interaction.Rune())
-					t.draw()
-				}
-
-			case *tcell.EventResize:
-				t.width, t.height = t.screen.Size()
-				t.draw()
-
-			case *tcell.EventInterrupt:
-				t.screen.Sync()
-			}
+		case output := <-outputs:
+			drawText(tui.screen, 0, 0, 100, 1, defStyle, string(output))
 		}
 	}
 }
 
-func (t *TUI) UpdateWorld(world *nogfx.World) {
-	t.world = world
-	t.draw()
+func drawText(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string) {
+	row := y1
+	col := x1
+	for _, r := range []rune(text) {
+		s.SetContent(col, row, r, nil, style)
+		col++
+		if col >= x2 {
+			row++
+			col = x1
+		}
+		if row > y2 {
+			break
+		}
+	}
 }
 
-func (t *TUI) draw() {
-	padding := 1
+func (tui *TUI) drawInputBox() {
+	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorGray)
 
-	minimapWidth, minimapHeight := 13, 7
-	minimapx, minimapy := 0, t.height-minimapHeight
-	minimapX, minimapY := minimapx+minimapWidth, minimapy+minimapHeight
-	t.drawMinimap(minimapx, minimapy, minimapX, minimapY)
+	x2, y2 := tui.screen.Size()
+	x1, y1 := 0, y2-1
 
-	// @todo calculate height
-	inputboxWidth, inputboxHeight := t.width-minimapWidth-padding, 1
-	inputboxx, inputboxy := minimapX+padding+1, t.height-inputboxHeight
-	inputboxX, inputboxY := inputboxx+inputboxWidth, inputboxy+inputboxHeight
-	t.drawInputbox(t.input.buffer, inputboxx, inputboxy, inputboxX, inputboxY)
-
-	// @todo calculate measurements
-	// commented out because of type mismatch with t.output
-	// if len(t.output) > 0 {
-	// 	outputboxWidth, outputboxHeight := t.width-minimapWidth-padding, t.height-inputboxHeight-padding
-	// 	outputboxx, outputboxy := minimapX+padding+1, 0
-	// 	outputboxX, outputboxY := outputboxx+outputboxWidth, outputboxy+outputboxHeight
-	// 	t.drawOutputbox(t.output, outputboxx, outputboxy, outputboxX, outputboxY)
-	// }
-
-	t.screen.Show()
+	for row := y1; row <= y2; row++ {
+		for col := x1; col <= x2; col++ {
+			r := ' '
+			if col < len(tui.input) {
+				r = tui.input[col]
+			}
+			tui.screen.SetContent(col, row, r, nil, style)
+		}
+	}
 }

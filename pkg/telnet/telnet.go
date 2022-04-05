@@ -31,25 +31,23 @@ type Stream struct {
 	data     io.ReadWriter
 	reader   *bufio.Reader
 	commands chan []byte
-
-	enabled map[byte]struct{}
-	accepts map[byte]struct{}
 }
 
 // NewStream wraps a given reader and returns a new Stream.
 func NewStream(data io.ReadWriter) (*Stream, <-chan []byte) {
 	commands := make(chan []byte)
 
-	return &Stream{
+	stream := &Stream{
 		data:     data,
 		reader:   bufio.NewReader(data),
 		commands: commands,
-		accepts: map[byte]struct{}{
-			ATCP: {},
-			GMCP: {},
-		},
-		enabled: map[byte]struct{}{},
-	}, commands
+	}
+
+	return stream, commands
+}
+
+func (stream *Stream) Write(buffer []byte) (int, error) {
+	return stream.data.Write(buffer)
 }
 
 func (stream *Stream) will(command byte) error {
@@ -72,8 +70,25 @@ func (stream *Stream) dont(command byte) error {
 	return err
 }
 
-func (stream *Stream) Write(buffer []byte) (int, error) {
-	return stream.data.Write(buffer)
+func (stream *Stream) subneg(b byte, value []byte) error {
+	var v byte = 0
+	if len(value) > 0 {
+		v = 1
+	}
+
+	_, err := stream.data.Write(append(append(
+		[]byte{IAC, SB, b, v},
+		value...,
+	), IAC, SE))
+	return err
+}
+
+func (stream *Stream) gmcp(value []byte) error {
+	_, err := stream.data.Write(append(append(
+		[]byte{IAC, SB, GMCP},
+		value...,
+	), IAC, SE))
+	return err
 }
 
 func (stream *Stream) Read(buffer []byte) (count int, err error) {
@@ -126,20 +141,13 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 
 	switch command[1] {
 	case WILL:
-		_, enabled := stream.enabled[command[2]]
-		_, accepts := stream.accepts[command[2]]
-
-		switch {
-		case enabled:
-			stream.enabled[command[2]] = struct{}{}
-
-		case accepts:
+		if command[2] == GMCP {
 			if err := stream.do(command[2]); err != nil {
 				log.Printf("failed accepting WILL %d", command[2])
 			}
-			stream.enabled[command[2]] = struct{}{}
-
-		default:
+			stream.gmcp([]byte(`Core.Hello { "client": "NoGFX", "version": "0.0.1" }`))
+			stream.gmcp([]byte(`Core.Supports.Set [ "Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "Room 1", "IRE.Rift 1"]`))
+		} else {
 			if err := stream.dont(command[2]); err != nil {
 				log.Printf("failed rejecting WILL %d", command[2])
 			}
