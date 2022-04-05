@@ -1,15 +1,17 @@
 package tui
 
 import (
+	"log"
 	"os"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 type TUI struct {
-	screen tcell.Screen
-	input  []rune
-	inputs chan []byte
+	screen  tcell.Screen
+	input   []rune
+	inputs  chan []byte
+	outputs [][]rune
 }
 
 func NewTUI() (*TUI, <-chan []byte, error) {
@@ -40,7 +42,8 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 	tui.screen.SetStyle(defStyle)
 	tui.screen.Clear()
 
-	tui.drawInputBox()
+	tui.drawInput()
+	tui.drawOutput()
 
 	quit := func() {
 		tui.screen.Fini()
@@ -50,8 +53,6 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 	inputs := make(chan []byte)
 	go func() {
 		for {
-			tui.screen.Show()
-
 			switch ev := tui.screen.PollEvent().(type) {
 			case *tcell.EventResize:
 				tui.screen.Sync()
@@ -61,19 +62,18 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 				case tcell.KeyESC, tcell.KeyCtrlC:
 					quit()
 
-				case tcell.KeyCtrlL:
-					tui.screen.Sync()
-
 				case tcell.KeyEnter:
 					inputs <- []byte(string(tui.input))
 					tui.input = []rune{}
-					tui.drawInputBox()
+					tui.drawInput()
 
 				case tcell.KeyRune:
 					tui.input = append(tui.input, ev.Rune())
-					tui.drawInputBox()
+					tui.drawInput()
 				}
 			}
+
+			tui.screen.Show()
 		}
 	}()
 
@@ -83,8 +83,13 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 			tui.inputs <- input
 
 		case output := <-outputs:
-			drawText(tui.screen, 0, 0, 100, 1, defStyle, string(output))
+			// Reverse the list, with the most recent on top, so
+			// that we don't have to do that at every draw.
+			tui.outputs = append([][]rune{[]rune(string(output))}, tui.outputs...)
+			tui.drawOutput()
 		}
+
+		tui.screen.Show()
 	}
 }
 
@@ -104,7 +109,52 @@ func drawText(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string
 	}
 }
 
-func (tui *TUI) drawInputBox() {
+func (tui *TUI) drawOutput() {
+	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorReset)
+
+	width, height := tui.screen.Size()
+	y := height - 2
+
+	log.Println("-- redraw --")
+
+	for _, output := range tui.outputs {
+		lines := countLines(output, width)
+
+		x := 0
+		y = y - lines + 1
+
+		log.Println(string(output))
+		log.Println("\t", lines, "lines, ", y, "y")
+
+		for _, r := range output {
+			// @todo Kolla istället efter "printable rune". Har
+			// kanske tcell det konceptet?
+			if r != '\n' && r != '\r' {
+				tui.screen.SetContent(x, y, r, nil, style)
+			}
+
+			x++
+			if r == '\n' || r == '\r' || x == width {
+				log.Println("\t", width-x, "newline fills")
+				for ; x < width; x++ {
+					tui.screen.SetContent(x, y, ' ', nil, style)
+				}
+
+				x = 0
+				y++
+			}
+		}
+
+		log.Println("\t", width-x, "done fills")
+		for ; x < width; x++ {
+			tui.screen.SetContent(x, y, ' ', nil, style)
+		}
+
+		y = y - lines
+	}
+}
+
+func (tui *TUI) drawInput() {
 	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorGray)
 
 	x2, y2 := tui.screen.Size()
@@ -119,4 +169,23 @@ func (tui *TUI) drawInputBox() {
 			tui.screen.SetContent(col, row, r, nil, style)
 		}
 	}
+}
+
+func countLines(text []rune, width int) int {
+	lines := 1
+
+	col := 0
+	for _, r := range text {
+		if r == '\n' || r == '\r' {
+			col = 0
+			lines++
+		} else if col == width {
+			col = 1
+			lines++
+		} else {
+			col++
+		}
+	}
+
+	return lines
 }

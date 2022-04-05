@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -51,7 +50,7 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 	connection := &MockData{
-		strings.NewReader("trololol\n"),
+		strings.NewReader("trololol\nqweqwrreqr\nasdasfasdfdsdfdsfasdasdasdasdasfasdasdsdasdasdsdsadsadsdsadsadsdasdasdsafasdasdasdsdasdasdasdasdasdasdasdasdasdasfasdasdasdsadasfasdasdasdasdasfasdasdasdasdadasdasfasdasdasfddasdasdasdasdasdasdasdasfasdasdsdasfadasdasdfasdasdasfasdasdasdsaddasdasfasdsadxasfasdasfdsfasdsadsadsafadfasdasdafadasdasdafadasdasdasdas\nzxcxzvzxcxcxzc"),
 		&strings.Builder{},
 	}
 
@@ -83,29 +82,23 @@ func main() {
 	for {
 		select {
 		case _ = <-serverDone:
-			fmt.Println("server done")
+			uiOutput <- []byte("server disconnected")
 			// break main
 
 		case input := <-playerInput:
+			// @todo Process input.
 			stream.Write(input)
 
 		case output := <-serverOutput:
-			fmt.Println(`>`, string(output))
+			// @todo Process output.
 			uiOutput <- output
 
-			// processa med typ world.Process()
-			// skicka vidare (eventuellt förändrat) till tuiInChan
-			// case input := <-tuiOutChan:
-			// 	// processa med typ world.Process()
-			// 	// skicka vidare (eventuellt förändrat) till serverInChan
-
 		case command, ok := <-serverCommands:
+			// @todo Process command.
 			if !ok {
 				continue
 			}
-
-			fmt.Println("{", command, "}")
-			fmt.Println("{", string(command), "}")
+			uiOutput <- append([]byte("[cmd] "), command...)
 		}
 	}
 }
