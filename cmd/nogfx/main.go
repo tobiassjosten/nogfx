@@ -5,8 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
-	"strings"
 
 	// "github.com/tobiassjosten/nogfx"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
@@ -45,14 +45,14 @@ func main() {
 	uiOutput := make(chan []byte)
 	go ui.Run(uiOutput)
 
-	// connection, err := net.Dial("tcp", "achaea.com:23")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	connection := &MockData{
-		strings.NewReader("trololol\nqweqwrreqr\nasdasfasdfdsdfdsfasdasdasdasdasfasdasdsdasdasdsdsadsadsdsadsadsdasdasdsafasdasdasdsdasdasdasdasdasdasdasdasdasdasfasdasdasdsadasfasdasdasdasdasfasdasdasdasdadasdasfasdasdasfddasdasdasdasdasdasdasdasfasdasdsdasfadasdasdfasdasdasfasdasdasdsaddasdasfasdsadxasfasdasfdsfasdsadsadsafadfasdasdafadasdasdafadasdasdasdas\nzxcxzvzxcxcxzc"),
-		&strings.Builder{},
+	connection, err := net.Dial("tcp", "achaea.com:23")
+	if err != nil {
+		log.Fatal(err)
 	}
+	// connection := &MockData{
+	// 	strings.NewReader("trololol\nqweqwrreqr\none two \033[33mthree \033[39mfour five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone twentytwo twentythree twentyfour twentyfive twentysix twentyseven twentyeight twentynine thirty thirtyone thirtytwo\nzxcxzvzxcxcxzc"),
+	// 	&strings.Builder{},
+	// }
 
 	stream, serverCommands := telnet.NewStream(connection)
 
@@ -87,7 +87,7 @@ func main() {
 
 		case input := <-playerInput:
 			// @todo Process input.
-			stream.Write(input)
+			stream.Write(append(input, '\n'))
 
 		case output := <-serverOutput:
 			// @todo Process output.
@@ -98,7 +98,7 @@ func main() {
 			if !ok {
 				continue
 			}
-			uiOutput <- append([]byte("[cmd] "), command...)
+			log.Println(string(command))
 		}
 	}
 }

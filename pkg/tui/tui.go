@@ -1,17 +1,16 @@
 package tui
 
 import (
-	"log"
 	"os"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 type TUI struct {
-	screen  tcell.Screen
-	input   []rune
-	inputs  chan []byte
-	outputs [][]rune
+	screen tcell.Screen
+	input  []rune
+	inputs chan []byte
+	texts  []Text
 }
 
 func NewTUI() (*TUI, <-chan []byte, error) {
@@ -31,19 +30,17 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 		return nil, nil, err
 	}
 
-	// 16777216 == tui.screen.Colors() // 24 bit
-
 	return tui, inputs, nil
 }
 
 func (tui *TUI) Run(outputs <-chan []byte) {
-	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
+	style := tcell.StyleDefault.
+		Background(tcell.ColorReset).
+		Foreground(tcell.ColorReset)
+	tui.screen.SetStyle(style)
+	// 16777216 == tui.screen.Colors() // 24 bit
 
-	tui.screen.SetStyle(defStyle)
-	tui.screen.Clear()
-
-	tui.drawInput()
-	tui.drawOutput()
+	tui.draw()
 
 	quit := func() {
 		tui.screen.Fini()
@@ -55,7 +52,7 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 		for {
 			switch ev := tui.screen.PollEvent().(type) {
 			case *tcell.EventResize:
-				tui.screen.Sync()
+				tui.drawSync()
 
 			case *tcell.EventKey:
 				switch ev.Key() {
@@ -65,15 +62,13 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 				case tcell.KeyEnter:
 					inputs <- []byte(string(tui.input))
 					tui.input = []rune{}
-					tui.drawInput()
+					tui.draw()
 
 				case tcell.KeyRune:
 					tui.input = append(tui.input, ev.Rune())
-					tui.drawInput()
+					tui.draw()
 				}
 			}
-
-			tui.screen.Show()
 		}
 	}()
 
@@ -83,74 +78,43 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 			tui.inputs <- input
 
 		case output := <-outputs:
-			// Reverse the list, with the most recent on top, so
-			// that we don't have to do that at every draw.
-			tui.outputs = append([][]rune{[]rune(string(output))}, tui.outputs...)
-			tui.drawOutput()
+			style = tui.newOutput(output, style)
+			tui.draw()
 		}
-
-		tui.screen.Show()
 	}
 }
 
-func drawText(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string) {
-	row := y1
-	col := x1
-	for _, r := range []rune(text) {
-		s.SetContent(col, row, r, nil, style)
-		col++
-		if col >= x2 {
-			row++
-			col = x1
-		}
-		if row > y2 {
-			break
-		}
-	}
+func (tui *TUI) newOutput(output []byte, style tcell.Style) tcell.Style {
+	text, style := NewText(output, style)
+	tui.texts = append([]Text{text}, tui.texts...)
+
+	return style
+}
+
+func (tui *TUI) draw() {
+	tui.screen.Clear()
+	tui.drawInput()
+	tui.drawOutput()
+	tui.screen.Show()
+}
+func (tui *TUI) drawSync() {
+	tui.screen.Clear()
+	tui.drawInput()
+	tui.drawOutput()
+	tui.screen.Sync()
 }
 
 func (tui *TUI) drawOutput() {
-	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorReset)
-
 	width, height := tui.screen.Size()
+
+	x := 0
 	y := height - 2
 
-	log.Println("-- redraw --")
-
-	for _, output := range tui.outputs {
-		lines := countLines(output, width)
-
-		x := 0
-		y = y - lines + 1
-
-		log.Println(string(output))
-		log.Println("\t", lines, "lines, ", y, "y")
-
-		for _, r := range output {
-			// @todo Kolla istället efter "printable rune". Har
-			// kanske tcell det konceptet?
-			if r != '\n' && r != '\r' {
-				tui.screen.SetContent(x, y, r, nil, style)
-			}
-
-			x++
-			if r == '\n' || r == '\r' || x == width {
-				log.Println("\t", width-x, "newline fills")
-				for ; x < width; x++ {
-					tui.screen.SetContent(x, y, ' ', nil, style)
-				}
-
-				x = 0
-				y++
-			}
-		}
-
-		log.Println("\t", width-x, "done fills")
-		for ; x < width; x++ {
-			tui.screen.SetContent(x, y, ' ', nil, style)
-		}
-
-		y = y - lines
+	for _, t := range tui.texts {
+		b := NewBlock(t, width)
+		y = y - b.Height() + 1
+		b.draw(tui.screen, x, y)
+		y--
 	}
 }
 
@@ -169,23 +133,4 @@ func (tui *TUI) drawInput() {
 			tui.screen.SetContent(col, row, r, nil, style)
 		}
 	}
-}
-
-func countLines(text []rune, width int) int {
-	lines := 1
-
-	col := 0
-	for _, r := range text {
-		if r == '\n' || r == '\r' {
-			col = 0
-			lines++
-		} else if col == width {
-			col = 1
-			lines++
-		} else {
-			col++
-		}
-	}
-
-	return lines
 }

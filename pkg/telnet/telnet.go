@@ -147,6 +147,14 @@ func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
 			}
 			stream.gmcp([]byte(`Core.Hello { "client": "NoGFX", "version": "0.0.1" }`))
 			stream.gmcp([]byte(`Core.Supports.Set [ "Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "Room 1", "IRE.Rift 1"]`))
+			/*
+				stream.gmcp([]byte(`IRE.Rift.Request`))
+				stream.gmcp([]byte(`Comm.Channel.Players`))
+				stream.gmcp([]byte(`Char.Items.Inv`))
+			*/
+			// stream.gmcp([]byte(`Char.Items.Contents 20306`))
+			// stream.gmcp([]byte(`Core.Ping 120`))
+			// stream.gmcp([]byte(`Char.Skills.Get { "group": "Vision", "name": "Look" }`))
 		} else {
 			if err := stream.dont(command[2]); err != nil {
 				log.Printf("failed rejecting WILL %d", command[2])
