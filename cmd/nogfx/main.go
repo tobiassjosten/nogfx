@@ -32,8 +32,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stream, commands := telnet.NewStream(connection)
+	client, commands := telnet.NewClient(connection)
+	client.AcceptWill(telnet.GMCP)
 
-	world := pkg.NewWorld(ui, stream)
+	world := pkg.NewWorld(ui, client)
 	world.Run(inputs, commands)
 }

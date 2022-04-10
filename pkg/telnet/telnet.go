@@ -27,85 +27,49 @@ const (
 	IAC   byte = 255
 )
 
-type Stream struct {
-	data     io.ReadWriter
-	reader   *bufio.Reader
-	commands chan []byte
+type Client struct {
+	data       io.ReadWriter
+	reader     *bufio.Reader
+	commands   chan []byte
+	acceptWill map[byte]struct{}
+	acceptDo   map[byte]struct{}
 }
 
-// NewStream wraps a given reader and returns a new Stream.
-func NewStream(data io.ReadWriter) (*Stream, <-chan []byte) {
+// NewClient wraps a given reader and returns a new Client.
+func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 	commands := make(chan []byte)
 
-	stream := &Stream{
-		data:     data,
-		reader:   bufio.NewReader(data),
-		commands: commands,
+	client := &Client{
+		data:       data,
+		reader:     bufio.NewReader(data),
+		commands:   commands,
+		acceptWill: map[byte]struct{}{},
+		acceptDo:   map[byte]struct{}{},
 	}
 
-	return stream, commands
+	return client, commands
 }
 
-func (stream *Stream) Write(buffer []byte) (int, error) {
-	return stream.data.Write(buffer)
+func (client *Client) Write(buffer []byte) (int, error) {
+	log.Printf("> '%s'", string(buffer))
+	return client.data.Write(buffer)
 }
 
-func (stream *Stream) will(command byte) error {
-	_, err := stream.data.Write([]byte{IAC, WILL, command})
-	return err
-}
-
-func (stream *Stream) wont(command byte) error {
-	_, err := stream.data.Write([]byte{IAC, WONT, command})
-	return err
-}
-
-func (stream *Stream) do(command byte) error {
-	_, err := stream.data.Write([]byte{IAC, DO, command})
-	return err
-}
-
-func (stream *Stream) dont(command byte) error {
-	_, err := stream.data.Write([]byte{IAC, DONT, command})
-	return err
-}
-
-func (stream *Stream) subneg(b byte, value []byte) error {
-	var v byte = 0
-	if len(value) > 0 {
-		v = 1
-	}
-
-	_, err := stream.data.Write(append(append(
-		[]byte{IAC, SB, b, v},
-		value...,
-	), IAC, SE))
-	return err
-}
-
-func (stream *Stream) gmcp(value []byte) error {
-	_, err := stream.data.Write(append(append(
-		[]byte{IAC, SB, GMCP},
-		value...,
-	), IAC, SE))
-	return err
-}
-
-func (stream *Stream) Read(buffer []byte) (count int, err error) {
+func (client *Client) Read(buffer []byte) (count int, err error) {
 	command := []byte{}
 
 	for bufferlen := len(buffer); count < bufferlen; {
-		b, err := stream.reader.ReadByte()
+		b, err := client.reader.ReadByte()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				close(stream.commands)
+				close(client.commands)
 			}
 
 			return count, err
 		}
 
 		if b == IAC || len(command) > 0 {
-			command, b = stream.processCommand(append(command, b))
+			command, b = client.processCommand(append(command, b))
 			if b == 0 {
 				continue
 			}
@@ -114,9 +78,7 @@ func (stream *Stream) Read(buffer []byte) (count int, err error) {
 		buffer[count] = b
 		count++
 
-		// Achaea skickar ibland CR CR LN, ibland CR LN. Kanske kan vi
-		// skapa någon konfigurerbar mekanism för att normalisera sånt?
-		if b == '\n' || b == GA {
+		if b == GA {
 			break
 		}
 	}
@@ -124,76 +86,18 @@ func (stream *Stream) Read(buffer []byte) (count int, err error) {
 	return count, nil
 }
 
-func (stream *Stream) processCommand(command []byte) ([]byte, byte) {
-	if bytes.Equal(command, []byte{IAC, IAC}) {
-		return []byte{}, IAC
+var ScanGA bufio.SplitFunc = func(data []byte, atEOF bool) (int, []byte, error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
 	}
 
-	// More reliable than newline to mark the end of a message, so we relay
-	// it upstream for processing in the game logic.
-	if bytes.Equal(command, []byte{IAC, GA}) {
-		return []byte{}, GA
+	if i := bytes.IndexByte(data, GA); i >= 0 {
+		return i + 1, data[0:i], nil
 	}
 
-	if len(command) < 3 {
-		return command, 0
+	if atEOF {
+		return len(data), data, nil
 	}
 
-	switch command[1] {
-	case WILL:
-		if command[2] == GMCP {
-			if err := stream.do(command[2]); err != nil {
-				log.Printf("failed accepting WILL %d", command[2])
-			}
-			stream.gmcp([]byte(`Core.Hello { "client": "NoGFX", "version": "0.0.1" }`))
-			stream.gmcp([]byte(`Core.Supports.Set [ "Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "Room 1", "IRE.Rift 1"]`))
-			/*
-				stream.gmcp([]byte(`IRE.Rift.Request`))
-				stream.gmcp([]byte(`Comm.Channel.Players`))
-				stream.gmcp([]byte(`Char.Items.Inv`))
-			*/
-			// stream.gmcp([]byte(`Char.Items.Contents 20306`))
-			// stream.gmcp([]byte(`Core.Ping 120`))
-			// stream.gmcp([]byte(`Char.Skills.Get { "group": "Vision", "name": "Look" }`))
-		} else {
-			if err := stream.dont(command[2]); err != nil {
-				log.Printf("failed rejecting WILL %d", command[2])
-			}
-		}
-
-		stream.commands <- command
-		return []byte{}, 0
-
-	case WONT:
-		stream.commands <- command
-		return []byte{}, 0
-
-	case DO:
-		if err := stream.wont(command[2]); err != nil {
-			log.Printf("failed rejecting DO %d", command[2])
-		}
-
-		stream.commands <- command
-		return []byte{}, 0
-
-	case DONT:
-		stream.commands <- command
-		return []byte{}, 0
-
-	default:
-		// Noop.
-	}
-
-	if len(command) < 5 {
-		return command, 0
-	}
-
-	if bytes.Equal(command[:2], []byte{IAC, SB}) {
-		if bytes.Equal(command[len(command)-2:], []byte{IAC, SE}) {
-			stream.commands <- command
-			return []byte{}, 0
-		}
-	}
-
-	return command, 0
+	return 0, nil, nil
 }
