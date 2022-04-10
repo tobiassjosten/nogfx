@@ -5,6 +5,25 @@ import (
 	"log"
 )
 
+const (
+	ECHO  byte = 1
+	LF    byte = 10
+	CR    byte = 13
+	TTYPE byte = 24
+	MCCP  byte = 85
+	MCCP2 byte = 86
+	ATCP  byte = 200
+	GMCP  byte = 201
+	SE    byte = 240
+	GA    byte = 249
+	SB    byte = 250
+	WILL  byte = 251
+	WONT  byte = 252
+	DO    byte = 253
+	DONT  byte = 254
+	IAC   byte = 255
+)
+
 func (client *Client) AcceptWill(command byte) {
 	client.acceptWill[command] = struct{}{}
 }
@@ -47,13 +66,10 @@ func (client *Client) Subneg(b byte, value []byte) error {
 }
 
 func (client *Client) processCommand(command []byte) ([]byte, byte) {
-	log.Printf("CMD: '%s': %s", command, string(command))
 	if bytes.Equal(command, []byte{IAC, IAC}) {
 		return []byte{}, IAC
 	}
 
-	// More reliable than newline to mark the end of a message, so we relay
-	// it upstream for processing in the game logic.
 	if bytes.Equal(command, []byte{IAC, GA}) {
 		return []byte{}, GA
 	}
@@ -65,7 +81,7 @@ func (client *Client) processCommand(command []byte) ([]byte, byte) {
 	switch command[1] {
 	case WILL:
 		if _, ok := client.acceptWill[command[2]]; ok {
-			if err := client.Do(GMCP); err != nil {
+			if err := client.Do(command[2]); err != nil {
 				log.Printf(
 					"failed accepting WILL %d: %s",
 					command[2], err,
@@ -87,7 +103,7 @@ func (client *Client) processCommand(command []byte) ([]byte, byte) {
 
 	case DO:
 		if _, ok := client.acceptDo[command[2]]; ok {
-			if err := client.Will(GMCP); err != nil {
+			if err := client.Will(command[2]); err != nil {
 				log.Printf(
 					"failed accepting DO %d: %s",
 					command[2], err,

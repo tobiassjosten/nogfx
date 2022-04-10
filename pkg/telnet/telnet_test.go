@@ -15,16 +15,16 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
-type MockData struct {
+type MockStream struct {
 	reader io.Reader
 	writer io.Writer
 }
 
-func (mock *MockData) Read(p []byte) (int, error) {
+func (mock *MockStream) Read(p []byte) (int, error) {
 	return mock.reader.Read(p)
 }
 
-func (mock MockData) Write(p []byte) (int, error) {
+func (mock MockStream) Write(p []byte) (int, error) {
 	return mock.writer.Write(p)
 }
 
@@ -64,12 +64,12 @@ func TestReader(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			data := &MockData{
+			stream := &MockStream{
 				bytes.NewReader(tc.data),
 				&strings.Builder{},
 			}
 
-			client, commandChan := telnet.NewClient(data)
+			client, commandChan := telnet.NewClient(stream)
 
 			var commands [][]byte
 			go func(commandChan <-chan []byte) {
@@ -113,12 +113,12 @@ func TestScanner(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			data := &MockData{
+			stream := &MockStream{
 				bytes.NewReader(tc.data),
 				&strings.Builder{},
 			}
 
-			client, commandChan := telnet.NewClient(data)
+			client, commandChan := telnet.NewClient(stream)
 
 			var commands [][]byte
 			go func(commandChan <-chan []byte) {
@@ -129,6 +129,9 @@ func TestScanner(t *testing.T) {
 
 			scanner := bufio.NewScanner(client)
 			scanner.Split(telnet.ScanGA)
+
+			buf := make([]byte, 2)
+			scanner.Buffer(buf, 4096)
 
 			output := []byte{}
 			for scanner.Scan() {
@@ -144,6 +147,45 @@ func TestScanner(t *testing.T) {
 
 			require.Nil(err)
 			assert.Equal(tc.output, output)
+		})
+	}
+}
+
+func TestWriter(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	tcs := []struct {
+		data   []byte
+		length int
+		err    error
+	}{
+		{
+			data:   []byte("xyz\n"),
+			length: 4,
+		},
+	}
+
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			builder := &strings.Builder{}
+			stream := &MockStream{
+				bytes.NewReader(tc.data),
+				builder,
+			}
+
+			client, _ := telnet.NewClient(stream)
+
+			length, err := client.Write(tc.data)
+
+			if tc.err != nil {
+				assert.Equal(tc.err, err)
+				return
+			}
+
+			require.Nil(err)
+			assert.Equal(tc.length, length)
+			assert.Equal(string(tc.data), builder.String())
 		})
 	}
 }

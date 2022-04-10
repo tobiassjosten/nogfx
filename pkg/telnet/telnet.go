@@ -5,26 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"log"
-)
-
-const (
-	ECHO  byte = 1
-	LF    byte = 10
-	CR    byte = 13
-	TTYPE byte = 24
-	MCCP  byte = 85
-	MCCP2 byte = 86
-	ATCP  byte = 200
-	GMCP  byte = 201
-	SE    byte = 240
-	GA    byte = 249
-	SB    byte = 250
-	WILL  byte = 251
-	WONT  byte = 252
-	DO    byte = 253
-	DONT  byte = 254
-	IAC   byte = 255
 )
 
 type Client struct {
@@ -50,9 +30,8 @@ func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 	return client, commands
 }
 
-func (client *Client) Write(buffer []byte) (int, error) {
-	log.Printf("> '%s'", string(buffer))
-	return client.data.Write(buffer)
+func (client *Client) Write(data []byte) (int, error) {
+	return client.data.Write(data)
 }
 
 func (client *Client) Read(buffer []byte) (count int, err error) {
