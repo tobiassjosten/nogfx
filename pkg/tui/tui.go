@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"log"
 	"os"
 
 	"github.com/gdamore/tcell/v2"
@@ -59,6 +60,33 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 				case tcell.KeyESC, tcell.KeyCtrlC:
 					quit()
 
+				case tcell.KeyBackspace, tcell.KeyBackspace2:
+					if len(tui.input) > 0 {
+						tui.input = tui.input[:len(tui.input)-1]
+						tui.draw()
+					}
+
+				case tcell.KeyETB: // opt/elt+backspace
+					deleted := false
+					for i := len(tui.input) - 1; i >= 0; i-- {
+						if tui.input[i] == ' ' {
+							tui.input = tui.input[0:i]
+							deleted = true
+						}
+					}
+
+					if !deleted {
+						tui.input = []rune{}
+					}
+
+					tui.draw()
+
+				case tcell.KeyNAK: // cmd/ctrl+backspace
+					if len(tui.input) > 0 {
+						tui.input = []rune{}
+						tui.draw()
+					}
+
 				case tcell.KeyEnter:
 					inputs <- []byte(string(tui.input))
 					tui.input = []rune{}
@@ -67,6 +95,9 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 				case tcell.KeyRune:
 					tui.input = append(tui.input, ev.Rune())
 					tui.draw()
+
+				default:
+					log.Println("KEY", ev.Key())
 				}
 			}
 		}
@@ -93,32 +124,38 @@ func (tui *TUI) newOutput(output []byte, style tcell.Style) tcell.Style {
 
 func (tui *TUI) draw() {
 	tui.screen.Clear()
-	tui.drawInput()
-	tui.drawOutput()
+
+	width, height := tui.screen.Size()
+
+	inputHeight := 1
+	tui.drawInput(0, height-1, width, inputHeight)
+
+	tui.drawOutput(0, 0, width, height-inputHeight)
+
 	tui.screen.Show()
 }
+
 func (tui *TUI) drawSync() {
-	tui.screen.Clear()
-	tui.drawInput()
-	tui.drawOutput()
+	tui.draw()
 	tui.screen.Sync()
 }
 
-func (tui *TUI) drawOutput() {
-	width, height := tui.screen.Size()
-
-	x := 0
-	y := height - 2
+func (tui *TUI) drawOutput(x, y, width, height int) {
+	line := y + height - 1
 
 	for _, t := range tui.texts {
 		b := NewBlock(t, width)
-		y = y - b.Height() + 1
-		b.draw(tui.screen, x, y)
-		y--
+		line = line - b.Height() + 1
+		b.draw(tui.screen, x, line)
+
+		line--
+		if line < y {
+			break
+		}
 	}
 }
 
-func (tui *TUI) drawInput() {
+func (tui *TUI) drawInput(x, y, width, height int) {
 	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorGray)
 
 	x2, y2 := tui.screen.Size()
