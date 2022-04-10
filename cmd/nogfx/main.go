@@ -32,7 +32,7 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return run(true)
+			return run(c.Bool("mock"))
 		},
 	}
 

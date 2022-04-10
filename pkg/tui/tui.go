@@ -3,15 +3,19 @@ package tui
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 type TUI struct {
 	screen tcell.Screen
-	input  []rune
-	inputs chan []byte
-	texts  []Text
+
+	inputting bool
+	input     []rune
+	inputs    chan []byte
+
+	texts []Text
 }
 
 func NewTUI() (*TUI, <-chan []byte, error) {
@@ -57,21 +61,35 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 
 			case *tcell.EventKey:
 				switch ev.Key() {
-				case tcell.KeyESC, tcell.KeyCtrlC:
+				case tcell.KeyCtrlC:
 					quit()
 
+				case tcell.KeyESC:
+					tui.inputting = false
+					tui.screen.HideCursor()
+					tui.draw()
+
 				case tcell.KeyBackspace, tcell.KeyBackspace2:
+					if !tui.inputting {
+						continue
+					}
+
 					if len(tui.input) > 0 {
 						tui.input = tui.input[:len(tui.input)-1]
 						tui.draw()
 					}
 
 				case tcell.KeyETB: // opt/elt+backspace
+					if !tui.inputting {
+						continue
+					}
+
 					deleted := false
 					for i := len(tui.input) - 1; i >= 0; i-- {
 						if tui.input[i] == ' ' {
 							tui.input = tui.input[0:i]
 							deleted = true
+							break
 						}
 					}
 
@@ -82,17 +100,62 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 					tui.draw()
 
 				case tcell.KeyNAK: // cmd/ctrl+backspace
+					if !tui.inputting {
+						continue
+					}
+
 					if len(tui.input) > 0 {
 						tui.input = []rune{}
 						tui.draw()
 					}
 
 				case tcell.KeyEnter:
+					if !tui.inputting {
+						continue
+					}
+
 					inputs <- []byte(string(tui.input))
 					tui.input = []rune{}
 					tui.draw()
 
 				case tcell.KeyRune:
+					if !tui.inputting {
+						if ev.Rune() == ' ' {
+							tui.inputting = true
+							tui.draw()
+						}
+
+						if ev.Rune() == '1' {
+							inputs <- []byte{'s', 'w'}
+						}
+						if ev.Rune() == '2' {
+							inputs <- []byte{'s'}
+						}
+						if ev.Rune() == '3' {
+							inputs <- []byte{'s', 'e'}
+						}
+						if ev.Rune() == '4' {
+							inputs <- []byte{'w'}
+						}
+						if ev.Rune() == '5' {
+							inputs <- []byte{'m', 'a', 'p'}
+						}
+						if ev.Rune() == '6' {
+							inputs <- []byte{'e'}
+						}
+						if ev.Rune() == '7' {
+							inputs <- []byte{'n', 'w'}
+						}
+						if ev.Rune() == '8' {
+							inputs <- []byte{'n'}
+						}
+						if ev.Rune() == '9' {
+							inputs <- []byte{'n', 'e'}
+						}
+
+						continue
+					}
+
 					tui.input = append(tui.input, ev.Rune())
 					tui.draw()
 
@@ -127,8 +190,11 @@ func (tui *TUI) draw() {
 
 	width, height := tui.screen.Size()
 
-	inputHeight := 1
-	tui.drawInput(0, height-1, width, inputHeight)
+	inputHeight := 0
+	if tui.inputting {
+		inputHeight = 1
+		tui.drawInput(0, height-1, width, inputHeight)
+	}
 
 	tui.drawOutput(0, 0, width, height-inputHeight)
 
@@ -156,18 +222,15 @@ func (tui *TUI) drawOutput(x, y, width, height int) {
 }
 
 func (tui *TUI) drawInput(x, y, width, height int) {
-	style := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorGray)
+	style := tcell.StyleDefault.
+		Foreground(tcell.ColorWhite).
+		Background(tcell.ColorGray)
 
-	x2, y2 := tui.screen.Size()
-	x1, y1 := 0, y2-1
+	input := append(tui.input, []rune(strings.Repeat(" ", width-len(tui.input)))...)
 
-	for row := y1; row <= y2; row++ {
-		for col := x1; col <= x2; col++ {
-			r := ' '
-			if col < len(tui.input) {
-				r = tui.input[col]
-			}
-			tui.screen.SetContent(col, row, r, nil, style)
-		}
+	for i, r := range input {
+		tui.screen.SetContent(x+i, y, r, nil, style)
 	}
+
+	tui.screen.ShowCursor(x+len(tui.input), y)
 }
