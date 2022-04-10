@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/icza/gox v0.0.0-20220321141217-e2d488ab2fbc // indirect
@@ -17,6 +18,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/urfave/cli/v2 v2.4.0 // indirect
 	golang.org/x/sys v0.0.0-20220403205710-6acee93ad0eb // indirect
 	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
 	golang.org/x/text v0.3.7 // indirect
