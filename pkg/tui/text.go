@@ -32,6 +32,9 @@ func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 	parsing := false
 	ansi := []rune{}
 
+	// @todo Strippa initial \r\n eller \n eller \r. Vi använder GA som vår
+	// newline, så det blir överflödigt här.
+
 	for _, r := range []rune(string(output)) {
 		if r == '\r' {
 			continue
