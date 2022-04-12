@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"bytes"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
@@ -32,8 +33,9 @@ func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 	parsing := false
 	ansi := []rune{}
 
-	// @todo Strippa initial \r\n eller \n eller \r. Vi använder GA som vår
-	// newline, så det blir överflödigt här.
+	// We replace GA with a newline so we can throw away these otherwise
+	// useful newlines.
+	output = bytes.TrimLeft(output, "\r\n")
 
 	for _, r := range []rune(string(output)) {
 		if r == '\r' {

@@ -43,7 +43,6 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 		Background(tcell.ColorReset).
 		Foreground(tcell.ColorReset)
 	tui.screen.SetStyle(style)
-	// 16777216 == tui.screen.Colors() // 24 bit
 
 	tui.draw()
 
