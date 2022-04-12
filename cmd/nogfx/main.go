@@ -58,10 +58,7 @@ func run(mock bool) error {
 	client, commands := telnet.NewClient(connection)
 	client.AcceptWill(telnet.GMCP)
 
-	var world pkg.World = pkg.NewGenericWorld(client)
-	if constructor, ok := worlds["achaea.com:23"]; ok {
-		world = constructor(client)
-	}
+	world := NewWorld(ui, client)
 
 	engine := pkg.NewEngine(world, ui, client)
 	engine.Run(inputs, commands)

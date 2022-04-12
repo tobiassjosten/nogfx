@@ -7,11 +7,13 @@ type World interface {
 }
 
 type GenericWorld struct {
+	ui     UI
 	client Client
 }
 
-func NewGenericWorld(client Client) *GenericWorld {
+func NewGenericWorld(ui UI, client Client) *GenericWorld {
 	return &GenericWorld{
+		ui:     ui,
 		client: client,
 	}
 }

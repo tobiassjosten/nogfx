@@ -178,13 +178,62 @@ func (msg CharStatus) String() string {
 	return fmt.Sprintf("Char.Status %s", data)
 }
 
+type CharVitals struct {
+	HP     int `json:"hp,string"`
+	MaxHP  int `json:"maxhp,string"`
+	MP     int `json:"mp,string"`
+	MaxMP  int `json:"maxmp,string"`
+	EP     int `json:"ep,string"`
+	MaxEP  int `json:"maxep,string"`
+	WP     int `json:"wp,string"`
+	MaxWP  int `json:"maxwp,string"`
+	NL     int `json:"nl,string"`
+	Bal    bool
+	Eq     bool
+	Vote   bool
+	Prompt string `json:"string"`
+
+	Stats CharVitalsStats `json:"charstats"`
+}
+
+func (msg CharVitals) Hydrate(data []byte) (Message, error) {
+	type CharVitalsAlias CharVitals
+	var child struct {
+		CharVitalsAlias
+		CBal  string `json:"bal"`
+		CEq   string `json:"eq"`
+		CVote string `json:"vote"`
+	}
+
+	err := json.Unmarshal(data, &child)
+	if err != nil {
+		return msg, err
+	}
+
+	msg = (CharVitals)(child.CharVitalsAlias)
+	msg.Bal = child.CBal == "1"
+	msg.Eq = child.CEq == "1"
+	msg.Vote = child.CVote == "1"
+
+	return msg, nil
+}
+
+func (msg CharVitals) String() string {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		data = []byte("{}")
+	}
+
+	return fmt.Sprintf("Char.Vitals %s", data)
+}
+
 type CharVitalsStats struct {
-	Bleed    *int
-	Ferocity *int
-	Kai      *int
-	Rage     *int
-	Spec     *string
-	Stance   *string
+	Bleed    int
+	Ferocity *int // Infernal.
+	Kai      *int // Monk.
+	Rage     int
+	Spec     *string // Infernal.
+	Stance   *string // Monk.
 }
 
 func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
@@ -210,7 +259,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 					err,
 				)
 			}
-			stats.Bleed = gox.NewInt(value)
+			stats.Bleed = value
 
 		case "Ferocity":
 			value, err := strconv.Atoi(parts[1])
@@ -240,7 +289,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 					err,
 				)
 			}
-			stats.Rage = gox.NewInt(value)
+			stats.Rage = value
 
 		case "Spec":
 			stats.Spec = gox.NewString(parts[1])
@@ -254,61 +303,6 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
-}
-
-type CharVitals struct {
-	HP     *int `json:"hp,string"`
-	MaxHP  *int `json:"maxhp,string"`
-	MP     *int `json:"mp,string"`
-	MaxMP  *int `json:"maxmp,string"`
-	EP     *int `json:"ep,string"`
-	MaxEP  *int `json:"maxep,string"`
-	WP     *int `json:"wp,string"`
-	MaxWP  *int `json:"maxwp,string"`
-	NL     *int `json:"nl,string"`
-	Bal    *bool
-	Eq     *bool
-	Vote   *bool
-	Prompt *string `json:"string"`
-
-	Stats CharVitalsStats `json:"charstats"`
-}
-
-func (msg CharVitals) Hydrate(data []byte) (Message, error) {
-	type CharVitalsAlias CharVitals
-	var child struct {
-		CharVitalsAlias
-		CBal  *string `json:"bal"`
-		CEq   *string `json:"eq"`
-		CVote *string `json:"vote"`
-	}
-
-	err := json.Unmarshal(data, &child)
-	if err != nil {
-		return msg, err
-	}
-
-	msg = (CharVitals)(child.CharVitalsAlias)
-	if child.CBal != nil {
-		msg.Bal = gox.NewBool(*child.CBal == "1")
-	}
-	if child.CEq != nil {
-		msg.Eq = gox.NewBool(*child.CEq == "1")
-	}
-	if child.CVote != nil {
-		msg.Vote = gox.NewBool(*child.CVote == "1")
-	}
-
-	return msg, nil
-}
-
-func (msg CharVitals) String() string {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		data = []byte("{}")
-	}
-
-	return fmt.Sprintf("Char.Vitals %s", data)
 }
 
 type CommChannelPlayers struct{}

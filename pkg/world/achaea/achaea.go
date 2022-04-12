@@ -10,12 +10,18 @@ import (
 )
 
 type World struct {
+	ui     pkg.UI
 	client pkg.Client
+
+	character Character
 }
 
-func NewWorld(client pkg.Client) *World {
+func NewWorld(ui pkg.UI, client pkg.Client) *World {
 	return &World{
+		ui:     ui,
 		client: client,
+
+		character: Character{},
 	}
 }
 
@@ -55,10 +61,15 @@ func (world *World) Command(command []byte) {
 
 		switch msg := message.(type) {
 		case gmcp.CharName:
+			world.character.fromCharName(msg)
+
+			// We have just logged in, so let's do an inventory.
 			world.gmcp(gmcp.IRERiftRequest{})
 			world.gmcp(gmcp.CommChannelPlayers{})
 			world.gmcp(gmcp.CharItemsInv{})
-			// @todo Update `world` with `msg`.
+
+		case gmcp.CharVitals:
+			world.character.fromCharVitals(msg)
 
 		default: // Noop.
 		}

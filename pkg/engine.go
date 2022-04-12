@@ -21,7 +21,6 @@ type UI interface {
 type Client interface {
 	io.ReadWriter
 	TelnetClient
-	Host() string
 }
 
 type TelnetClient interface {
