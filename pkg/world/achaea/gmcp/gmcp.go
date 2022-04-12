@@ -13,61 +13,43 @@ import (
 // @todo Implement the full set:
 // - https://nexus.ironrealms.com/GMCP
 // - https://nexus.ironrealms.com/GMCP_Data
+// - https://github.com/keneanung/GMCPAdditions
 
 type Message interface {
 	String() string
 }
 
+type Hydrator interface {
+	Hydrate([]byte) (Message, error)
+}
+
 func Parse(command []byte) (Message, error) {
 	parts := bytes.SplitN(command, []byte{' '}, 2)
 
-	var message Message
+	var hydrator Hydrator
 
 	switch string(parts[0]) {
 	case "Char.Items.Inv":
-		message = CharItemsInv{}
+		return CharItemsInv{}, nil
 
 	case "Char.Name":
-		if len(parts) == 1 {
-			return nil, fmt.Errorf("missing 'Char.Name' data")
-		}
-
-		msg, err := (&CharName{}).Hydrate(parts[1])
-		if err != nil {
-			return nil, fmt.Errorf("failed hydrating 'Char.Name': %w", err)
-		}
-
-		message = msg
+		hydrator = CharName{}
 
 	case "Char.Status":
-		if len(parts) == 1 {
-			return nil, fmt.Errorf("missing 'Char.Status' data")
-		}
-
-		msg, err := (&CharStatus{}).Hydrate(parts[1])
-		if err != nil {
-			return nil, fmt.Errorf("failed hydrating 'Char.Status': %w", err)
-		}
-
-		message = msg
+		hydrator = CharStatus{}
 
 	case "Char.Vitals":
-		if len(parts) == 1 {
-			return nil, fmt.Errorf("missing 'Char.Vitals' data")
-		}
-
-		msg, err := (&CharVitals{}).Hydrate(parts[1])
-		if err != nil {
-			return nil, fmt.Errorf("failed hydrating 'Char.Vitals': %w", err)
-		}
-
-		message = msg
+		hydrator = CharVitals{}
 
 	default:
-		return nil, fmt.Errorf("invalid message '%s'", parts[0])
+		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
 
-	return message, nil
+	if len(parts) == 1 {
+		return nil, fmt.Errorf("missing '%T' data", hydrator)
+	}
+
+	return hydrator.Hydrate(parts[1])
 }
 
 type CharItemsInv struct{}
@@ -81,13 +63,13 @@ type CharName struct {
 	Fullname string `json:"fullname"`
 }
 
-func (msg *CharName) Hydrate(data []byte) (CharName, error) {
-	err := json.Unmarshal(data, msg)
+func (msg CharName) Hydrate(data []byte) (Message, error) {
+	err := json.Unmarshal(data, &msg)
 	if err != nil {
-		return *msg, err
+		return msg, err
 	}
 
-	return *msg, nil
+	return msg, nil
 }
 
 func (msg CharName) String() string {
@@ -99,58 +81,92 @@ func (msg CharName) String() string {
 	return fmt.Sprintf("Char.Name %s", data)
 }
 
-// Hur separerar vi Achaea-specifika saker från generella GMCP-saker?
-
 type CharStatus struct {
 	Name             string `json:"name"`
 	Fullname         string `json:"fullname"`
-	Age              int    `json:"age"`
+	Age              int    `json:"age,string"`
 	Race             string `json:"race"`
 	Specialisation   string `json:"specialisation"`
-	Level            int    `json:"level"`
-	XP               int    `json:"xp"`
-	XPRank           int    `json:"xprank"`
+	Level            int
+	XP               int    `json:"-"`
+	XPRank           int    `json:"xprank,string"`
 	Class            string `json:"class"`
-	City             string `json:"city"`
+	City             string
 	CityRank         int
-	House            string  `json:"house"`
-	Order            *string `json:"order"`
-	BoundCredits     int     `json:"boundcredits"`
-	UnboundCredits   int     `json:"unboundcredits"`
-	Lessons          int     `json:"lessons"`
-	ExplorerRank     string  `json:"explorerrank"`
-	MayanCrowns      int     `json:"mayancrowns"`
-	BoundMayanCrowns int     `json:"boundmayancrowns"`
-	Gold             int     `json:"gold"`
-	Bank             int     `json:"bank"`
-	UnreadNews       int     `json:"unread_news"`
-	UnreadMessages   int     `json:"unread_msgs"`
-	Target           string  `json:"target"`
-	Gender           string  `json:"gender"`
+	House            string
+	HouseRank        int
+	Order            *string
+	BoundCredits     int    `json:"boundcredits,string"`
+	UnboundCredits   int    `json:"unboundcredits,string"`
+	Lessons          int    `json:"lessons,string"`
+	ExplorerRank     string `json:"explorerrank"`
+	MayanCrowns      int    `json:"mayancrowns,string"`
+	BoundMayanCrowns int    `json:"boundmayancrowns,string"`
+	Gold             int    `json:"gold,string"`
+	Bank             int    `json:"bank,string"`
+	UnreadNews       int    `json:"unread_news,string"`
+	UnreadMessages   int    `json:"unread_msgs,string"`
+	Target           *string
+	Gender           int // ISO/IEC 5218
 }
 
-// Char.Status { "name": "Durak", "fullname": "Mason Durak", "age": "184", "race": "Dwarf", "specialisation": "Brawler", "level": "68 (19%)", "xp": "19%", "xprank": "999", "class": "Monk", "city": "Hashan (1)", "house": "The Somatikos(1)", "order": "(None)", "boundcredits": "20", "unboundcredits": "1", "lessons": "4073", "explorerrank": "an Itinerant", "mayancrowns": "0", "boundmayancrowns": "0", "gold": "35", "bank": "159060", "unread_news": "3751", "unread_msgs": "1", "target": "None", "gender": "male" }
-
-func (msg *CharStatus) Hydrate(data []byte) (CharStatus, error) {
+func (msg CharStatus) Hydrate(data []byte) (Message, error) {
 	type CharStatusAlias CharStatus
 	var child struct {
 		CharStatusAlias
-		CBal  *string `json:"bal"`
-		CEq   *string `json:"eq"`
-		CVote *string `json:"vote"`
+		CLevel  string `json:"level"`
+		CCity   string `json:"city"`
+		CHouse  string `json:"house"`
+		COrder  string `json:"order"`
+		CTarget string `json:"target"`
+		CGender string `json:"gender"`
 	}
 
 	err := json.Unmarshal(data, &child)
 	if err != nil {
-		return *msg, err
+		return msg, err
 	}
 
-	msg = (*CharStatus)(&child.CharStatusAlias)
-	// if child.CBal != nil {
-	// 	msg.Bal = gox.NewBool(*child.CBal == "1")
-	// }
+	msg = (CharStatus)(child.CharStatusAlias)
 
-	return *msg, nil
+	if level, rank := splitLevelRank(child.CLevel); level == 0 && rank == 0 {
+		return msg, fmt.Errorf("failed parsing level: %w", err)
+	} else {
+		msg.Level = level
+		msg.XP = rank
+	}
+
+	if city, rank := splitRank(child.CCity); city == "" && rank == 0 {
+		return msg, fmt.Errorf("failed parsing city: %w", err)
+	} else {
+		msg.City = city
+		msg.CityRank = rank
+	}
+
+	if house, rank := splitRank(child.CHouse); house == "" && rank == 0 {
+		return msg, fmt.Errorf("failed parsing city: %w", err)
+	} else {
+		msg.House = house
+		msg.HouseRank = rank
+	}
+
+	if child.COrder != "(None)" {
+		msg.Order = gox.NewString(child.COrder)
+	}
+
+	if child.CTarget != "None" {
+		msg.Target = gox.NewString(child.CTarget)
+	}
+
+	if child.CGender == "male" {
+		msg.Gender = 1
+	} else if child.CGender == "female" {
+		msg.Gender = 2
+	} else {
+		msg.Gender = 9
+	}
+
+	return msg, nil
 }
 
 func (msg CharStatus) String() string {
@@ -258,7 +274,7 @@ type CharVitals struct {
 	Stats CharVitalsStats `json:"charstats"`
 }
 
-func (msg *CharVitals) Hydrate(data []byte) (CharVitals, error) {
+func (msg CharVitals) Hydrate(data []byte) (Message, error) {
 	type CharVitalsAlias CharVitals
 	var child struct {
 		CharVitalsAlias
@@ -269,10 +285,10 @@ func (msg *CharVitals) Hydrate(data []byte) (CharVitals, error) {
 
 	err := json.Unmarshal(data, &child)
 	if err != nil {
-		return *msg, err
+		return msg, err
 	}
 
-	msg = (*CharVitals)(&child.CharVitalsAlias)
+	msg = (CharVitals)(child.CharVitalsAlias)
 	if child.CBal != nil {
 		msg.Bal = gox.NewBool(*child.CBal == "1")
 	}
@@ -283,7 +299,7 @@ func (msg *CharVitals) Hydrate(data []byte) (CharVitals, error) {
 		msg.Vote = gox.NewBool(*child.CVote == "1")
 	}
 
-	return *msg, nil
+	return msg, nil
 }
 
 func (msg CharVitals) String() string {

@@ -53,12 +53,12 @@ func (world *World) Command(command []byte) {
 			return
 		}
 
-		switch message.(type) {
+		switch msg := message.(type) {
 		case gmcp.CharName:
 			world.gmcp(gmcp.IRERiftRequest{})
 			world.gmcp(gmcp.CommChannelPlayers{})
 			world.gmcp(gmcp.CharItemsInv{})
-			// @todo Update `world` with new info.
+			// @todo Update `world` with `msg`.
 
 		default: // Noop.
 		}
