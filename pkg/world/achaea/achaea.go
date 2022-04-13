@@ -34,11 +34,20 @@ func (world *World) Output(output []byte) []byte {
 }
 
 func (world *World) Command(command []byte) {
+	willEcho := []byte{telnet.IAC, telnet.WILL, telnet.ECHO}
+	wontEcho := []byte{telnet.IAC, telnet.WONT, telnet.ECHO}
+
 	willGMCP := []byte{telnet.IAC, telnet.WILL, telnet.GMCP}
 	prefixGMCP := []byte{telnet.IAC, telnet.SB, telnet.GMCP}
 	suffixGMCP := []byte{telnet.IAC, telnet.SE}
 
 	switch {
+	case bytes.Equal(command, willEcho):
+		world.ui.MaskInput()
+
+	case bytes.Equal(command, wontEcho):
+		world.ui.UnmaskInput()
+
 	case bytes.Equal(command, willGMCP):
 		// @todo Use the actual version number when we have one.
 		world.gmcp(gmcp.CoreHello{Client: "NoGFX", Version: "0.0.1"})

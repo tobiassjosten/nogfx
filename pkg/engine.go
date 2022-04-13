@@ -16,6 +16,8 @@ type Engine struct {
 
 type UI interface {
 	Run(<-chan []byte)
+	MaskInput()
+	UnmaskInput()
 }
 
 type Client interface {
@@ -68,7 +70,7 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) {
 		case input := <-inputs:
 			input = engine.world.Input(input)
 			if len(input) > 0 {
-				engine.client.Write(append(input, '\n'))
+				engine.client.Write(append(input, '\r', '\n'))
 			}
 
 		case output := <-serverOutput:

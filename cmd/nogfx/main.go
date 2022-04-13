@@ -56,7 +56,6 @@ func run(mock bool) error {
 	}
 
 	client, commands := telnet.NewClient(connection)
-	client.AcceptWill(telnet.GMCP)
 
 	world := NewWorld(ui, client)
 

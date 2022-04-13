@@ -8,11 +8,9 @@ import (
 )
 
 type Client struct {
-	data       io.ReadWriter
-	reader     *bufio.Reader
-	commands   chan []byte
-	acceptWill map[byte]struct{}
-	acceptDo   map[byte]struct{}
+	data     io.ReadWriter
+	reader   *bufio.Reader
+	commands chan []byte
 }
 
 // NewClient wraps a given reader and returns a new Client.
@@ -20,11 +18,9 @@ func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 	commands := make(chan []byte)
 
 	client := &Client{
-		data:       data,
-		reader:     bufio.NewReader(data),
-		commands:   commands,
-		acceptWill: map[byte]struct{}{},
-		acceptDo:   map[byte]struct{}{},
+		data:     data,
+		reader:   bufio.NewReader(data),
+		commands: commands,
 	}
 
 	return client, commands

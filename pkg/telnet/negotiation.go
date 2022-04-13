@@ -24,13 +24,13 @@ const (
 	IAC   byte = 255
 )
 
-func (client *Client) AcceptWill(command byte) {
-	client.acceptWill[command] = struct{}{}
-}
-
-func (client *Client) AcceptDo(command byte) {
-	client.acceptDo[command] = struct{}{}
-}
+var (
+	acceptWill = map[byte]struct{}{
+		ECHO: {},
+		GMCP: {},
+	}
+	acceptDo = map[byte]struct{}{}
+)
 
 func (client *Client) Will(command byte) error {
 	_, err := client.data.Write([]byte{IAC, WILL, command})
@@ -80,7 +80,7 @@ func (client *Client) processCommand(command []byte) ([]byte, byte) {
 
 	switch command[1] {
 	case WILL:
-		if _, ok := client.acceptWill[command[2]]; ok {
+		if _, ok := acceptWill[command[2]]; ok {
 			if err := client.Do(command[2]); err != nil {
 				log.Printf(
 					"failed accepting WILL %d: %s",
@@ -98,11 +98,18 @@ func (client *Client) processCommand(command []byte) ([]byte, byte) {
 		return []byte{}, 0
 
 	case WONT:
+		if err := client.Dont(command[2]); err != nil {
+			log.Printf(
+				"failed rejecting WONT %d: %s",
+				command[2], err,
+			)
+		}
+
 		client.commands <- command
 		return []byte{}, 0
 
 	case DO:
-		if _, ok := client.acceptDo[command[2]]; ok {
+		if _, ok := acceptDo[command[2]]; ok {
 			if err := client.Will(command[2]); err != nil {
 				log.Printf(
 					"failed accepting DO %d: %s",
@@ -120,6 +127,13 @@ func (client *Client) processCommand(command []byte) ([]byte, byte) {
 		return []byte{}, 0
 
 	case DONT:
+		if err := client.Wont(command[2]); err != nil {
+			log.Printf(
+				"failed rejecting DONT %d: %s",
+				command[2], err,
+			)
+		}
+
 		client.commands <- command
 		return []byte{}, 0
 

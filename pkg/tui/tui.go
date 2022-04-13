@@ -14,6 +14,7 @@ type TUI struct {
 	inputting bool
 	input     []rune
 	inputs    chan []byte
+	inputMask bool
 
 	texts []Text
 }
@@ -177,6 +178,14 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 	}
 }
 
+func (tui *TUI) MaskInput() {
+	tui.inputMask = true
+}
+
+func (tui *TUI) UnmaskInput() {
+	tui.inputMask = false
+}
+
 func (tui *TUI) newOutput(output []byte, style tcell.Style) tcell.Style {
 	text, style := NewText(output, style)
 	tui.texts = append([]Text{text}, tui.texts...)
@@ -208,6 +217,8 @@ func (tui *TUI) drawSync() {
 func (tui *TUI) drawOutput(x, y, width, height int) {
 	line := y + height - 1
 
+	// @todo Fixa stöd för att kunna scrolla upp.
+
 	for _, t := range tui.texts {
 		b := NewBlock(t, width)
 		line = line - b.Height() + 1
@@ -225,9 +236,18 @@ func (tui *TUI) drawInput(x, y, width, height int) {
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorGray)
 
+	// @todo Fixa stöd för flera rader.
+
+	// @todo Fixa stöd för att hoppa med cursorn.
+
+	// @todo Behåll texten för att lätt kunna repetera.
+
 	input := append(tui.input, []rune(strings.Repeat(" ", width-len(tui.input)))...)
 
 	for i, r := range input {
+		if tui.inputMask && i < len(tui.input) {
+			r = '*'
+		}
 		tui.screen.SetContent(x+i, y, r, nil, style)
 	}
 

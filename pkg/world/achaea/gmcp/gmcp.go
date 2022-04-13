@@ -91,10 +91,10 @@ type CharStatus struct {
 	XP               int    `json:"-"`
 	XPRank           int    `json:"xprank,string"`
 	Class            string `json:"class"`
-	City             string
-	CityRank         int
-	House            string
-	HouseRank        int
+	City             *string
+	CityRank         *int
+	House            *string
+	HouseRank        *int
 	Order            *string
 	BoundCredits     int    `json:"boundcredits,string"`
 	UnboundCredits   int    `json:"unboundcredits,string"`
@@ -136,18 +136,22 @@ func (msg CharStatus) Hydrate(data []byte) (Message, error) {
 		msg.XP = rank
 	}
 
-	if city, rank := splitRank(child.CCity); city == "" && rank == 0 {
-		return msg, fmt.Errorf("failed parsing city: %w", err)
-	} else {
-		msg.City = city
-		msg.CityRank = rank
+	if child.CCity != "(None)" {
+		if city, rank := splitRank(child.CCity); city == "" && rank == 0 {
+			return msg, fmt.Errorf("failed parsing city: %w", err)
+		} else {
+			msg.City = gox.NewString(city)
+			msg.CityRank = gox.NewInt(rank)
+		}
 	}
 
-	if house, rank := splitRank(child.CHouse); house == "" && rank == 0 {
-		return msg, fmt.Errorf("failed parsing city: %w", err)
-	} else {
-		msg.House = house
-		msg.HouseRank = rank
+	if child.CHouse != "(None)" {
+		if house, rank := splitRank(child.CHouse); house == "" && rank == 0 {
+			return msg, fmt.Errorf("failed parsing city: %w", err)
+		} else {
+			msg.House = gox.NewString(house)
+			msg.HouseRank = gox.NewInt(rank)
+		}
 	}
 
 	if child.COrder != "(None)" {
