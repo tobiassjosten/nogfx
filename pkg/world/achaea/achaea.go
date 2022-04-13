@@ -2,7 +2,7 @@ package achaea
 
 import (
 	"bytes"
-	"log"
+	"fmt"
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
@@ -41,6 +41,13 @@ func (world *World) Command(command []byte) {
 	prefixGMCP := []byte{telnet.IAC, telnet.SB, telnet.GMCP}
 	suffixGMCP := []byte{telnet.IAC, telnet.SE}
 
+	if !bytes.HasPrefix(command, prefixGMCP) {
+		world.ui.Print([]byte(fmt.Sprintf(
+			"[Telnet command: %s]",
+			telnet.CommandToString(command),
+		)))
+	}
+
 	switch {
 	case bytes.Equal(command, willEcho):
 		world.ui.MaskInput()
@@ -64,7 +71,7 @@ func (world *World) Command(command []byte) {
 		data := command[len(prefixGMCP) : len(command)-len(suffixGMCP)]
 		message, err := gmcp.Parse(data)
 		if err != nil {
-			log.Printf("failed parsing GMCP command: %s", err)
+			world.ui.Print([]byte(fmt.Sprintf("[Invalid GMCP: %s]", err)))
 			return
 		}
 

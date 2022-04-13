@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 )
 
 type Client struct {
@@ -26,6 +28,27 @@ func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 	return client, commands
 }
 
+func (client *Client) Scanner() *bufio.Scanner {
+	scanner := bufio.NewScanner(client)
+	scanner.Split(func(data []byte, atEOF bool) (int, []byte, error) {
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+
+		if i := bytes.IndexByte(data, GA); i >= 0 {
+			return i + 1, data[0:i], nil
+		}
+
+		if atEOF {
+			return len(data), data, nil
+		}
+
+		return 0, nil, nil
+	})
+
+	return scanner
+}
+
 func (client *Client) Write(data []byte) (int, error) {
 	return client.data.Write(data)
 }
@@ -44,7 +67,10 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 		}
 
 		if b == IAC || len(command) > 0 {
-			command, b = client.processCommand(append(command, b))
+			command, b, err = client.processCommand(append(command, b))
+			if err != nil {
+				return count, err
+			}
 			if b == 0 {
 				continue
 			}
@@ -61,18 +87,46 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 	return count, nil
 }
 
-var ScanGA bufio.SplitFunc = func(data []byte, atEOF bool) (int, []byte, error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
+func CommandToString(command []byte) string {
+	var chars []string
+	for _, b := range command {
+		switch b {
+		case ECHO:
+			chars = append(chars, "ECHO")
+		case LF:
+			chars = append(chars, "LF")
+		case CR:
+			chars = append(chars, "CR")
+		case TTYPE:
+			chars = append(chars, "TTYPE")
+		case MCCP:
+			chars = append(chars, "MCCP")
+		case MCCP2:
+			chars = append(chars, "MCCP2")
+		case ATCP:
+			chars = append(chars, "ATCP")
+		case GMCP:
+			chars = append(chars, "GMCP")
+		case SE:
+			chars = append(chars, "SE")
+		case GA:
+			chars = append(chars, "GA")
+		case SB:
+			chars = append(chars, "SB")
+		case WILL:
+			chars = append(chars, "WILL")
+		case WONT:
+			chars = append(chars, "WONT")
+		case DO:
+			chars = append(chars, "DO")
+		case DONT:
+			chars = append(chars, "DONT")
+		case IAC:
+			chars = append(chars, "IAC")
+		default:
+			chars = append(chars, fmt.Sprintf("%d", b))
+		}
 	}
 
-	if i := bytes.IndexByte(data, GA); i >= 0 {
-		return i + 1, data[0:i], nil
-	}
-
-	if atEOF {
-		return len(data), data, nil
-	}
-
-	return 0, nil, nil
+	return strings.Join(chars, " ")
 }

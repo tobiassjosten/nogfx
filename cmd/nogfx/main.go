@@ -60,7 +60,6 @@ func run(mock bool) error {
 	world := NewWorld(ui, client)
 
 	engine := pkg.NewEngine(world, ui, client)
-	engine.Run(inputs, commands)
 
-	return nil
+	return engine.Run(inputs, commands)
 }

@@ -1,8 +1,7 @@
 package tui
 
 import (
-	"log"
-	"os"
+	"fmt"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -16,8 +15,16 @@ type TUI struct {
 	inputs    chan []byte
 	inputMask bool
 
+	outputs chan []byte
+
+	style tcell.Style
+
 	texts []Text
 }
+
+var defaultStyle = tcell.StyleDefault.
+	Background(tcell.ColorReset).
+	Foreground(tcell.ColorReset)
 
 func NewTUI() (*TUI, <-chan []byte, error) {
 	screen, err := tcell.NewScreen()
@@ -39,17 +46,15 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 	return tui, inputs, nil
 }
 
-func (tui *TUI) Run(outputs <-chan []byte) {
-	style := tcell.StyleDefault.
-		Background(tcell.ColorReset).
-		Foreground(tcell.ColorReset)
-	tui.screen.SetStyle(style)
+func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
+	tui.style = defaultStyle
+	tui.screen.SetStyle(defaultStyle)
 
 	tui.draw()
 
 	quit := func() {
 		tui.screen.Fini()
-		os.Exit(0) // @todo Move this to main loop.
+		done <- struct{}{}
 	}
 
 	inputs := make(chan []byte)
@@ -160,7 +165,11 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 					tui.draw()
 
 				default:
-					log.Println("KEY", ev.Key())
+					// @todo Remove this when we're done
+					// exploring keys and their mappings.
+					tui.Print([]byte(fmt.Sprintf(
+						"[Unknown key pressed: '%d']", ev.Key(),
+					)))
 				}
 			}
 		}
@@ -172,10 +181,20 @@ func (tui *TUI) Run(outputs <-chan []byte) {
 			tui.inputs <- input
 
 		case output := <-outputs:
-			style = tui.newOutput(output, style)
+			text, style := NewText(output, tui.style)
+
+			tui.texts = append([]Text{text}, tui.texts...)
+			tui.style = style
+
 			tui.draw()
 		}
 	}
+}
+
+func (tui *TUI) Print(output []byte) {
+	text, _ := NewText(output, defaultStyle)
+	tui.texts = append([]Text{text}, tui.texts...)
+	tui.draw()
 }
 
 func (tui *TUI) MaskInput() {
@@ -184,13 +203,6 @@ func (tui *TUI) MaskInput() {
 
 func (tui *TUI) UnmaskInput() {
 	tui.inputMask = false
-}
-
-func (tui *TUI) newOutput(output []byte, style tcell.Style) tcell.Style {
-	text, style := NewText(output, style)
-	tui.texts = append([]Text{text}, tui.texts...)
-
-	return style
 }
 
 func (tui *TUI) draw() {
@@ -232,7 +244,7 @@ func (tui *TUI) drawOutput(x, y, width, height int) {
 }
 
 func (tui *TUI) drawInput(x, y, width, height int) {
-	style := tcell.StyleDefault.
+	style := defaultStyle.
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorGray)
 

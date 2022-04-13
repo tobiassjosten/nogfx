@@ -3,9 +3,6 @@ package pkg
 import (
 	"bufio"
 	"io"
-	"log"
-
-	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 type Engine struct {
@@ -15,17 +12,17 @@ type Engine struct {
 }
 
 type UI interface {
-	Run(<-chan []byte)
+	Run(<-chan []byte, chan<- struct{})
+	Print([]byte)
 	MaskInput()
 	UnmaskInput()
 }
 
 type Client interface {
 	io.ReadWriter
-	TelnetClient
-}
+	Scanner() *bufio.Scanner
 
-type TelnetClient interface {
+	// Telnet utilities.
 	Will(byte) error
 	Wont(byte) error
 	Do(byte) error
@@ -41,30 +38,41 @@ func NewEngine(world World, ui UI, client Client) *Engine {
 	}
 }
 
-func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) {
+func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 	uiOutput := make(chan []byte)
-	go engine.ui.Run(uiOutput)
+	uiDone := make(chan struct{})
 
-	serverOutput := make(chan []byte)
-	serverDone := make(chan struct{})
+	go engine.ui.Run(uiOutput, uiDone)
+
+	clientOutput := make(chan []byte)
+	clientErr := make(chan error)
+	clientDone := make(chan struct{})
+
 	go func() {
-		scanner := bufio.NewScanner(engine.client)
-		scanner.Split(telnet.ScanGA)
+		scanner := engine.client.Scanner()
 
 		for scanner.Scan() {
-			serverOutput <- scanner.Bytes()
+			clientOutput <- scanner.Bytes()
 		}
 
 		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
+			clientErr <- err
 		}
 
-		serverDone <- struct{}{}
+		clientDone <- struct{}{}
 	}()
+
+	// @todo Implement proper logging.
 
 	for {
 		select {
-		case _ = <-serverDone:
+		case _ = <-uiDone:
+			return nil
+
+		case err := <-clientErr:
+			return err
+
+		case _ = <-clientDone:
 			uiOutput <- []byte("server disconnected")
 
 		case input := <-inputs:
@@ -73,7 +81,7 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) {
 				engine.client.Write(append(input, '\r', '\n'))
 			}
 
-		case output := <-serverOutput:
+		case output := <-clientOutput:
 			output = engine.world.Output(output)
 			if len(output) > 0 {
 				uiOutput <- output
