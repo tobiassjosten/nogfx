@@ -1,7 +1,6 @@
 package telnet_test
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -127,8 +126,7 @@ func TestScanner(t *testing.T) {
 				}
 			}(commandChan)
 
-			scanner := bufio.NewScanner(client)
-			scanner.Split(telnet.ScanGA)
+			scanner := client.Scanner()
 
 			buf := make([]byte, 2)
 			scanner.Buffer(buf, 4096)

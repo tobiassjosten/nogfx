@@ -16,35 +16,45 @@ func TestAccepts(t *testing.T) {
 	assert := assert.New(t)
 
 	tcs := []struct {
-		serverWill byte
-		acceptWill byte
+		expectDo   byte
+		expectDont byte
+		expectWill byte
+		expectWont byte
 		serverDo   byte
-		acceptDo   byte
+		serverWill byte
 		err        error
 	}{
 		{
+			serverWill: telnet.ECHO,
+			expectDo:   telnet.ECHO,
+		},
+		{
+			serverWill: telnet.GMCP,
+			expectDo:   telnet.GMCP,
+		},
+		{
+			serverWill: telnet.ATCP,
+			expectDont: telnet.ATCP,
+		},
+		{
+			serverWill: telnet.MCCP,
+			expectDont: telnet.MCCP,
+		},
+		{
+			serverWill: telnet.MCCP2,
+			expectDont: telnet.MCCP2,
+		},
+		{
 			serverWill: 123,
-			acceptWill: 123,
+			expectDont: 123,
 		},
 		{
-			serverWill: 124,
+			serverDo:   telnet.TTYPE,
+			expectWont: telnet.TTYPE,
 		},
 		{
-			serverDo: 125,
-			acceptDo: 125,
-		},
-		{
-			serverDo: 126,
-		},
-		{
-			serverWill: 127,
-			acceptWill: 127,
-			serverDo:   128,
-			acceptDo:   128,
-		},
-		{
-			serverWill: 127,
-			serverDo:   128,
+			serverDo:   124,
+			expectWont: 124,
 		},
 	}
 
@@ -59,15 +69,17 @@ func TestAccepts(t *testing.T) {
 			}
 
 			input := []byte{}
-			if tc.acceptWill > 0 {
-				input = append(input, telnet.IAC, telnet.DO, tc.acceptWill)
-			} else if tc.serverWill > 0 {
-				input = append(input, telnet.IAC, telnet.DONT, tc.serverWill)
+			if tc.expectWill > 0 {
+				input = append(input, telnet.IAC, telnet.WILL, tc.expectWill)
 			}
-			if tc.acceptDo > 0 {
-				input = append(input, telnet.IAC, telnet.WILL, tc.acceptDo)
-			} else if tc.serverDo > 0 {
-				input = append(input, telnet.IAC, telnet.WONT, tc.serverDo)
+			if tc.expectWont > 0 {
+				input = append(input, telnet.IAC, telnet.WONT, tc.expectWont)
+			}
+			if tc.expectDo > 0 {
+				input = append(input, telnet.IAC, telnet.DO, tc.expectDo)
+			}
+			if tc.expectDont > 0 {
+				input = append(input, telnet.IAC, telnet.DONT, tc.expectDont)
 			}
 
 			builder := &strings.Builder{}
@@ -77,13 +89,6 @@ func TestAccepts(t *testing.T) {
 			}
 
 			client, commandChan := telnet.NewClient(stream)
-
-			if tc.acceptWill > 0 {
-				client.AcceptWill(tc.acceptWill)
-			}
-			if tc.acceptDo > 0 {
-				client.AcceptDo(tc.acceptDo)
-			}
 
 			var commands [][]byte
 			go func(commandChan <-chan []byte) {
