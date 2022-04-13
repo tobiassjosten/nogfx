@@ -97,7 +97,7 @@ func TestAccepts(t *testing.T) {
 				}
 			}(commandChan)
 
-			output, err := ioutil.ReadAll(client)
+			_, err := ioutil.ReadAll(client)
 
 			if tc.err != nil {
 				assert.Equal(tc.err, err)

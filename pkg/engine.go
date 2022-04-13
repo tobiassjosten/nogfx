@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 )
 
@@ -78,7 +79,12 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 		case input := <-inputs:
 			input = engine.world.Input(input)
 			if len(input) > 0 {
-				engine.client.Write(append(input, '\r', '\n'))
+				_, err := engine.client.Write(append(input, '\r', '\n'))
+				if err != nil {
+					return fmt.Errorf(
+						"failed sending input: %w", err,
+					)
+				}
 			}
 
 		case output := <-clientOutput:
@@ -92,7 +98,13 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 				continue
 			}
 
-			engine.world.Command(command)
+			err := engine.world.Command(command)
+			if err != nil {
+				return fmt.Errorf(
+					"failed processing command '%s': %w",
+					command, err,
+				)
+			}
 		}
 	}
 }
