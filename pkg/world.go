@@ -3,7 +3,7 @@ package pkg
 type World interface {
 	Input([]byte) []byte
 	Output([]byte) []byte
-	Command([]byte)
+	Command([]byte) error
 }
 
 type GenericWorld struct {
@@ -26,5 +26,6 @@ func (world *GenericWorld) Output(output []byte) []byte {
 	return output
 }
 
-func (world *GenericWorld) Command(command []byte) {
+func (world *GenericWorld) Command(command []byte) error {
+	return nil
 }

@@ -33,7 +33,7 @@ func (world *World) Output(output []byte) []byte {
 	return output
 }
 
-func (world *World) Command(command []byte) {
+func (world *World) Command(command []byte) error {
 	willEcho := []byte{telnet.IAC, telnet.WILL, telnet.ECHO}
 	wontEcho := []byte{telnet.IAC, telnet.WONT, telnet.ECHO}
 
@@ -57,8 +57,15 @@ func (world *World) Command(command []byte) {
 
 	case bytes.Equal(command, willGMCP):
 		// @todo Use the actual version number when we have one.
-		world.gmcp(gmcp.CoreHello{Client: "NoGFX", Version: "0.0.1"})
-		world.gmcp(gmcp.CoreSupportsSet{
+		err := world.gmcp(gmcp.CoreHello{
+			Client:  "NoGFX",
+			Version: "0.0.1",
+		})
+		if err != nil {
+			return fmt.Errorf("failed GMCP: %w", err)
+		}
+
+		err = world.gmcp(gmcp.CoreSupportsSet{
 			Char:        true,
 			CharSkills:  true,
 			CharItems:   true,
@@ -66,13 +73,16 @@ func (world *World) Command(command []byte) {
 			Room:        true,
 			IRERift:     true,
 		})
+		if err != nil {
+			return fmt.Errorf("failed GMCP: %w", err)
+		}
 
 	case bytes.HasPrefix(command, prefixGMCP):
 		data := command[len(prefixGMCP) : len(command)-len(suffixGMCP)]
 		message, err := gmcp.Parse(data)
 		if err != nil {
 			world.ui.Print([]byte(fmt.Sprintf("[Invalid GMCP: %s]", err)))
-			return
+			return nil
 		}
 
 		switch msg := message.(type) {
@@ -80,9 +90,20 @@ func (world *World) Command(command []byte) {
 			world.character.fromCharName(msg)
 
 			// We have just logged in, so let's do an inventory.
-			world.gmcp(gmcp.IRERiftRequest{})
-			world.gmcp(gmcp.CommChannelPlayers{})
-			world.gmcp(gmcp.CharItemsInv{})
+			err := world.gmcp(gmcp.IRERiftRequest{})
+			if err != nil {
+				return fmt.Errorf("failed GMCP: %w", err)
+			}
+
+			err = world.gmcp(gmcp.CommChannelPlayers{})
+			if err != nil {
+				return fmt.Errorf("failed GMCP: %w", err)
+			}
+
+			err = world.gmcp(gmcp.CharItemsInv{})
+			if err != nil {
+				return fmt.Errorf("failed GMCP: %w", err)
+			}
 
 		case gmcp.CharVitals:
 			world.character.fromCharVitals(msg)
@@ -92,6 +113,8 @@ func (world *World) Command(command []byte) {
 
 	default: // Noop.
 	}
+
+	return nil
 }
 
 func (world *World) gmcp(value gmcp.Message) error {
