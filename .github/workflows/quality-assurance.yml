@@ -1,4 +1,4 @@
-me: Quality assurance
+Name: Quality assurance
 
 on:
   pull_request:
