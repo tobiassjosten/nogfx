@@ -1,0 +1,33 @@
+name: Reporting
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  codacy:
+    name: Codacy coverage
+    needs: [linting]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Test Go code
+        run: go test --coverprofile=coverage.out ./...
+
+      - name: Upload to Codacy
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_TOKEN }}
+          coverage-reports: coverage.out
+          language: go
+          force-coverage-parser: go
