@@ -9,7 +9,7 @@ brews:
       name: homebrew-nogfx
       token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
 
-    url_template: "https://github.com/tobiassjosten/nogfx/releases/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
 
     commit_msg_template: "Update brew formula: {{ .ProjectName }} {{ .Tag }}"
     commit_author:
