@@ -26,6 +26,7 @@ func TestNewText(t *testing.T) {
 	tcs := []struct {
 		output   []byte
 		text     tui.Text
+		width    int
 		styleIn  tcell.Style
 		styleOut tcell.Style
 	}{
@@ -35,6 +36,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'x', baseStyle, 1},
 				tui.Cell{'y', baseStyle, 1},
 			},
+			width: 2,
 		},
 		{
 			output: []byte("yx"),
@@ -42,6 +44,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', baseStyle, 1},
 				tui.Cell{'x', baseStyle, 1},
 			},
+			width: 2,
 		},
 		{
 			output: []byte("yx"),
@@ -49,8 +52,18 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', redStyle, 1},
 			},
+			width:    2,
 			styleIn:  redStyle,
 			styleOut: redStyle,
+		},
+		{
+			output: []byte("y\r\nx"),
+			text: tui.Text{
+				tui.Cell{'y', baseStyle, 1},
+				tui.Cell{'\n', baseStyle, 0},
+				tui.Cell{'x', baseStyle, 1},
+			},
+			width: 2,
 		},
 		{
 			output: []byte("y\033[32;44mx"),
@@ -58,6 +71,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', greenStyle, 1},
 			},
+			width:    2,
 			styleIn:  redStyle,
 			styleOut: greenStyle,
 		},
@@ -67,8 +81,19 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', greenStyle, 1},
 				tui.Cell{'x', blueStyle, 1},
 			},
+			width:    2,
 			styleIn:  greenStyle,
 			styleOut: blueStyle,
+		},
+		{
+			output: []byte("y\033{x"),
+			text: tui.Text{
+				tui.Cell{'y', baseStyle, 1},
+				tui.Cell{'^', baseStyle, 1},
+				tui.Cell{'{', baseStyle, 1},
+				tui.Cell{'x', baseStyle, 1},
+			},
+			width: 4,
 		},
 	}
 
@@ -77,6 +102,7 @@ func TestNewText(t *testing.T) {
 			text, style := tui.NewText(tc.output, tc.styleIn)
 			assert.Equal(tc.text, text)
 			assert.Equal(tc.styleOut, style)
+			assert.Equal(tc.width, text.Width())
 		})
 	}
 }
