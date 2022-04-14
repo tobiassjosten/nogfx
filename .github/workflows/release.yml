@@ -37,6 +37,7 @@ jobs:
           args: -f .goreleaser.yml release --rm-dist
           workdir: cmd/nogfx
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
           GORELEASER_COMMIT_NAME: ${{ secrets.GORELEASER_COMMIT_NAME }}
           GORELEASER_COMMIT_EMAIL: ${{ secrets.GORELEASER_COMMIT_EMAIL }}
