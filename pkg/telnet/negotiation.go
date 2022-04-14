@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	// Convenience constants to make telnet commands more readable.
 	ECHO  byte = 1
 	TTYPE byte = 24
 	MCCP2 byte = 86
@@ -29,28 +30,33 @@ var (
 	acceptDo = map[byte]struct{}{}
 )
 
+// Will sends the IAC WILL <CMD> sequence.
 func (client *Client) Will(command byte) error {
 	_, err := client.data.Write([]byte{IAC, WILL, command})
 	return err
 }
 
+// Wont sends the IAC WONT <CMD> sequence.
 func (client *Client) Wont(command byte) error {
 	_, err := client.data.Write([]byte{IAC, WONT, command})
 	return err
 }
 
+// Do sends the IAC DO <CMD> sequence.
 func (client *Client) Do(command byte) error {
 	_, err := client.data.Write([]byte{IAC, DO, command})
 	return err
 }
 
+// Dont sends the IAC DONT <CMD> sequence.
 func (client *Client) Dont(command byte) error {
 	_, err := client.data.Write([]byte{IAC, DONT, command})
 	return err
 }
 
+// Subneg sends the IAC SB <CMD> 0/1 <DATA> IAC SE sequence.
 func (client *Client) Subneg(b byte, value []byte) error {
-	var v byte = 0
+	var v byte
 	if len(value) > 0 {
 		v = 1
 	}
