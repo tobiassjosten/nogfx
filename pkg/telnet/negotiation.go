@@ -4,8 +4,8 @@ import (
 	"bytes"
 )
 
+// Convenience constants to make telnet commands more readable.
 const (
-	// Convenience constants to make telnet commands more readable.
 	ECHO  byte = 1
 	TTYPE byte = 24
 	MCCP2 byte = 86
