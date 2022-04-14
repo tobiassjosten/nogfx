@@ -11,7 +11,5 @@ brews:
 
     commit_msg_template: "Update brew formula: {{ .ProjectName }} {{ .Tag }}"
     commit_author:
-      name: tobiassjosten
-      email: tobias.sjosten@gmail.com
       name: "{{ .Env.GORELEASER_COMMIT_NAME }}"
       email: "{{ .Env.GORELEASER_COMMIT_EMAIL }}"

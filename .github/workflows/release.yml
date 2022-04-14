@@ -34,7 +34,7 @@ jobs:
         uses: goreleaser/goreleaser-action@master
         with:
           version: latest
-          args: release --rm-dist
+          args: -f .goreleaser.yml release --rm-dist
           workdir: cmd/nogfx
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
