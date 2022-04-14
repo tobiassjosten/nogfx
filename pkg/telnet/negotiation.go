@@ -7,10 +7,7 @@ import (
 
 const (
 	ECHO  byte = 1
-	LF    byte = 10
-	CR    byte = 13
 	TTYPE byte = 24
-	MCCP  byte = 85
 	MCCP2 byte = 86
 	ATCP  byte = 200
 	GMCP  byte = 201
@@ -64,6 +61,10 @@ func (client *Client) Subneg(b byte, value []byte) error {
 	), IAC, SE))
 	return err
 }
+
+// @todo Change the pkg.World.Command interface to be a pure function that
+// takes a command and returns a response (which could be empty). Then we can
+// implement it here for low-level stuff and reuse that in specific Worlds.
 
 func (client *Client) processCommand(command []byte) ([]byte, byte, error) {
 	if bytes.Equal(command, []byte{IAC, IAC}) {

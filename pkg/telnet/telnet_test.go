@@ -187,3 +187,43 @@ func TestWriter(t *testing.T) {
 		})
 	}
 }
+
+func TestCommandToString(t *testing.T) {
+	assert := assert.New(t)
+
+	tcs := []struct {
+		command []byte
+		output  string
+	}{
+		{
+			command: []byte{telnet.IAC, telnet.GA},
+			output:  "IAC GA",
+		},
+		{
+			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
+			output:  "IAC WILL GMCP",
+		},
+		{
+			command: []byte{telnet.IAC, telnet.WONT, telnet.MCCP2},
+			output:  "IAC WONT MCCP2",
+		},
+		{
+			command: []byte{telnet.IAC, telnet.DO, telnet.ECHO},
+			output:  "IAC DO ECHO",
+		},
+		{
+			command: []byte{telnet.IAC, telnet.DONT, telnet.ATCP},
+			output:  "IAC DONT ATCP",
+		},
+		{
+			command: []byte{telnet.IAC, telnet.SB, telnet.TTYPE, 65, telnet.IAC, telnet.SE},
+			output:  "IAC SB TTYPE 65 IAC SE",
+		},
+	}
+
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert.Equal(tc.output, telnet.CommandToString(tc.command))
+		})
+	}
+}

@@ -37,10 +37,6 @@ func TestAccepts(t *testing.T) {
 			expectDont: telnet.ATCP,
 		},
 		{
-			serverWill: telnet.MCCP,
-			expectDont: telnet.MCCP,
-		},
-		{
 			serverWill: telnet.MCCP2,
 			expectDont: telnet.MCCP2,
 		},

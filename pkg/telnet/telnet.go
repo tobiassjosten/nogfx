@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Client is a wrapper around a telnet io.ReadWriter stream.
 type Client struct {
 	data     io.ReadWriter
 	reader   *bufio.Reader
@@ -28,6 +29,7 @@ func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 	return client, commands
 }
 
+// Scanner creates a bufio.Scanner to abstract some low-level reading.
 func (client *Client) Scanner() *bufio.Scanner {
 	scanner := bufio.NewScanner(client)
 	scanner.Split(func(data []byte, atEOF bool) (int, []byte, error) {
@@ -49,10 +51,12 @@ func (client *Client) Scanner() *bufio.Scanner {
 	return scanner
 }
 
+// Write sends data to the server.
 func (client *Client) Write(data []byte) (int, error) {
 	return client.data.Write(data)
 }
 
+// Read parses and returns data received from the server.
 func (client *Client) Read(buffer []byte) (count int, err error) {
 	command := []byte{}
 
@@ -69,6 +73,7 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 		if b == IAC || len(command) > 0 {
 			command, b, err = client.processCommand(append(command, b))
 			if err != nil {
+				// otestat
 				return count, err
 			}
 			if b == 0 {
@@ -87,20 +92,15 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 	return count, nil
 }
 
+// CommandToString creates a string representation of a telnet command sequence.
 func CommandToString(command []byte) string {
 	var chars []string
 	for _, b := range command {
 		switch b {
 		case ECHO:
 			chars = append(chars, "ECHO")
-		case LF:
-			chars = append(chars, "LF")
-		case CR:
-			chars = append(chars, "CR")
 		case TTYPE:
 			chars = append(chars, "TTYPE")
-		case MCCP:
-			chars = append(chars, "MCCP")
 		case MCCP2:
 			chars = append(chars, "MCCP2")
 		case ATCP:
