@@ -70,22 +70,39 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 			return count, err
 		}
 
-		if b == IAC || len(command) > 0 {
-			command, b, err = client.processCommand(append(command, b))
-			if err != nil {
-				// otestat
-				return count, err
-			}
-			if b == 0 {
-				continue
+		if b != IAC && len(command) == 0 {
+			buffer[count] = b
+			count++
+			continue
+		}
+
+		command = append(command, b)
+
+		if bytes.Equal(command, []byte{IAC, IAC}) {
+			command = []byte{}
+			continue
+		}
+
+		if bytes.Equal(command, []byte{IAC, GA}) {
+			buffer[count] = b
+			count++
+			return count, nil
+		}
+
+		processed, responses := client.processCommand(command)
+
+		for _, response := range responses {
+			if _, err := client.data.Write(response); err != nil {
+				return count, fmt.Errorf(
+					"failed sending response (%s -> %s): %w",
+					command, response, err,
+				)
 			}
 		}
 
-		buffer[count] = b
-		count++
-
-		if b == GA {
-			break
+		if processed {
+			client.commands <- command
+			command = []byte{}
 		}
 	}
 

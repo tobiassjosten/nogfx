@@ -67,8 +67,6 @@ func applyANSI(style tcell.Style, ansi int) tcell.Style {
 	case 100, 101, 102, 103, 104, 105, 106, 107, 109:
 		// @todo Figure out how to make these "high intensity".
 		return style.Background(ansiColors[ansi%10])
-
-	default: // Noop.
 	}
 
 	// @todo Implement 256-color scale: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit

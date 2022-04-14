@@ -33,6 +33,8 @@ func (world *World) Output(output []byte) []byte {
 	return output
 }
 
+// func(command []byte) (responses [][]byte, error)
+
 func (world *World) Command(command []byte) error {
 	willEcho := []byte{telnet.IAC, telnet.WILL, telnet.ECHO}
 	wontEcho := []byte{telnet.IAC, telnet.WONT, telnet.ECHO}
@@ -107,11 +109,7 @@ func (world *World) Command(command []byte) error {
 
 		case gmcp.CharVitals:
 			world.character.fromCharVitals(msg)
-
-		default: // Noop.
 		}
-
-	default: // Noop.
 	}
 
 	return nil

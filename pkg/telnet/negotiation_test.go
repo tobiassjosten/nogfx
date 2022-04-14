@@ -12,7 +12,99 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccepts(t *testing.T) {
+func TestWill(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte{})
+	writer := bytes.NewBuffer([]byte{})
+	stream := &mockStream{reader, writer, nil}
+
+	client, _ := telnet.NewClient(stream)
+
+	_ = client.Will(telnet.ECHO)
+	assert.Equal([]byte{telnet.IAC, telnet.WILL, telnet.ECHO}, writer.Bytes())
+}
+
+func TestWont(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte{})
+	writer := bytes.NewBuffer([]byte{})
+	stream := &mockStream{reader, writer, nil}
+
+	client, _ := telnet.NewClient(stream)
+
+	_ = client.Wont(telnet.ECHO)
+	assert.Equal([]byte{telnet.IAC, telnet.WONT, telnet.ECHO}, writer.Bytes())
+}
+
+func TestDo(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte{})
+	writer := bytes.NewBuffer([]byte{})
+	stream := &mockStream{reader, writer, nil}
+
+	client, _ := telnet.NewClient(stream)
+
+	_ = client.Do(telnet.ECHO)
+	assert.Equal([]byte{telnet.IAC, telnet.DO, telnet.ECHO}, writer.Bytes())
+}
+
+func TestDont(t *testing.T) {
+	assert := assert.New(t)
+
+	reader := bytes.NewReader([]byte{})
+	writer := bytes.NewBuffer([]byte{})
+	stream := &mockStream{reader, writer, nil}
+
+	client, _ := telnet.NewClient(stream)
+
+	_ = client.Dont(telnet.ECHO)
+	assert.Equal([]byte{telnet.IAC, telnet.DONT, telnet.ECHO}, writer.Bytes())
+}
+
+func TestSubneg(t *testing.T) {
+	assert := assert.New(t)
+
+	tcs := []struct {
+		b     byte
+		value []byte
+		out   []byte
+	}{
+		{
+			b:     telnet.TTYPE,
+			value: []byte{},
+			out: []byte{
+				telnet.IAC, telnet.SB, telnet.TTYPE, 0,
+				telnet.IAC, telnet.SE,
+			},
+		},
+		{
+			b:     telnet.TTYPE,
+			value: []byte{'x', 'y'},
+			out: []byte{
+				telnet.IAC, telnet.SB, telnet.TTYPE, 1, 'x',
+				'y', telnet.IAC, telnet.SE,
+			},
+		},
+	}
+
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			reader := bytes.NewReader([]byte{})
+			writer := bytes.NewBuffer([]byte{})
+			stream := &mockStream{reader, writer, nil}
+
+			client, _ := telnet.NewClient(stream)
+
+			_ = client.Subneg(tc.b, tc.value)
+			assert.Equal(tc.out, writer.Bytes())
+		})
+	}
+}
+
+func TestNegotiation(t *testing.T) {
 	assert := assert.New(t)
 
 	tcs := []struct {
@@ -21,7 +113,9 @@ func TestAccepts(t *testing.T) {
 		expectWill byte
 		expectWont byte
 		serverDo   byte
+		serverDont byte
 		serverWill byte
+		serverWont byte
 		err        error
 	}{
 		{
@@ -45,11 +139,23 @@ func TestAccepts(t *testing.T) {
 			expectDont: 123,
 		},
 		{
+			serverWont: telnet.ECHO,
+			expectDont: telnet.ECHO,
+		},
+		{
 			serverDo:   telnet.TTYPE,
 			expectWont: telnet.TTYPE,
 		},
 		{
 			serverDo:   124,
+			expectWont: 124,
+		},
+		{
+			serverDont: telnet.TTYPE,
+			expectWont: telnet.TTYPE,
+		},
+		{
+			serverDont: 124,
 			expectWont: 124,
 		},
 	}
@@ -60,8 +166,14 @@ func TestAccepts(t *testing.T) {
 			if tc.serverWill > 0 {
 				output = append(output, telnet.IAC, telnet.WILL, tc.serverWill)
 			}
+			if tc.serverWont > 0 {
+				output = append(output, telnet.IAC, telnet.WONT, tc.serverWont)
+			}
 			if tc.serverDo > 0 {
 				output = append(output, telnet.IAC, telnet.DO, tc.serverDo)
+			}
+			if tc.serverDont > 0 {
+				output = append(output, telnet.IAC, telnet.DONT, tc.serverDont)
 			}
 
 			input := []byte{}
@@ -79,10 +191,7 @@ func TestAccepts(t *testing.T) {
 			}
 
 			builder := &strings.Builder{}
-			stream := &MockStream{
-				bytes.NewReader(output),
-				builder,
-			}
+			stream := &mockStream{bytes.NewReader(output), builder, nil}
 
 			client, commandChan := telnet.NewClient(stream)
 
