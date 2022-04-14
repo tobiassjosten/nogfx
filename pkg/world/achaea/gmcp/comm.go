@@ -1,19 +1,18 @@
 package gmcp
 
 var (
-	_ Message = &CommChannelPlayers{}
+	_ ClientServerMessage = &CommChannelPlayers{}
 )
 
-// CharVitals is a server-sent GMCP message containing character attributes.
 // CommChannelPlayers is both a client-sent and server-sent GMCP message, to
 // either request data or lists players and which channels (if any) they share
 // with the player's character.
 type CommChannelPlayers struct{}
 
 // Hydrate populates the message with data.
-func (msg CommChannelPlayers) Hydrate(_ []byte) (Message, error) {
+func (msg CommChannelPlayers) Hydrate(_ []byte) (ServerMessage, error) {
 	// @todo Implement this.
-	return nil, nil
+	return msg, nil
 }
 
 // String is the message's string representation.

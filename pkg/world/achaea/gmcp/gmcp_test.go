@@ -16,7 +16,6 @@ func TestParse(t *testing.T) {
 
 	tcs := []struct {
 		command []byte
-		message gmcp.Message
 		err     error
 	}{
 		{
@@ -27,7 +26,7 @@ func TestParse(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			message, err := gmcp.Parse(tc.command)
+			_, err := gmcp.Parse(tc.command)
 
 			if tc.err != nil {
 				assert.Equal(tc.err, err)
@@ -35,7 +34,6 @@ func TestParse(t *testing.T) {
 			}
 
 			require.Nil(err)
-			assert.Equal(tc.message, message)
 		})
 	}
 }

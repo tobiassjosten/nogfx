@@ -115,7 +115,7 @@ func (world *World) Command(command []byte) error {
 	return nil
 }
 
-func (world *World) gmcp(value gmcp.Message) error {
+func (world *World) gmcp(value gmcp.ClientMessage) error {
 	_, err := world.client.Write(append(append(
 		[]byte{telnet.IAC, telnet.SB, telnet.GMCP},
 		[]byte(value.String())...,

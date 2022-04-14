@@ -10,20 +10,15 @@ import (
 )
 
 var (
-	_ Message = &CharItemsInv{}
-	_ Message = &CharName{}
-	_ Message = &CharStatus{}
-	_ Message = &CharVitals{}
+	_ ClientMessage = &CharItemsInv{}
+	_ ServerMessage = &CharName{}
+	_ ServerMessage = &CharStatus{}
+	_ ServerMessage = &CharVitals{}
 )
 
 // CharItemsInv is a client-sent GMCP message to request a list of items in the
 // player's inventory.
 type CharItemsInv struct{}
-
-// Hydrate populates the message with data.
-func (msg CharItemsInv) Hydrate(_ []byte) (Message, error) {
-	return msg, nil
-}
 
 // String is the message's string representation.
 func (msg CharItemsInv) String() string {
@@ -38,23 +33,13 @@ type CharName struct {
 }
 
 // Hydrate populates the message with data.
-func (msg CharName) Hydrate(data []byte) (Message, error) {
+func (msg CharName) Hydrate(data []byte) (ServerMessage, error) {
 	err := json.Unmarshal(data, &msg)
 	if err != nil {
 		return msg, err
 	}
 
 	return msg, nil
-}
-
-// String is the message's string representation.
-func (msg CharName) String() string {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		data = []byte("{}")
-	}
-
-	return fmt.Sprintf("Char.Name %s", data)
 }
 
 // CharStatus is a server-sent GMCP message containing character values. The
@@ -75,6 +60,7 @@ type CharStatus struct {
 	House            *string
 	HouseRank        *int
 	Order            *string
+	OrderRank        *int
 	BoundCredits     *int    `json:"boundcredits,string"`
 	UnboundCredits   *int    `json:"unboundcredits,string"`
 	Lessons          *int    `json:"lessons,string"`
@@ -85,12 +71,12 @@ type CharStatus struct {
 	Bank             *int    `json:"bank,string"`
 	UnreadNews       *int    `json:"unread_news,string"`
 	UnreadMessages   *int    `json:"unread_msgs,string"`
-	Target           *string
+	Target           *int
 	Gender           *int // ISO/IEC 5218
 }
 
 // Hydrate populates the message with data.
-func (msg CharStatus) Hydrate(data []byte) (Message, error) {
+func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 	type CharStatusAlias CharStatus
 	var child struct {
 		CharStatusAlias
@@ -110,38 +96,63 @@ func (msg CharStatus) Hydrate(data []byte) (Message, error) {
 	msg = (CharStatus)(child.CharStatusAlias)
 
 	if child.CLevel != nil {
-		if level, rank := splitLevelRank(*child.CLevel); level == 0 && rank == 0 {
-			return msg, fmt.Errorf("failed parsing level: %w", err)
-		} else {
-			msg.Level = gox.NewInt(level)
-			msg.XP = gox.NewInt(rank)
+		level, rank := splitLevelRank(*child.CLevel)
+		if rank == 0 {
+			return msg, fmt.Errorf(
+				"failed parsing level '%s'", *child.CLevel,
+			)
 		}
+
+		msg.Level = gox.NewInt(level)
+		msg.XP = gox.NewInt(rank)
 	}
 
 	if child.CCity != nil && *child.CCity != "(None)" {
-		if city, rank := splitRank(*child.CCity); city == "" && rank == 0 {
-			return msg, fmt.Errorf("failed parsing city: %w", err)
-		} else {
-			msg.City = gox.NewString(city)
-			msg.CityRank = gox.NewInt(rank)
+		city, rank := splitRank(*child.CCity)
+		if rank == 0 {
+			return msg, fmt.Errorf(
+				"failed parsing city '%s'", *child.CCity,
+			)
 		}
+
+		msg.City = gox.NewString(city)
+		msg.CityRank = gox.NewInt(rank)
 	}
 
 	if child.CHouse != nil && *child.CHouse != "(None)" {
-		if house, rank := splitRank(*child.CHouse); house == "" && rank == 0 {
-			return msg, fmt.Errorf("failed parsing city: %w", err)
-		} else {
-			msg.House = gox.NewString(house)
-			msg.HouseRank = gox.NewInt(rank)
+		house, rank := splitRank(*child.CHouse)
+		if rank == 0 {
+			return msg, fmt.Errorf(
+				"failed parsing house '%s'", *child.CHouse,
+			)
 		}
+
+		msg.House = gox.NewString(house)
+		msg.HouseRank = gox.NewInt(rank)
 	}
 
 	if child.COrder != nil && *child.COrder != "(None)" {
-		msg.Order = gox.NewString(*child.COrder)
+		order, rank := splitRank(*child.COrder)
+		if rank == 0 {
+			return msg, fmt.Errorf(
+				"failed parsing order '%s'", *child.COrder,
+			)
+		}
+
+		msg.Order = gox.NewString(order)
+		msg.OrderRank = gox.NewInt(rank)
 	}
 
 	if child.CTarget != nil && *child.CTarget != "None" {
-		msg.Target = gox.NewString(*child.CTarget)
+		// Yes, sometimes it's a string, sometimes it's an int. Yay!
+		target, err := strconv.Atoi(*child.CTarget)
+		if err != nil {
+			return msg, fmt.Errorf(
+				"failed parsing target '%s'", *child.CTarget,
+			)
+		}
+
+		msg.Target = gox.NewInt(target)
 	}
 
 	if child.CGender != nil {
@@ -156,16 +167,6 @@ func (msg CharStatus) Hydrate(data []byte) (Message, error) {
 	}
 
 	return msg, nil
-}
-
-// String is the message's string representation.
-func (msg CharStatus) String() string {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		data = []byte("{}")
-	}
-
-	return fmt.Sprintf("Char.Status %s", data)
 }
 
 // CharVitals is a server-sent GMCP message containing character attributes.
@@ -188,7 +189,7 @@ type CharVitals struct {
 }
 
 // Hydrate populates the message with data.
-func (msg CharVitals) Hydrate(data []byte) (Message, error) {
+func (msg CharVitals) Hydrate(data []byte) (ServerMessage, error) {
 	type CharVitalsAlias CharVitals
 	var child struct {
 		CharVitalsAlias
@@ -208,16 +209,6 @@ func (msg CharVitals) Hydrate(data []byte) (Message, error) {
 	msg.Vote = child.CVote == "1"
 
 	return msg, nil
-}
-
-// String is the message's string representation.
-func (msg CharVitals) String() string {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		data = []byte("{}")
-	}
-
-	return fmt.Sprintf("Char.Vitals %s", data)
 }
 
 // CharVitalsStats is structured data extending CharVitals.
@@ -305,7 +296,9 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			stats.Spec = gox.NewString(parts[1])
 
 		case "Stance":
-			stats.Stance = gox.NewString(parts[1])
+			if parts[1] != "None" {
+				stats.Stance = gox.NewString(parts[1])
+			}
 
 		default:
 			return fmt.Errorf("invalid Char.Vitals.charstats '%s'", item)

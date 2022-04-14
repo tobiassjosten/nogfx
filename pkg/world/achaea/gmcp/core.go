@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	_ Message = &CoreHello{}
-	_ Message = &CoreSupportsSet{}
+	_ ClientMessage = &CoreHello{}
+	_ ClientMessage = &CoreSupportsSet{}
 )
 
 // CoreHello is a client-sent GMCP message used to identify the client. It has
@@ -27,13 +27,7 @@ func (msg CoreHello) String() string {
 	return fmt.Sprintf("Core.Hello %s", data)
 }
 
-// Hydrate populates the message with data.
-func (msg CoreHello) Hydrate(_ []byte) (Message, error) {
-	// This is client-side only, so we'll never have to hydrate it.
-	return nil, nil
-}
-
-// CoreHello is a client-sent GMCP message containing packages supported.
+// CoreSupportsSet is a client-sent GMCP message containing packages supported.
 type CoreSupportsSet struct {
 	Char        bool
 	CharSkills  bool
@@ -41,12 +35,6 @@ type CoreSupportsSet struct {
 	CommChannel bool
 	Room        bool
 	IRERift     bool
-}
-
-// Hydrate populates the message with data.
-func (msg CoreSupportsSet) Hydrate(_ []byte) (Message, error) {
-	// This is client-side only, so we'll never have to hydrate it.
-	return nil, nil
 }
 
 // String is the message's string representation.

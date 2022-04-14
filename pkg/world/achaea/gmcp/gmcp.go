@@ -10,22 +10,28 @@ import (
 // - https://nexus.ironrealms.com/GMCP_Data
 // - https://github.com/keneanung/GMCPAdditions
 
-// Message is a GMCP message.
-type Message interface {
-	Hydrate([]byte) (Message, error)
+// ClientMessage is a GMCP message sent from the client.
+type ClientMessage interface {
 	String() string
 }
 
+// ServerMessage is a GMCP message sent from the server.
+type ServerMessage interface {
+	Hydrate([]byte) (ServerMessage, error)
+}
+
+type ClientServerMessage interface {
+	ClientMessage
+	ServerMessage
+}
+
 // Parse converts a byte slice into a GMCP message.
-func Parse(command []byte) (Message, error) {
+func Parse(command []byte) (ServerMessage, error) {
 	parts := bytes.SplitN(command, []byte{' '}, 2)
 
-	var hydrator Message
+	var hydrator ServerMessage
 
 	switch string(parts[0]) {
-	case "Char.Items.Inv":
-		return CharItemsInv{}, nil
-
 	case "Char.Name":
 		hydrator = CharName{}
 
