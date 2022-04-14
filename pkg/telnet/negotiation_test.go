@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWill(t *testing.T) {
+func TestWillWontDoDont(t *testing.T) {
 	assert := assert.New(t)
 
 	reader := bytes.NewReader([]byte{})
@@ -21,47 +21,40 @@ func TestWill(t *testing.T) {
 
 	client, _ := telnet.NewClient(stream)
 
-	_ = client.Will(telnet.ECHO)
-	assert.Equal([]byte{telnet.IAC, telnet.WILL, telnet.ECHO}, writer.Bytes())
-}
+	tcs := []struct {
+		verb byte
+		noun byte
+		f    func(byte) error
+	}{
+		{
+			verb: telnet.WILL,
+			noun: telnet.ECHO,
+			f:    client.Will,
+		},
+		{
+			verb: telnet.WONT,
+			noun: telnet.ECHO,
+			f:    client.Wont,
+		},
+		{
+			verb: telnet.DO,
+			noun: telnet.ECHO,
+			f:    client.Do,
+		},
+		{
+			verb: telnet.DONT,
+			noun: telnet.ECHO,
+			f:    client.Dont,
+		},
+	}
 
-func TestWont(t *testing.T) {
-	assert := assert.New(t)
-
-	reader := bytes.NewReader([]byte{})
-	writer := bytes.NewBuffer([]byte{})
-	stream := &mockStream{reader, writer, nil}
-
-	client, _ := telnet.NewClient(stream)
-
-	_ = client.Wont(telnet.ECHO)
-	assert.Equal([]byte{telnet.IAC, telnet.WONT, telnet.ECHO}, writer.Bytes())
-}
-
-func TestDo(t *testing.T) {
-	assert := assert.New(t)
-
-	reader := bytes.NewReader([]byte{})
-	writer := bytes.NewBuffer([]byte{})
-	stream := &mockStream{reader, writer, nil}
-
-	client, _ := telnet.NewClient(stream)
-
-	_ = client.Do(telnet.ECHO)
-	assert.Equal([]byte{telnet.IAC, telnet.DO, telnet.ECHO}, writer.Bytes())
-}
-
-func TestDont(t *testing.T) {
-	assert := assert.New(t)
-
-	reader := bytes.NewReader([]byte{})
-	writer := bytes.NewBuffer([]byte{})
-	stream := &mockStream{reader, writer, nil}
-
-	client, _ := telnet.NewClient(stream)
-
-	_ = client.Dont(telnet.ECHO)
-	assert.Equal([]byte{telnet.IAC, telnet.DONT, telnet.ECHO}, writer.Bytes())
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			writer.Reset()
+			_ = tc.f(tc.noun)
+			assert.Equal([]byte{telnet.IAC, tc.verb, tc.noun}, writer.Bytes())
+		})
+	}
 }
 
 func TestSubneg(t *testing.T) {
