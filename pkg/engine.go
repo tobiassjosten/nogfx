@@ -6,12 +6,15 @@ import (
 	"io"
 )
 
+// Engine is the orchestrator of the entire application, tying together input
+// and output from the different parts.
 type Engine struct {
 	ui     UI
 	client Client
 	world  World
 }
 
+// UI is the primary user interface for the application.
 type UI interface {
 	Run(<-chan []byte, chan<- struct{})
 	Print([]byte)
@@ -19,6 +22,7 @@ type UI interface {
 	UnmaskInput()
 }
 
+// Client is the application's main connection to the game server.
 type Client interface {
 	io.ReadWriter
 	Scanner() *bufio.Scanner
@@ -31,6 +35,7 @@ type Client interface {
 	Subneg(byte, []byte) error
 }
 
+// NewEngine creates a new Engine based on the given parts.
 func NewEngine(world World, ui UI, client Client) *Engine {
 	return &Engine{
 		ui:     ui,
@@ -39,6 +44,7 @@ func NewEngine(world World, ui UI, client Client) *Engine {
 	}
 }
 
+// Run is the main loop of the application.
 func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 	uiOutput := make(chan []byte)
 	uiDone := make(chan struct{})
