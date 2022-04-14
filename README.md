@@ -4,7 +4,7 @@ Make MUDing great again.
 
 ## Installation
 
-```
+```bash
 $ brew tap tobiassjosten/nogfx
 $ brew install nogfx
 ```
