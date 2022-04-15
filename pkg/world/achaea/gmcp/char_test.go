@@ -160,6 +160,14 @@ func TestCharServerMessages(t *testing.T) {
 			err:     "invalid charstat 'Kai: 1'",
 		},
 		{
+			command: []byte(`Char.Vitals { "charstats": [ "Karma: invalid" ] }`),
+			err:     "invalid charstat 'Karma: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Karma: 1" ] }`),
+			err:     "invalid charstat 'Karma: 1'",
+		},
+		{
 			command: []byte(`Char.Vitals { "charstats": [ "Stance: None" ] }`),
 			message: gmcp.CharVitals{
 				Stats: gmcp.CharVitalsStats{Stance: nil},
