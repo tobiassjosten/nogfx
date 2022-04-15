@@ -20,6 +20,7 @@ type ServerMessage interface {
 	Hydrate([]byte) (ServerMessage, error)
 }
 
+// ClientServerMessage is a GMCP message sent from both server and client.
 type ClientServerMessage interface {
 	ClientMessage
 	ServerMessage

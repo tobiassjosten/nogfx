@@ -132,13 +132,41 @@ func TestCharServerMessages(t *testing.T) {
 			err:     "missing 'gmcp.CharVitals' data",
 		},
 		{
+			command: []byte(`Char.Vitals { "charstats": [ "Invalid" ] }`),
+			err:     "misformed charstat 'Invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Unknown: 123" ] }`),
+			err:     "invalid charstat 'Unknown: 123'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Bleed: invalid" ] }`),
+			err:     "invalid charstat 'Bleed: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Rage: invalid" ] }`),
+			err:     "invalid charstat 'Rage: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Ferocity: invalid" ] }`),
+			err:     "invalid charstat 'Ferocity: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Kai: invalid" ] }`),
+			err:     "invalid charstat 'Kai: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Kai: 1" ] }`),
+			err:     "invalid charstat 'Kai: 1'",
+		},
+		{
 			command: []byte(`Char.Vitals { "charstats": [ "Stance: None" ] }`),
 			message: gmcp.CharVitals{
 				Stats: gmcp.CharVitalsStats{Stance: nil},
 			},
 		},
 		{
-			command: []byte(`Char.Vitals { "hp": "3904", "maxhp": "3904", "mp": "3845", "maxmp": "3845", "ep": "15020", "maxep": "15020", "wp": "12980", "maxwp": "12980", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3904 M:3845/3845 E:15020/15020 W:12980/12980 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 0%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
+			command: []byte(`Char.Vitals { "hp": "3904", "maxhp": "3904", "mp": "3845", "maxmp": "3845", "ep": "15020", "maxep": "15020", "wp": "12980", "maxwp": "12980", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3904 M:3845/3845 E:15020/15020 W:12980/12980 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
 			message: gmcp.CharVitals{
 				HP:     3904,
 				MaxHP:  3904,
@@ -158,7 +186,7 @@ func TestCharServerMessages(t *testing.T) {
 					Rage:  2,
 
 					Ferocity: gox.NewInt(3),
-					Kai:      gox.NewInt(0),
+					Kai:      gox.NewInt(4),
 					Spec:     gox.NewString("Sword and Shield"),
 					Stance:   gox.NewString("Crane"),
 				},

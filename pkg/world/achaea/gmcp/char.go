@@ -248,49 +248,37 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 	for _, item := range list {
 		parts := strings.SplitN(item, ": ", 2)
 		if len(parts) != 2 {
-			return fmt.Errorf("misformed Char.Vitals.charstats '%s'", item)
+			return fmt.Errorf("misformed charstat '%s'", item)
 		}
 
 		switch parts[0] {
 		case "Bleed":
 			value, err := strconv.Atoi(parts[1])
 			if err != nil {
-				return fmt.Errorf(
-					"failed getting 'Bleed' value for Char.Vitals.charstats: %w",
-					err,
-				)
+				return fmt.Errorf("invalid charstat '%s'", item)
 			}
 			stats.Bleed = value
+
+		case "Rage":
+			value, err := strconv.Atoi(parts[1])
+			if err != nil {
+				return fmt.Errorf("invalid charstat '%s'", item)
+			}
+			stats.Rage = value
 
 		case "Ferocity":
 			value, err := strconv.Atoi(parts[1])
 			if err != nil {
-				return fmt.Errorf(
-					"failed getting 'Ferocity' value for Char.Vitals.charstats: %w",
-					err,
-				)
+				return fmt.Errorf("invalid charstat '%s'", item)
 			}
 			stats.Ferocity = gox.NewInt(value)
 
 		case "Kai":
 			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
 			if err != nil {
-				return fmt.Errorf(
-					"failed getting 'Kai' value for Char.Vitals.charstats: %w",
-					err,
-				)
+				return fmt.Errorf("invalid charstat '%s'", item)
 			}
 			stats.Kai = gox.NewInt(value)
-
-		case "Rage":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf(
-					"failed getting 'Rage' value for Char.Vitals.charstats: %w",
-					err,
-				)
-			}
-			stats.Rage = value
 
 		case "Spec":
 			stats.Spec = gox.NewString(parts[1])
@@ -301,7 +289,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			}
 
 		default:
-			return fmt.Errorf("invalid Char.Vitals.charstats '%s'", item)
+			return fmt.Errorf("invalid charstat '%s'", item)
 		}
 	}
 
