@@ -25,6 +25,7 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	screen.SetStyle(outputStyle)
 
 	inputs := make(chan []byte)
 
