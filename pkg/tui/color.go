@@ -14,12 +14,11 @@ var ansiColors = map[int]tcell.Color{
 	9: tcell.ColorDefault,
 }
 
-func applyANSI(style tcell.Style, ansi int) tcell.Style {
+// ApplyANSI modifies a tcell.Style by the given ANSI code.
+func ApplyANSI(style tcell.Style, ansi int) tcell.Style {
 	switch ansi {
 	case 0:
-		return tcell.StyleDefault.
-			Background(tcell.ColorReset).
-			Foreground(tcell.ColorReset)
+		return tcell.Style{}
 
 	case 1:
 		return style.Bold(true)

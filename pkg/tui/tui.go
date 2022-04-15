@@ -22,10 +22,6 @@ type TUI struct {
 	texts []Text
 }
 
-var defaultStyle = tcell.StyleDefault.
-	Background(tcell.ColorReset).
-	Foreground(tcell.ColorReset)
-
 func NewTUI() (*TUI, <-chan []byte, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
@@ -47,8 +43,7 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 }
 
 func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
-	tui.style = defaultStyle
-	tui.screen.SetStyle(defaultStyle)
+	tui.screen.SetStyle(tui.style)
 
 	tui.draw()
 
@@ -192,7 +187,7 @@ func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
 }
 
 func (tui *TUI) Print(output []byte) {
-	text, _ := NewText(output, defaultStyle)
+	text, _ := NewText(output, tcell.Style{})
 	tui.texts = append([]Text{text}, tui.texts...)
 	tui.draw()
 }
@@ -244,7 +239,7 @@ func (tui *TUI) drawOutput(x, y, width, height int) {
 }
 
 func (tui *TUI) drawInput(x, y, width, height int) {
-	style := defaultStyle.
+	style := (tcell.Style{}).
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorGray)
 
