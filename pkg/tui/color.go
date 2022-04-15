@@ -4,6 +4,13 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+var (
+	outputStyle = tcell.Style{}
+	inputStyle  = (tcell.Style{}).
+			Foreground(tcell.ColorWhite).
+			Background(tcell.ColorGray)
+)
+
 var ansiColors = map[int]tcell.Color{
 	0: tcell.ColorBlack,
 	1: tcell.ColorRed,

@@ -15,7 +15,7 @@ func (tui *TUI) InteractKey(ev *tcell.EventKey) []byte {
 
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
 		if !tui.inputting {
-			return []byte{}
+			return nil
 		}
 
 		if len(tui.input) > 0 {
@@ -25,12 +25,12 @@ func (tui *TUI) InteractKey(ev *tcell.EventKey) []byte {
 
 	case tcell.KeyETB: // opt/elt+backspace
 		if !tui.inputting {
-			return []byte{}
+			return nil
 		}
 
 		deleted := false
 		for i := len(tui.input) - 1; i >= 0; i-- {
-			if tui.input[i] == ' ' {
+			if tui.input[i].Content == ' ' {
 				tui.input = tui.input[0:i]
 				deleted = true
 				break
@@ -38,30 +38,33 @@ func (tui *TUI) InteractKey(ev *tcell.EventKey) []byte {
 		}
 
 		if !deleted {
-			tui.input = []rune{}
+			tui.input = Text{}
 		}
 
 		tui.draw()
 
 	case tcell.KeyNAK: // cmd/ctrl+backspace
 		if !tui.inputting {
-			return []byte{}
+			return nil
 		}
 
 		if len(tui.input) > 0 {
-			tui.input = []rune{}
+			tui.input = Text{}
 			tui.draw()
 		}
 
 	case tcell.KeyEnter:
 		if !tui.inputting {
-			return []byte{}
+			// @todo Keep the text to enable quick repetition.
+			return nil
 		}
 
-		tui.input = []rune{}
+		input := tui.input.Bytes()
+
+		tui.input = Text{}
 		tui.draw()
 
-		return []byte(string(tui.input))
+		return input
 
 	case tcell.KeyRune:
 		if !tui.inputting {
@@ -98,13 +101,15 @@ func (tui *TUI) InteractKey(ev *tcell.EventKey) []byte {
 				return []byte{'n', 'e'}
 			}
 
-			return []byte{}
+			return nil
 		}
 
-		tui.input = append(tui.input, ev.Rune())
+		tui.input = append(tui.input, NewCell(ev.Rune(), inputStyle))
 		tui.draw()
 
 	default:
+		// @todo Use arrow keys (wht opt/cmd mods) to jump the cursor.
+
 		// @todo Remove this when we're done exploring keys and their
 		// mappings.
 		tui.Print([]byte(fmt.Sprintf(
@@ -112,5 +117,5 @@ func (tui *TUI) InteractKey(ev *tcell.EventKey) []byte {
 		)))
 	}
 
-	return []byte{}
+	return nil
 }

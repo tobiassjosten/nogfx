@@ -90,10 +90,29 @@ func NewBlock(text Text, width int) Block {
 	return block
 }
 
-func (block *Block) draw(screen tcell.Screen, x, y int) {
-	for iy, row := range block.Rows {
-		for ix, cell := range row {
-			screen.SetContent(x+ix, y+iy, cell.Content, nil, cell.Style)
+type DrawOptions struct {
+	X       int
+	Y       int
+	Masked  bool
+	Filling Cell
+}
+
+func (block *Block) draw(screen tcell.Screen, opts DrawOptions) {
+	for y, row := range block.Rows {
+		for x, cell := range row {
+			content := cell.Content
+			if opts.Masked {
+				content = '*'
+			}
+			screen.SetContent(opts.X+x, opts.Y+y, content, nil, cell.Style)
+		}
+
+		if opts.Filling != (Cell{}) && len(row) < block.width {
+			c := opts.Filling
+			diff := block.width - len(row)
+			for x := block.width - diff; x < block.width; x++ {
+				screen.SetContent(opts.X+x, opts.Y+y, c.Content, nil, c.Style)
+			}
 		}
 	}
 }

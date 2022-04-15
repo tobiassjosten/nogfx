@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"strings"
-
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -10,7 +8,7 @@ type TUI struct {
 	screen tcell.Screen
 
 	inputting bool
-	input     []rune
+	input     Text
 	inputs    chan []byte
 	inputMask bool
 
@@ -42,8 +40,6 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 }
 
 func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
-	tui.screen.SetStyle(tui.style)
-
 	tui.draw()
 
 	quit := func() {
@@ -79,6 +75,8 @@ func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
 		case output := <-outputs:
 			text, style := NewText(output, tui.style)
 
+			// @todo Cap tui.texts so it doesn't grow indefinitely.
+
 			tui.texts = append([]Text{text}, tui.texts...)
 			tui.style = style
 
@@ -104,12 +102,24 @@ func (tui *TUI) UnmaskInput() {
 func (tui *TUI) draw() {
 	tui.screen.Clear()
 
+	// @todo Workaround for https://github.com/gdamore/tcell/issues/522.
+	tui.screen.Sync()
+
 	width, height := tui.screen.Size()
 
 	inputHeight := 0
 	if tui.inputting {
-		inputHeight = 1
-		tui.drawInput(0, height-1, width, inputHeight)
+		b := NewBlock(tui.input, width)
+		b.draw(tui.screen, DrawOptions{
+			X:       0,
+			Y:       height - b.Height(),
+			Masked:  tui.inputMask,
+			Filling: NewCell(' ', inputStyle),
+		})
+
+		tui.screen.ShowCursor(len(tui.input), height-1)
+
+		inputHeight = b.Height()
 	}
 
 	tui.drawOutput(0, 0, width, height-inputHeight)
@@ -130,34 +140,11 @@ func (tui *TUI) drawOutput(x, y, width, height int) {
 	for _, t := range tui.texts {
 		b := NewBlock(t, width)
 		line = line - b.Height() + 1
-		b.draw(tui.screen, x, line)
+		b.draw(tui.screen, DrawOptions{X: x, Y: line})
 
 		line--
 		if line < y {
 			break
 		}
 	}
-}
-
-func (tui *TUI) drawInput(x, y, width, height int) {
-	style := (tcell.Style{}).
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorGray)
-
-	// @todo Fixa stöd för flera rader.
-
-	// @todo Fixa stöd för att hoppa med cursorn.
-
-	// @todo Behåll texten för att lätt kunna repetera.
-
-	input := append(tui.input, []rune(strings.Repeat(" ", width-len(tui.input)))...)
-
-	for i, r := range input {
-		if tui.inputMask && i < len(tui.input) {
-			r = '*'
-		}
-		tui.screen.SetContent(x+i, y, r, nil, style)
-	}
-
-	tui.screen.ShowCursor(x+len(tui.input), y)
 }
