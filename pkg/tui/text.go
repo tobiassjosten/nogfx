@@ -8,6 +8,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+// Cell represents one character worth of output in a terminal output.
 type Cell struct {
 	// @todo Figure out how this main+combined work in tcell so that we
 	// model it better on our side.
@@ -16,6 +17,7 @@ type Cell struct {
 	Width   int
 }
 
+// NewCell wraps a rune and creates a Cell.
 func NewCell(r rune, style tcell.Style) Cell {
 	return Cell{
 		Content: r,
@@ -24,8 +26,11 @@ func NewCell(r rune, style tcell.Style) Cell {
 	}
 }
 
+// Text is a slice of Cells (e.g. a line of characters).
 type Text []Cell
 
+// NewText parses a byte slice and creates a Text, with ANSI color codes
+// abstracted into Cell styles.
 func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 	var text Text
 
@@ -81,6 +86,7 @@ func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 	return text, style
 }
 
+// Width calculates the sum of all the containing Cells' width.
 func (text *Text) Width() int {
 	var width int
 

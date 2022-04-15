@@ -47,9 +47,11 @@ func run(mock bool) error {
 		log.Fatal(err)
 	}
 
+	address := "achaea.com:23"
+
 	connection := mockReadWriter()
 	if !mock {
-		connection, err = net.Dial("tcp", "achaea.com:23")
+		connection, err = net.Dial("tcp", address)
 		if err != nil {
 			return err
 		}
@@ -57,7 +59,7 @@ func run(mock bool) error {
 
 	client, commands := telnet.NewClient(connection)
 
-	world := NewWorld(ui, client)
+	world := NewWorld(ui, client, address)
 
 	engine := pkg.NewEngine(world, ui, client)
 

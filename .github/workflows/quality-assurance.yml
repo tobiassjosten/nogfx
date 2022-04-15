@@ -54,4 +54,15 @@ jobs:
         run: go mod download
 
       - name: Test Go code
-        run: go test ./...
+        run: go test --coverprofile=coverage.out ./...
+
+      - name: Trim coverage report
+        run: cat coverage.out | grep -v "/mock_" > coverage_trimmed.out
+
+      - name: Upload to Codacy
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_TOKEN }}
+          coverage-reports: coverage_trimmed.out
+          language: go
+          force-coverage-parser: go

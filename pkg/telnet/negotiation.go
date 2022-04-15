@@ -2,15 +2,12 @@ package telnet
 
 import (
 	"bytes"
-	"fmt"
 )
 
+// Convenience constants to make telnet commands more readable.
 const (
 	ECHO  byte = 1
-	LF    byte = 10
-	CR    byte = 13
 	TTYPE byte = 24
-	MCCP  byte = 85
 	MCCP2 byte = 86
 	ATCP  byte = 200
 	GMCP  byte = 201
@@ -29,31 +26,35 @@ var (
 		ECHO: {},
 		GMCP: {},
 	}
-	acceptDo = map[byte]struct{}{}
 )
 
+// Will sends the IAC WILL <CMD> sequence.
 func (client *Client) Will(command byte) error {
 	_, err := client.data.Write([]byte{IAC, WILL, command})
 	return err
 }
 
+// Wont sends the IAC WONT <CMD> sequence.
 func (client *Client) Wont(command byte) error {
 	_, err := client.data.Write([]byte{IAC, WONT, command})
 	return err
 }
 
+// Do sends the IAC DO <CMD> sequence.
 func (client *Client) Do(command byte) error {
 	_, err := client.data.Write([]byte{IAC, DO, command})
 	return err
 }
 
+// Dont sends the IAC DONT <CMD> sequence.
 func (client *Client) Dont(command byte) error {
 	_, err := client.data.Write([]byte{IAC, DONT, command})
 	return err
 }
 
+// Subneg sends the IAC SB <CMD> 0/1 <DATA> IAC SE sequence.
 func (client *Client) Subneg(b byte, value []byte) error {
-	var v byte = 0
+	var v byte
 	if len(value) > 0 {
 		v = 1
 	}
@@ -65,91 +66,45 @@ func (client *Client) Subneg(b byte, value []byte) error {
 	return err
 }
 
-func (client *Client) processCommand(command []byte) ([]byte, byte, error) {
-	if bytes.Equal(command, []byte{IAC, IAC}) {
-		return []byte{}, IAC, nil
-	}
-
-	if bytes.Equal(command, []byte{IAC, GA}) {
-		return []byte{}, GA, nil
-	}
+func (client *Client) processCommand(command []byte) (bool, [][]byte) {
+	var responses [][]byte
 
 	if len(command) < 3 {
-		return command, 0, nil
+		return false, nil
 	}
 
 	switch command[1] {
 	case WILL:
 		if _, ok := acceptWill[command[2]]; ok {
-			if err := client.Do(command[2]); err != nil {
-				return nil, 0, fmt.Errorf(
-					"failed accepting WILL %d: %s",
-					command[2], err,
-				)
-			}
-		} else if err := client.Dont(command[2]); err != nil {
-			return nil, 0, fmt.Errorf(
-				"failed rejecting WILL %d: %s",
-				command[2], err,
-			)
+			responses = append(responses, []byte{IAC, DO, command[2]})
+		} else {
+			responses = append(responses, []byte{IAC, DONT, command[2]})
 		}
 
-		client.commands <- command
-		return []byte{}, 0, nil
+		return true, responses
 
 	case WONT:
-		if err := client.Dont(command[2]); err != nil {
-			return nil, 0, fmt.Errorf(
-				"failed rejecting WONT %d: %s",
-				command[2], err,
-			)
-		}
-
-		client.commands <- command
-		return []byte{}, 0, nil
+		responses = append(responses, []byte{IAC, DONT, command[2]})
+		return true, responses
 
 	case DO:
-		if _, ok := acceptDo[command[2]]; ok {
-			if err := client.Will(command[2]); err != nil {
-				return nil, 0, fmt.Errorf(
-					"failed accepting DO %d: %s",
-					command[2], err,
-				)
-			}
-		} else if err := client.Wont(command[2]); err != nil {
-			return nil, 0, fmt.Errorf(
-				"failed rejecting DO %d: %s",
-				command[2], err,
-			)
-		}
-
-		client.commands <- command
-		return []byte{}, 0, nil
+		responses = append(responses, []byte{IAC, WONT, command[2]})
+		return true, responses
 
 	case DONT:
-		if err := client.Wont(command[2]); err != nil {
-			return nil, 0, fmt.Errorf(
-				"failed rejecting DONT %d: %s",
-				command[2], err,
-			)
-		}
-
-		client.commands <- command
-		return []byte{}, 0, nil
-
-	default: // Noop.
+		responses = append(responses, []byte{IAC, WONT, command[2]})
+		return true, responses
 	}
 
 	if len(command) < 5 {
-		return command, 0, nil
+		return false, nil
 	}
 
 	if bytes.Equal(command[:2], []byte{IAC, SB}) {
 		if bytes.Equal(command[len(command)-2:], []byte{IAC, SE}) {
-			client.commands <- command
-			return []byte{}, 0, nil
+			return true, nil
 		}
 	}
 
-	return command, 0, nil
+	return false, nil
 }
