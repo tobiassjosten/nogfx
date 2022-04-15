@@ -92,6 +92,20 @@ func TestApplyANSI(t *testing.T) {
 			ansi: 27,
 			out:  (tcell.Style{}).Attributes(tcell.AttrBlink),
 		},
+		{
+			in:   tcell.Style{},
+			ansi: 91,
+			out: (tcell.Style{}).
+				Foreground(tcell.ColorRed).
+				Attributes(tcell.AttrBold),
+		},
+		{
+			in:   tcell.Style{},
+			ansi: 102,
+			out: (tcell.Style{}).
+				Background(tcell.ColorGreen).
+				Attributes(tcell.AttrBold),
+		},
 	}
 
 	for i, tc := range tcs {
