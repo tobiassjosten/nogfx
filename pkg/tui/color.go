@@ -1,6 +1,8 @@
 package tui
 
-import "github.com/gdamore/tcell/v2"
+import (
+	"github.com/gdamore/tcell/v2"
+)
 
 var ansiColors = map[int]tcell.Color{
 	0: tcell.ColorBlack,
@@ -14,12 +16,11 @@ var ansiColors = map[int]tcell.Color{
 	9: tcell.ColorDefault,
 }
 
-func applyANSI(style tcell.Style, ansi int) tcell.Style {
+// ApplyANSI modifies a tcell.Style by the given ANSI code.
+func ApplyANSI(style tcell.Style, ansi int) tcell.Style {
 	switch ansi {
 	case 0:
-		return tcell.StyleDefault.
-			Background(tcell.ColorReset).
-			Foreground(tcell.ColorReset)
+		return tcell.Style{}
 
 	case 1:
 		return style.Bold(true)
@@ -57,16 +58,22 @@ func applyANSI(style tcell.Style, ansi int) tcell.Style {
 	case 30, 31, 32, 33, 34, 35, 36, 37, 39:
 		return style.Foreground(ansiColors[ansi%10])
 
-	case 90, 91, 92, 93, 94, 95, 96, 97, 99:
-		// @todo Figure out how to make these "high intensity".
-		return style.Foreground(ansiColors[ansi%10])
-
 	case 40, 41, 42, 43, 44, 45, 46, 47, 49:
 		return style.Background(ansiColors[ansi%10])
 
+	case 90, 91, 92, 93, 94, 95, 96, 97, 99:
+		// There might be a better way to represent "high intensity"
+		// colors with tcell but I can't find it.
+		return style.
+			Foreground(ansiColors[ansi%10]).
+			Attributes(tcell.AttrBold)
+
 	case 100, 101, 102, 103, 104, 105, 106, 107, 109:
-		// @todo Figure out how to make these "high intensity".
-		return style.Background(ansiColors[ansi%10])
+		// There might be a better way to represent "high intensity"
+		// colors with tcell but I can't find it.
+		return style.
+			Background(ansiColors[ansi%10]).
+			Attributes(tcell.AttrBold)
 	}
 
 	// @todo Implement 256-color scale: https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit

@@ -12,7 +12,6 @@ var worlds = map[string]func(pkg.UI, pkg.Client) pkg.World{
 
 // NewWorld creates a World specific to the game being played.
 func NewWorld(ui pkg.UI, client pkg.Client, address string) pkg.World {
-	// @todo Make this actually configurable.
 	var world pkg.World = pkg.NewGenericWorld(ui, client)
 	if constructor, ok := worlds[address]; ok {
 		world = constructor(ui, client)

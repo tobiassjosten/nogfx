@@ -66,7 +66,7 @@ func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 			if r == ';' || r == 'm' {
 				ansii, err := strconv.Atoi(string(ansi))
 				if err == nil {
-					style = applyANSI(style, ansii)
+					style = ApplyANSI(style, ansii)
 				}
 
 				ansi = []rune{}
