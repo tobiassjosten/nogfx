@@ -43,6 +43,7 @@ func (world *World) Command(command []byte) error {
 	prefixGMCP := []byte{telnet.IAC, telnet.SB, telnet.GMCP}
 	suffixGMCP := []byte{telnet.IAC, telnet.SE}
 
+	// @todo Remove when we're more confident we've covered everything.
 	if !bytes.HasPrefix(command, prefixGMCP) {
 		world.ui.Print([]byte(fmt.Sprintf(
 			"[Telnet command: %s]",
@@ -83,7 +84,7 @@ func (world *World) Command(command []byte) error {
 		data := command[len(prefixGMCP) : len(command)-len(suffixGMCP)]
 		message, err := gmcp.Parse(data)
 		if err != nil {
-			world.ui.Print([]byte(fmt.Sprintf("[Invalid GMCP: %s]", err)))
+			world.ui.Print([]byte(fmt.Sprintf("[GMCP error: %s]", err)))
 			return nil
 		}
 
