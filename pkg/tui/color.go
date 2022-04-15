@@ -9,6 +9,10 @@ var (
 	inputStyle  = (tcell.Style{}).
 			Foreground(tcell.ColorWhite).
 			Background(tcell.ColorGray)
+	inputtedStyle = (tcell.Style{}).
+			Foreground(tcell.ColorWhite).
+			Background(tcell.ColorGray).
+			Attributes(tcell.AttrDim)
 )
 
 var ansiColors = map[int]tcell.Color{

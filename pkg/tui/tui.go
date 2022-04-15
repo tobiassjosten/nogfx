@@ -7,8 +7,9 @@ import (
 type TUI struct {
 	screen tcell.Screen
 
-	inputting bool
 	input     Text
+	inputting bool
+	inputted  bool
 	inputs    chan []byte
 	inputMask bool
 
