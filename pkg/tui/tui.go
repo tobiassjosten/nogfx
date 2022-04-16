@@ -138,7 +138,4 @@ func (tui *TUI) Draw() {
 	tui.output.Draw(tui.screen)
 
 	tui.screen.Show()
-
-	// @todo Workaround for https://github.com/gdamore/tcell/issues/522.
-	tui.screen.Sync()
 }
