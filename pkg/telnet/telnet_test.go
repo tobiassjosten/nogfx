@@ -85,14 +85,14 @@ func TestReader(t *testing.T) {
 			writer := bytes.NewBuffer([]byte{})
 			stream := &mockStream{reader, writer, tc.writerErr}
 
-			client, commandChan := telnet.NewClient(stream)
+			client := telnet.NewClient(stream)
 
 			var commands [][]byte
-			go func(commandChan <-chan []byte) {
-				for command := range commandChan {
+			go func() {
+				for command := range client.Commands() {
 					commands = append(commands, command)
 				}
-			}(commandChan)
+			}()
 
 			output, err := ioutil.ReadAll(client)
 
@@ -134,14 +134,14 @@ func TestScanner(t *testing.T) {
 			writer := &strings.Builder{}
 			stream := &mockStream{reader, writer, nil}
 
-			client, commandChan := telnet.NewClient(stream)
+			client := telnet.NewClient(stream)
 
 			var commands [][]byte
-			go func(commandChan <-chan []byte) {
-				for command := range commandChan {
+			go func() {
+				for command := range client.Commands() {
 					commands = append(commands, command)
 				}
-			}(commandChan)
+			}()
 
 			scanner := client.Scanner()
 
@@ -187,7 +187,7 @@ func TestWriter(t *testing.T) {
 			writer := &strings.Builder{}
 			stream := &mockStream{reader, writer, nil}
 
-			client, _ := telnet.NewClient(stream)
+			client := telnet.NewClient(stream)
 
 			length, err := client.Write(tc.data)
 

@@ -2,21 +2,16 @@ package pkg
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 )
 
-// Engine is the orchestrator of the entire application, tying together input
-// and output from the different parts.
-type Engine struct {
-	ui     UI
-	client Client
-	world  World
-}
-
 // UI is the primary user interface for the application.
 type UI interface {
-	Run(<-chan []byte, chan<- struct{})
+	Inputs() <-chan []byte
+	Outputs() chan<- []byte
+	Run(context.Context)
 	Print([]byte)
 	MaskInput()
 	UnmaskInput()
@@ -25,6 +20,7 @@ type UI interface {
 // Client is the application's main connection to the game server.
 type Client interface {
 	io.ReadWriter
+	Commands() <-chan []byte
 	Scanner() *bufio.Scanner
 
 	// Telnet utilities.
@@ -35,28 +31,20 @@ type Client interface {
 	Subneg(byte, []byte) error
 }
 
-// NewEngine creates a new Engine based on the given parts.
-func NewEngine(world World, ui UI, client Client) *Engine {
-	return &Engine{
-		ui:     ui,
-		client: client,
-		world:  world,
-	}
-}
+func Run(pctx context.Context, client Client, ui UI, world World) error {
+	ctx, cancel := context.WithCancel(pctx)
 
-// Run is the main loop of the application.
-func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
-	uiOutput := make(chan []byte)
-	uiDone := make(chan struct{})
-
-	go engine.ui.Run(uiOutput, uiDone)
+	go func() {
+		ui.Run(ctx)
+		cancel()
+	}()
 
 	clientOutput := make(chan []byte)
 	clientErr := make(chan error)
 	clientDone := make(chan struct{})
 
 	go func() {
-		scanner := engine.client.Scanner()
+		scanner := client.Scanner()
 
 		for scanner.Scan() {
 			clientOutput <- scanner.Bytes()
@@ -73,19 +61,19 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 
 	for {
 		select {
-		case _ = <-uiDone:
+		case _ = <-ctx.Done():
 			return nil
 
 		case err := <-clientErr:
 			return err
 
 		case _ = <-clientDone:
-			uiOutput <- []byte("server disconnected")
+			ui.Outputs() <- []byte("server disconnected")
 
-		case input := <-inputs:
-			input = engine.world.Input(input)
+		case input := <-ui.Inputs():
+			input = world.Input(input)
 			if len(input) > 0 {
-				_, err := engine.client.Write(append(input, '\r', '\n'))
+				_, err := client.Write(append(input, '\r', '\n'))
 				if err != nil {
 					return fmt.Errorf(
 						"failed sending input: %w", err,
@@ -94,17 +82,17 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 			}
 
 		case output := <-clientOutput:
-			output = engine.world.Output(output)
+			output = world.Output(output)
 			if len(output) > 0 {
-				uiOutput <- output
+				ui.Outputs() <- output
 			}
 
-		case command, ok := <-commands:
+		case command, ok := <-client.Commands():
 			if !ok {
 				continue
 			}
 
-			err := engine.world.Command(command)
+			err := world.Command(command)
 			if err != nil {
 				return fmt.Errorf(
 					"failed processing command '%s': %w",
@@ -113,4 +101,5 @@ func (engine *Engine) Run(inputs <-chan []byte, commands <-chan []byte) error {
 			}
 		}
 	}
+
 }

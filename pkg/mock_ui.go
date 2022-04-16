@@ -4,6 +4,7 @@
 package pkg
 
 import (
+	"context"
 	"sync"
 )
 
@@ -13,45 +14,63 @@ var _ UI = &UIMock{}
 
 // UIMock is a mock implementation of UI.
 //
-//      func TestSomethingThatUsesUI(t *testing.T) {
+// 	func TestSomethingThatUsesUI(t *testing.T) {
 //
-//              // make and configure a mocked UI
-//              mockedUI := &UIMock{
-//                      MaskInputFunc: func()  {
-//                              panic("mock out the MaskInput method")
-//                      },
-//                      PrintFunc: func(bytes []byte)  {
-//                              panic("mock out the Print method")
-//                      },
-//                      RunFunc: func(bytesCh <-chan []byte, valCh chan<- struct{})  {
-//                              panic("mock out the Run method")
-//                      },
-//                      UnmaskInputFunc: func()  {
-//                              panic("mock out the UnmaskInput method")
-//                      },
-//              }
+// 		// make and configure a mocked UI
+// 		mockedUI := &UIMock{
+// 			InputsFunc: func() <-chan []byte {
+// 				panic("mock out the Inputs method")
+// 			},
+// 			MaskInputFunc: func()  {
+// 				panic("mock out the MaskInput method")
+// 			},
+// 			OutputsFunc: func() chan<- []byte {
+// 				panic("mock out the Outputs method")
+// 			},
+// 			PrintFunc: func(bytes []byte)  {
+// 				panic("mock out the Print method")
+// 			},
+// 			RunFunc: func(contextMoqParam context.Context)  {
+// 				panic("mock out the Run method")
+// 			},
+// 			UnmaskInputFunc: func()  {
+// 				panic("mock out the UnmaskInput method")
+// 			},
+// 		}
 //
-//              // use mockedUI in code that requires UI
-//              // and then make assertions.
+// 		// use mockedUI in code that requires UI
+// 		// and then make assertions.
 //
-//      }
+// 	}
 type UIMock struct {
+	// InputsFunc mocks the Inputs method.
+	InputsFunc func() <-chan []byte
+
 	// MaskInputFunc mocks the MaskInput method.
 	MaskInputFunc func()
+
+	// OutputsFunc mocks the Outputs method.
+	OutputsFunc func() chan<- []byte
 
 	// PrintFunc mocks the Print method.
 	PrintFunc func(bytes []byte)
 
 	// RunFunc mocks the Run method.
-	RunFunc func(bytesCh <-chan []byte, valCh chan<- struct{})
+	RunFunc func(contextMoqParam context.Context)
 
 	// UnmaskInputFunc mocks the UnmaskInput method.
 	UnmaskInputFunc func()
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Inputs holds details about calls to the Inputs method.
+		Inputs []struct {
+		}
 		// MaskInput holds details about calls to the MaskInput method.
 		MaskInput []struct {
+		}
+		// Outputs holds details about calls to the Outputs method.
+		Outputs []struct {
 		}
 		// Print holds details about calls to the Print method.
 		Print []struct {
@@ -60,19 +79,45 @@ type UIMock struct {
 		}
 		// Run holds details about calls to the Run method.
 		Run []struct {
-			// BytesCh is the bytesCh argument value.
-			BytesCh <-chan []byte
-			// ValCh is the valCh argument value.
-			ValCh chan<- struct{}
+			// ContextMoqParam is the contextMoqParam argument value.
+			ContextMoqParam context.Context
 		}
 		// UnmaskInput holds details about calls to the UnmaskInput method.
 		UnmaskInput []struct {
 		}
 	}
+	lockInputs      sync.RWMutex
 	lockMaskInput   sync.RWMutex
+	lockOutputs     sync.RWMutex
 	lockPrint       sync.RWMutex
 	lockRun         sync.RWMutex
 	lockUnmaskInput sync.RWMutex
+}
+
+// Inputs calls InputsFunc.
+func (mock *UIMock) Inputs() <-chan []byte {
+	if mock.InputsFunc == nil {
+		panic("UIMock.InputsFunc: method is nil but UI.Inputs was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockInputs.Lock()
+	mock.calls.Inputs = append(mock.calls.Inputs, callInfo)
+	mock.lockInputs.Unlock()
+	return mock.InputsFunc()
+}
+
+// InputsCalls gets all the calls that were made to Inputs.
+// Check the length with:
+//     len(mockedUI.InputsCalls())
+func (mock *UIMock) InputsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockInputs.RLock()
+	calls = mock.calls.Inputs
+	mock.lockInputs.RUnlock()
+	return calls
 }
 
 // MaskInput calls MaskInputFunc.
@@ -98,6 +143,32 @@ func (mock *UIMock) MaskInputCalls() []struct {
 	mock.lockMaskInput.RLock()
 	calls = mock.calls.MaskInput
 	mock.lockMaskInput.RUnlock()
+	return calls
+}
+
+// Outputs calls OutputsFunc.
+func (mock *UIMock) Outputs() chan<- []byte {
+	if mock.OutputsFunc == nil {
+		panic("UIMock.OutputsFunc: method is nil but UI.Outputs was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockOutputs.Lock()
+	mock.calls.Outputs = append(mock.calls.Outputs, callInfo)
+	mock.lockOutputs.Unlock()
+	return mock.OutputsFunc()
+}
+
+// OutputsCalls gets all the calls that were made to Outputs.
+// Check the length with:
+//     len(mockedUI.OutputsCalls())
+func (mock *UIMock) OutputsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockOutputs.RLock()
+	calls = mock.calls.Outputs
+	mock.lockOutputs.RUnlock()
 	return calls
 }
 
@@ -133,33 +204,29 @@ func (mock *UIMock) PrintCalls() []struct {
 }
 
 // Run calls RunFunc.
-func (mock *UIMock) Run(bytesCh <-chan []byte, valCh chan<- struct{}) {
+func (mock *UIMock) Run(contextMoqParam context.Context) {
 	if mock.RunFunc == nil {
 		panic("UIMock.RunFunc: method is nil but UI.Run was just called")
 	}
 	callInfo := struct {
-		BytesCh <-chan []byte
-		ValCh   chan<- struct{}
+		ContextMoqParam context.Context
 	}{
-		BytesCh: bytesCh,
-		ValCh:   valCh,
+		ContextMoqParam: contextMoqParam,
 	}
 	mock.lockRun.Lock()
 	mock.calls.Run = append(mock.calls.Run, callInfo)
 	mock.lockRun.Unlock()
-	mock.RunFunc(bytesCh, valCh)
+	mock.RunFunc(contextMoqParam)
 }
 
 // RunCalls gets all the calls that were made to Run.
 // Check the length with:
 //     len(mockedUI.RunCalls())
 func (mock *UIMock) RunCalls() []struct {
-	BytesCh <-chan []byte
-	ValCh   chan<- struct{}
+	ContextMoqParam context.Context
 } {
 	var calls []struct {
-		BytesCh <-chan []byte
-		ValCh   chan<- struct{}
+		ContextMoqParam context.Context
 	}
 	mock.lockRun.RLock()
 	calls = mock.calls.Run

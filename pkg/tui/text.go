@@ -96,12 +96,3 @@ func (text *Text) Width() int {
 
 	return width
 }
-
-func (text *Text) Bytes() []byte {
-	var runes []rune
-	for _, c := range *text {
-		runes = append(runes, c.Content)
-	}
-
-	return []byte(string(runes))
-}

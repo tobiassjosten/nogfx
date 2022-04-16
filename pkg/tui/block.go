@@ -97,7 +97,7 @@ type DrawOptions struct {
 	Filling Cell
 }
 
-func (block *Block) draw(screen tcell.Screen, opts DrawOptions) {
+func (block *Block) Draw(screen tcell.Screen, opts DrawOptions) {
 	for y, row := range block.Rows {
 		for x, cell := range row {
 			content := cell.Content

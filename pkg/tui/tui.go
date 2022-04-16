@@ -1,154 +1,144 @@
 package tui
 
 import (
+	"context"
+	"fmt"
+	"math"
+
 	"github.com/gdamore/tcell/v2"
 )
 
 type TUI struct {
 	screen tcell.Screen
 
-	input     Text
-	inputting bool
-	inputted  bool
-	inputs    chan []byte
-	inputMask bool
+	width  int
+	height int
 
-	outputs chan []byte
+	input *InputPane
 
-	style tcell.Style
-
-	texts []Text
+	output *OutputPane
 }
 
-func NewTUI() (*TUI, <-chan []byte, error) {
+func NewTUI() (*TUI, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("failed creating screen: %w", err)
 	}
+
+	var (
+		outputStyle = tcell.Style{}
+		inputStyle  = (tcell.Style{}).
+				Foreground(tcell.ColorWhite).
+				Background(tcell.ColorGray)
+		inputtedStyle = (tcell.Style{}).
+				Foreground(tcell.ColorWhite).
+				Background(tcell.ColorGray).
+				Attributes(tcell.AttrDim)
+	)
+
+	tui := &TUI{screen: screen}
+	tui.input = NewInputPane(tui, inputStyle, inputtedStyle)
+	tui.output = NewOutputPane(tui, outputStyle)
+
 	screen.SetStyle(outputStyle)
 	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
 
-	inputs := make(chan []byte)
-
-	tui := &TUI{
-		screen: screen,
-		inputs: inputs,
+	if err := screen.Init(); err != nil {
+		return nil, fmt.Errorf("failed initializing screen: %w", err)
 	}
 
-	if err := tui.screen.Init(); err != nil {
-		return nil, nil, err
-	}
-
-	return tui, inputs, nil
+	return tui, nil
 }
 
-func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
-	tui.draw()
+func (tui *TUI) Inputs() <-chan []byte {
+	return tui.input.inputs
+}
 
-	quit := func() {
-		tui.screen.Fini()
-		done <- struct{}{}
-	}
+func (tui *TUI) Outputs() chan<- []byte {
+	return tui.output.outputs
+}
 
-	inputs := make(chan []byte)
+func (tui *TUI) Run(pctx context.Context) {
+	ctx, cancel := context.WithCancel(pctx)
+
+	tui.Resize(tui.screen.Size())
+
 	go func() {
-		// @todo Replace with individual tcell.EventHandlers.
 		for {
-			switch ev := tui.screen.PollEvent().(type) {
+			event := tui.screen.PollEvent()
+			if event == nil {
+				return
+			}
+
+			switch ev := event.(type) {
 			case *tcell.EventResize:
-				tui.drawSync()
+				tui.Resize(tui.screen.Size())
+				tui.screen.Sync()
 
 			case *tcell.EventKey:
-				if ev.Key() == tcell.KeyCtrlC {
-					quit()
+				if ev.Key() == tcell.KeyCtrlD {
+					cancel()
+					return
 				}
+			}
 
-				input := tui.InteractKey(ev)
-				if len(input) > 0 {
-					inputs <- input
-				}
+			if ok := tui.input.HandleEvent(event); ok {
+				tui.Draw()
 			}
 		}
 	}()
 
 	for {
 		select {
-		case input := <-inputs:
-			tui.inputs <- input
+		case output := <-tui.output.outputs:
+			tui.output.Add(output)
+			tui.Draw()
 
-		case output := <-outputs:
-			text, style := NewText(output, tui.style)
-
-			// @todo Cap tui.texts so it doesn't grow indefinitely.
-
-			tui.texts = append([]Text{text}, tui.texts...)
-			tui.style = style
-
-			tui.draw()
+		case <-ctx.Done():
+			tui.screen.Fini()
+			return
 		}
 	}
 }
 
 func (tui *TUI) Print(output []byte) {
-	text, _ := NewText(output, tcell.Style{})
-	tui.texts = append([]Text{text}, tui.texts...)
-	tui.draw()
+	// @todo Apply default style instead of inheriting whatever's current.
+	tui.output.Add(output)
+	tui.Draw()
 }
 
 func (tui *TUI) MaskInput() {
-	tui.inputMask = true
+	tui.input.masked = true
 }
 
 func (tui *TUI) UnmaskInput() {
-	tui.inputMask = false
+	tui.input.masked = false
 }
 
-func (tui *TUI) draw() {
+func (tui *TUI) Resize(width, height int) {
+	tui.width, tui.height = width, height
+
+	tui.input.width = width
+	tui.input.height = int(math.Min(
+		float64(height),
+		float64(tui.input.Height()),
+	))
+	tui.input.x, tui.input.y = 0, height-tui.input.height
+
+	tui.output.x, tui.output.y = 0, 0
+	tui.output.width, tui.output.height = width, height-tui.input.height
+
+	tui.Draw()
+}
+
+func (tui *TUI) Draw() {
 	tui.screen.Clear()
+
+	tui.input.Draw(tui.screen)
+	tui.output.Draw(tui.screen)
+
+	tui.screen.Show()
 
 	// @todo Workaround for https://github.com/gdamore/tcell/issues/522.
 	tui.screen.Sync()
-
-	width, height := tui.screen.Size()
-
-	inputHeight := 0
-	if tui.inputting {
-		b := NewBlock(tui.input, width)
-		b.draw(tui.screen, DrawOptions{
-			X:       0,
-			Y:       height - b.Height(),
-			Masked:  tui.inputMask,
-			Filling: NewCell(' ', inputStyle),
-		})
-
-		tui.screen.ShowCursor(len(tui.input), height-1)
-
-		inputHeight = b.Height()
-	}
-
-	tui.drawOutput(0, 0, width, height-inputHeight)
-
-	tui.screen.Show()
-}
-
-func (tui *TUI) drawSync() {
-	tui.draw()
-	tui.screen.Sync()
-}
-
-func (tui *TUI) drawOutput(x, y, width, height int) {
-	line := y + height - 1
-
-	// @todo Fixa stöd för att kunna scrolla upp.
-
-	for _, t := range tui.texts {
-		b := NewBlock(t, width)
-		line = line - b.Height() + 1
-		b.draw(tui.screen, DrawOptions{X: x, Y: line})
-
-		line--
-		if line < y {
-			break
-		}
-	}
 }

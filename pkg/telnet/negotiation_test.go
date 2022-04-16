@@ -19,7 +19,7 @@ func TestWillWontDoDont(t *testing.T) {
 	writer := bytes.NewBuffer([]byte{})
 	stream := &mockStream{reader, writer, nil}
 
-	client, _ := telnet.NewClient(stream)
+	client := telnet.NewClient(stream)
 
 	tcs := []struct {
 		verb byte
@@ -89,7 +89,7 @@ func TestSubneg(t *testing.T) {
 			writer := bytes.NewBuffer([]byte{})
 			stream := &mockStream{reader, writer, nil}
 
-			client, _ := telnet.NewClient(stream)
+			client := telnet.NewClient(stream)
 
 			_ = client.Subneg(tc.b, tc.value)
 			assert.Equal(tc.out, writer.Bytes())
@@ -186,14 +186,14 @@ func TestNegotiation(t *testing.T) {
 			builder := &strings.Builder{}
 			stream := &mockStream{bytes.NewReader(output), builder, nil}
 
-			client, commandChan := telnet.NewClient(stream)
+			client := telnet.NewClient(stream)
 
 			var commands [][]byte
-			go func(commandChan <-chan []byte) {
-				for command := range commandChan {
+			go func() {
+				for command := range client.Commands() {
 					commands = append(commands, command)
 				}
-			}(commandChan)
+			}()
 
 			_, err := ioutil.ReadAll(client)
 

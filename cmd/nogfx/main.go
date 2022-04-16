@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net"
@@ -42,7 +43,9 @@ func main() {
 }
 
 func run(mock bool) error {
-	ui, inputs, err := tui.NewTUI()
+	ctx := context.Background()
+
+	ui, err := tui.NewTUI()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,11 +60,9 @@ func run(mock bool) error {
 		}
 	}
 
-	client, commands := telnet.NewClient(connection)
+	client := telnet.NewClient(connection)
 
 	world := NewWorld(ui, client, address)
 
-	engine := pkg.NewEngine(world, ui, client)
-
-	return engine.Run(inputs, commands)
+	return pkg.Run(ctx, client, ui, world)
 }

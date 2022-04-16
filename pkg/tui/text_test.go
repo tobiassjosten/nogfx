@@ -26,7 +26,6 @@ func TestNewText(t *testing.T) {
 
 	tcs := []struct {
 		in       []byte
-		out      []byte
 		width    int
 		text     tui.Text
 		styleIn  tcell.Style
@@ -34,7 +33,6 @@ func TestNewText(t *testing.T) {
 	}{
 		{
 			in:    []byte("xy"),
-			out:   []byte("xy"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'x', baseStyle, 1},
@@ -43,7 +41,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("yx"),
-			out:   []byte("yx"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
@@ -52,7 +49,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("yx"),
-			out:   []byte("yx"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', redStyle, 1},
@@ -63,7 +59,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("y\r\nx"),
-			out:   []byte("y\nx"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
@@ -73,7 +68,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("y\033[32;44mx"),
-			out:   []byte("yx"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', redStyle, 1},
@@ -84,7 +78,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("y\033[34;46mx"),
-			out:   []byte("yx"),
 			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', greenStyle, 1},
@@ -95,7 +88,6 @@ func TestNewText(t *testing.T) {
 		},
 		{
 			in:    []byte("y\033{x"),
-			out:   []byte("y^{x"),
 			width: 4,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
@@ -112,7 +104,6 @@ func TestNewText(t *testing.T) {
 			assert.Equal(tc.text, text)
 			assert.Equal(tc.styleOut, style)
 			assert.Equal(tc.width, text.Width())
-			assert.Equal(tc.out, text.Bytes())
 		})
 	}
 }
