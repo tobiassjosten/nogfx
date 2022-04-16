@@ -26,6 +26,7 @@ func NewTUI() (*TUI, <-chan []byte, error) {
 		return nil, nil, err
 	}
 	screen.SetStyle(outputStyle)
+	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
 
 	inputs := make(chan []byte)
 
@@ -51,6 +52,7 @@ func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
 
 	inputs := make(chan []byte)
 	go func() {
+		// @todo Replace with individual tcell.EventHandlers.
 		for {
 			switch ev := tui.screen.PollEvent().(type) {
 			case *tcell.EventResize:
