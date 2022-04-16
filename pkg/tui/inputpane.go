@@ -304,6 +304,10 @@ func (pane *InputPane) Draw(screen tcell.Screen) {
 		}
 
 		if x+wwidth > pane.x+pane.width || r == '\n' {
+			for x < pane.x+pane.width {
+				screen.SetContent(x, y, ' ', nil, style)
+				x++
+			}
 			x = pane.x
 			y++
 		}
@@ -315,6 +319,10 @@ func (pane *InputPane) Draw(screen tcell.Screen) {
 
 	for i, r := range word {
 		screen.SetContent(x+i, y, r, nil, style)
+	}
+	for x+wwidth < pane.x+pane.width {
+		screen.SetContent(x+wwidth, y, ' ', nil, style)
+		x++
 	}
 
 	screen.ShowCursor(cursorX, cursorY)
