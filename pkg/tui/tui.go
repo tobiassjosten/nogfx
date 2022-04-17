@@ -12,6 +12,8 @@ import (
 type TUI struct {
 	screen tcell.Screen
 
+	inputs chan []byte
+
 	width  int
 	height int
 
@@ -21,12 +23,7 @@ type TUI struct {
 }
 
 // NewTUI creates a new TUI.
-func NewTUI() (*TUI, error) {
-	screen, err := tcell.NewScreen()
-	if err != nil {
-		return nil, fmt.Errorf("failed creating screen: %w", err)
-	}
-
+func NewTUI(screen tcell.Screen) *TUI {
 	var (
 		outputStyle = tcell.Style{}
 		inputStyle  = (tcell.Style{}).
@@ -38,23 +35,22 @@ func NewTUI() (*TUI, error) {
 				Attributes(tcell.AttrDim)
 	)
 
-	tui := &TUI{screen: screen}
-	tui.input = NewInputPane(tui, inputStyle, inputtedStyle)
+	tui := &TUI{
+		screen: screen,
+		inputs: make(chan []byte),
+		input:  NewInputPane(inputStyle, inputtedStyle),
+	}
 	tui.output = NewOutputPane(tui, outputStyle)
 
 	screen.SetStyle(outputStyle)
 	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
 
-	if err := screen.Init(); err != nil {
-		return nil, fmt.Errorf("failed initializing screen: %w", err)
-	}
-
-	return tui, nil
+	return tui
 }
 
 // Inputs exposes the outgoing channel for player input.
 func (tui *TUI) Inputs() <-chan []byte {
-	return tui.input.inputs
+	return tui.inputs
 }
 
 // Outputs exposes the incoming channel for server output.
@@ -63,10 +59,15 @@ func (tui *TUI) Outputs() chan<- []byte {
 }
 
 // Run is the main loop of the user interface, where everything is orchestrated.
-func (tui *TUI) Run(pctx context.Context) {
+func (tui *TUI) Run(pctx context.Context) error {
 	ctx, cancel := context.WithCancel(pctx)
 
-	tui.Resize(tui.screen.Size())
+	if err := tui.screen.Init(); err != nil {
+		cancel()
+		return fmt.Errorf("failed initializing screen: %w", err)
+	}
+
+	// tui.Resize(tui.screen.Size())
 
 	go func() {
 		for {
@@ -77,7 +78,8 @@ func (tui *TUI) Run(pctx context.Context) {
 
 			switch ev := event.(type) {
 			case *tcell.EventResize:
-				tui.Resize(tui.screen.Size())
+				// tui.Resize(tui.screen.Size())
+				tui.Draw()
 				tui.screen.Sync()
 
 			case *tcell.EventKey:
@@ -87,7 +89,10 @@ func (tui *TUI) Run(pctx context.Context) {
 				}
 			}
 
-			if ok := tui.input.HandleEvent(event); ok {
+			if ok, input := tui.input.HandleEvent(event); ok {
+				if input != nil {
+					tui.inputs <- []byte(string(input))
+				}
 				tui.Draw()
 			}
 		}
@@ -101,7 +106,7 @@ func (tui *TUI) Run(pctx context.Context) {
 
 		case <-ctx.Done():
 			tui.screen.Fini()
-			return
+			return nil
 		}
 	}
 }
@@ -115,12 +120,12 @@ func (tui *TUI) Print(output []byte) {
 
 // MaskInput hides the content of the InputPane.
 func (tui *TUI) MaskInput() {
-	tui.input.masked = true
+	tui.input.Mask()
 }
 
 // UnmaskInput shows the content of the InputPane.
 func (tui *TUI) UnmaskInput() {
-	tui.input.masked = false
+	tui.input.Unmask()
 }
 
 // Resize calculates the layout of the various panes.
@@ -137,12 +142,14 @@ func (tui *TUI) Resize(width, height int) {
 	tui.output.x, tui.output.y = 0, 0
 	tui.output.width, tui.output.height = width, height-tui.input.height
 
-	tui.Draw()
+	// tui.Draw()
 }
 
 // Draw updates the terminal and prints the contents of the panes.
 func (tui *TUI) Draw() {
 	tui.screen.Clear()
+
+	tui.Resize(tui.screen.Size())
 
 	tui.input.Draw(tui.screen)
 	tui.output.Draw(tui.screen)

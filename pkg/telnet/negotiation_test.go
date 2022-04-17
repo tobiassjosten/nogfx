@@ -13,8 +13,6 @@ import (
 )
 
 func TestWillWontDoDont(t *testing.T) {
-	assert := assert.New(t)
-
 	reader := bytes.NewReader([]byte{})
 	writer := bytes.NewBuffer([]byte{})
 	stream := &mockStream{reader, writer, nil}
@@ -50,6 +48,8 @@ func TestWillWontDoDont(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			writer.Reset()
 			_ = tc.f(tc.noun)
 			assert.Equal([]byte{telnet.IAC, tc.verb, tc.noun}, writer.Bytes())
@@ -58,8 +58,6 @@ func TestWillWontDoDont(t *testing.T) {
 }
 
 func TestSubneg(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		b     byte
 		value []byte
@@ -85,6 +83,8 @@ func TestSubneg(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			reader := bytes.NewReader([]byte{})
 			writer := bytes.NewBuffer([]byte{})
 			stream := &mockStream{reader, writer, nil}
@@ -98,8 +98,6 @@ func TestSubneg(t *testing.T) {
 }
 
 func TestNegotiation(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		expectDo   byte
 		expectDont byte
@@ -155,6 +153,8 @@ func TestNegotiation(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			output := []byte{}
 			if tc.serverWill > 0 {
 				output = append(output, telnet.IAC, telnet.WILL, tc.serverWill)

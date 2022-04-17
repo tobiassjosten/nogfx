@@ -38,6 +38,7 @@ jobs:
   testing:
     name: Testing
     needs: [linting]
+    timeout-minutes: 2
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

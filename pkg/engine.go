@@ -11,7 +11,7 @@ import (
 type UI interface {
 	Inputs() <-chan []byte
 	Outputs() chan<- []byte
-	Run(context.Context)
+	Run(context.Context) error
 	Print([]byte)
 	MaskInput()
 	UnmaskInput()
@@ -36,7 +36,8 @@ func Run(pctx context.Context, client Client, ui UI, world World) error {
 	ctx, cancel := context.WithCancel(pctx)
 
 	go func() {
-		ui.Run(ctx)
+		// @todo Feed potential errors back so they can be returned.
+		_ = ui.Run(ctx)
 		cancel()
 	}()
 

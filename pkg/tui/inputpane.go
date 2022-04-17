@@ -10,10 +10,6 @@ import (
 
 // InputPane is the pane that takes input and users most often interact with.
 type InputPane struct {
-	tui *TUI
-
-	inputs chan []byte
-
 	x      int
 	y      int
 	width  int
@@ -30,13 +26,22 @@ type InputPane struct {
 }
 
 // NewInputPane creates a new InputPane.
-func NewInputPane(tui *TUI, inputStyle, inputtedStyle tcell.Style) *InputPane {
+func NewInputPane(inputStyle, inputtedStyle tcell.Style) *InputPane {
 	return &InputPane{
-		tui:           tui,
-		inputs:        make(chan []byte),
 		inputStyle:    inputStyle,
 		inputtedStyle: inputtedStyle,
+		input:         []rune{},
 	}
+}
+
+// MaskInput replaces input with stars when printed.
+func (pane *InputPane) Mask() {
+	pane.masked = true
+}
+
+// UnmaskInput shows the actual input when printed.
+func (pane *InputPane) Unmask() {
+	pane.masked = false
 }
 
 // Height is the actual height that a full rendition of InputPane would need,
@@ -70,30 +75,17 @@ func (pane *InputPane) Height() int {
 	return height
 }
 
-// Resize triggers a new layout to be calculated, if needed.
-func (pane *InputPane) Resize() {
-	resize := len(pane.input) >= pane.width && pane.height != pane.Height()
-	resize = resize || pane.height > 1 && len(pane.input) <= pane.width
-	resize = resize || pane.height > 0 && !pane.inputting
-	resize = resize || pane.height == 0 && pane.inputting
-
-	if resize {
-		pane.tui.Resize(pane.tui.screen.Size())
-	}
-}
-
 // HandleEvent reacts on a user event and modifies itself from it.
-func (pane *InputPane) HandleEvent(event tcell.Event) bool {
+func (pane *InputPane) HandleEvent(event tcell.Event) (bool, []rune) {
 	ev, ok := event.(*tcell.EventKey)
 	if !ok {
-		return false
+		return false, nil
 	}
 
 	if !pane.inputting {
 		if ev.Key() == tcell.KeyRune && ev.Rune() == ' ' {
 			pane.inputting = true
-			pane.Resize()
-			return true
+			return true, nil
 		}
 
 		return pane.HandleBinding(ev)
@@ -109,7 +101,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 			pane.input = []rune{}
 			pane.cursor = 0
 			pane.inputted = false
-			return true
+			return true, nil
 
 		case tcell.KeyRune:
 			pane.input = []rune{}
@@ -125,7 +117,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 		case tcell.KeyETB: // opt/elt+backspace
 			fallthrough
 		case tcell.KeyNAK: // cmd/ctrl+backspace
-			return true
+			return true, nil
 		}
 	}
 
@@ -137,8 +129,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 
 	case tcell.KeyESC:
 		pane.inputting = false
-		pane.Resize()
-		return true
+		return true, nil
 
 	case tcell.KeyBackspace, tcell.KeyBackspace2:
 		pane.input = append(
@@ -146,8 +137,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 			pane.input[pane.cursor:]...,
 		)
 		pane.cursor--
-		pane.Resize()
-		return true
+		return true, nil
 
 	case tcell.KeyETB: // opt/elt+backspace
 		delete := false
@@ -158,8 +148,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 					pane.input[pane.cursor:]...,
 				)
 				pane.cursor = i + 1
-				pane.Resize()
-				return true
+				return true, nil
 			}
 			if !delete && pane.input[i] != ' ' {
 				delete = true
@@ -167,26 +156,24 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 		}
 		pane.input = pane.input[pane.cursor:]
 		pane.cursor = 0
-		pane.Resize()
-		return true
+		return true, nil
 
 	case tcell.KeyNAK: // cmd/ctrl+backspace
 		pane.input = pane.input[pane.cursor:]
 		pane.cursor = 0
-		pane.Resize()
-		return true
+		return true, nil
 
 	case tcell.KeyLeft:
 		if pane.cursor > 0 {
 			pane.cursor--
 		}
-		return true
+		return true, nil
 
 	case tcell.KeyRight:
 		if pane.cursor < len(pane.input) {
 			pane.cursor++
 		}
-		return true
+		return true, nil
 
 	case tcell.KeyUp:
 		// Search like fish
@@ -195,24 +182,22 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 		// search
 
 	case tcell.KeyEnter:
-		pane.inputs <- []byte(string(pane.input))
+		input := pane.input
 		if pane.masked {
 			pane.input = []rune{}
 			pane.cursor = 0
-			pane.Resize()
 		} else {
 			pane.inputted = true
 		}
-		return true
+		return true, append(input, '\n')
 
 	case tcell.KeyRune:
 		pane.input = append(pane.input[:pane.cursor], append(
 			[]rune{ev.Rune()}, pane.input[pane.cursor:]...,
 		)...)
 		pane.cursor++
-		pane.Resize()
 
-		return true
+		return true, nil
 
 	default:
 		// @todo Remove this when we're done exploring keys and their
@@ -220,56 +205,47 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 		log.Println(fmt.Sprintf("[Unknown key: '%d']", ev.Key()))
 	}
 
-	return false
+	return false, nil
 }
 
 // HandleBinding reacts to keypress events during normal mode.
-func (pane *InputPane) HandleBinding(ev *tcell.EventKey) bool {
+func (pane *InputPane) HandleBinding(ev *tcell.EventKey) (bool, []rune) {
 	if ev.Key() != tcell.KeyRune {
 		// This guard here doesn't make sense now but it will when we
 		// have non-rune key bindings in the future.
-		return false
+		return false, nil
 	}
 
 	switch ev.Rune() {
 	case '1':
-		pane.inputs <- []byte{'s', 'w'}
-		return true
+		return true, []rune{'s', 'w'}
 
 	case '2':
-		pane.inputs <- []byte{'s'}
-		return true
+		return true, []rune{'s'}
 
 	case '3':
-		pane.inputs <- []byte{'s', 'e'}
-		return true
+		return true, []rune{'s', 'e'}
 
 	case '4':
-		pane.inputs <- []byte{'w'}
-		return true
+		return true, []rune{'w'}
 
 	case '5':
-		pane.inputs <- []byte{'m', 'a', 'p'}
-		return true
+		return true, []rune{'m', 'a', 'p'}
 
 	case '6':
-		pane.inputs <- []byte{'e'}
-		return true
+		return true, []rune{'e'}
 
 	case '7':
-		pane.inputs <- []byte{'n', 'w'}
-		return true
+		return true, []rune{'n', 'w'}
 
 	case '8':
-		pane.inputs <- []byte{'n'}
-		return true
+		return true, []rune{'n'}
 
 	case '9':
-		pane.inputs <- []byte{'n', 'e'}
-		return true
+		return true, []rune{'n', 'e'}
 	}
 
-	return false
+	return false, nil
 }
 
 // Draw prints the contents of the InputPane to the given tcell.Screen.

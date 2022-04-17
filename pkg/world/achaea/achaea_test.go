@@ -29,9 +29,6 @@ func TestWorldBasics(t *testing.T) {
 }
 
 func TestCommands(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	var masked bool
 	var printed []byte
 	ui := &pkg.UIMock{
@@ -107,6 +104,9 @@ func TestCommands(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			printed = []byte{}
 			sent = []byte{}
 

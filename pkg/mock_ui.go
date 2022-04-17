@@ -30,7 +30,7 @@ var _ UI = &UIMock{}
 // 			PrintFunc: func(bytes []byte)  {
 // 				panic("mock out the Print method")
 // 			},
-// 			RunFunc: func(contextMoqParam context.Context)  {
+// 			RunFunc: func(contextMoqParam context.Context) error {
 // 				panic("mock out the Run method")
 // 			},
 // 			UnmaskInputFunc: func()  {
@@ -56,7 +56,7 @@ type UIMock struct {
 	PrintFunc func(bytes []byte)
 
 	// RunFunc mocks the Run method.
-	RunFunc func(contextMoqParam context.Context)
+	RunFunc func(contextMoqParam context.Context) error
 
 	// UnmaskInputFunc mocks the UnmaskInput method.
 	UnmaskInputFunc func()
@@ -204,7 +204,7 @@ func (mock *UIMock) PrintCalls() []struct {
 }
 
 // Run calls RunFunc.
-func (mock *UIMock) Run(contextMoqParam context.Context) {
+func (mock *UIMock) Run(contextMoqParam context.Context) error {
 	if mock.RunFunc == nil {
 		panic("UIMock.RunFunc: method is nil but UI.Run was just called")
 	}
@@ -216,7 +216,7 @@ func (mock *UIMock) Run(contextMoqParam context.Context) {
 	mock.lockRun.Lock()
 	mock.calls.Run = append(mock.calls.Run, callInfo)
 	mock.lockRun.Unlock()
-	mock.RunFunc(contextMoqParam)
+	return mock.RunFunc(contextMoqParam)
 }
 
 // RunCalls gets all the calls that were made to Run.

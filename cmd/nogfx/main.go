@@ -7,11 +7,12 @@ import (
 	"net"
 	"os"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -45,7 +46,12 @@ func main() {
 func run(mock bool) error {
 	ctx := context.Background()
 
-	ui, err := tui.NewTUI()
+	screen, err := tcell.NewScreen()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ui := tui.NewTUI(screen)
 	if err != nil {
 		log.Fatal(err)
 	}

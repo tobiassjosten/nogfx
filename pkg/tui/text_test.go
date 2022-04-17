@@ -11,8 +11,6 @@ import (
 )
 
 func TestNewText(t *testing.T) {
-	assert := assert.New(t)
-
 	baseStyle := tcell.StyleDefault
 	redStyle := baseStyle.
 		Foreground(tcell.ColorRed).
@@ -100,6 +98,8 @@ func TestNewText(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			text, style := tui.NewText(tc.in, tc.styleIn)
 			assert.Equal(tc.text, text)
 			assert.Equal(tc.styleOut, style)

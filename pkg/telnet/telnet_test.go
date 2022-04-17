@@ -32,9 +32,6 @@ func (mock mockStream) Write(p []byte) (int, error) {
 }
 
 func TestReader(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		data      []byte
 		output    []byte
@@ -81,6 +78,9 @@ func TestReader(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			reader := bytes.NewReader(tc.data)
 			writer := bytes.NewBuffer([]byte{})
 			stream := &mockStream{reader, writer, tc.writerErr}
@@ -110,9 +110,6 @@ func TestReader(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		data   []byte
 		output []byte
@@ -130,6 +127,9 @@ func TestScanner(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			reader := bytes.NewReader(tc.data)
 			writer := &strings.Builder{}
 			stream := &mockStream{reader, writer, nil}
@@ -167,9 +167,6 @@ func TestScanner(t *testing.T) {
 }
 
 func TestWriter(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		data   []byte
 		length int
@@ -183,6 +180,9 @@ func TestWriter(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			reader := bytes.NewReader(tc.data)
 			writer := &strings.Builder{}
 			stream := &mockStream{reader, writer, nil}
@@ -204,8 +204,6 @@ func TestWriter(t *testing.T) {
 }
 
 func TestCommandToString(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		command []byte
 		output  string
@@ -238,6 +236,8 @@ func TestCommandToString(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			assert.Equal(tc.output, telnet.CommandToString(tc.command))
 		})
 	}

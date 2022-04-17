@@ -11,8 +11,6 @@ import (
 )
 
 func TestBlockProcessing(t *testing.T) {
-	assert := assert.New(t)
-
 	newText := func(output string) tui.Text {
 		text, _ := tui.NewText([]byte(output), tcell.Style{})
 		return text
@@ -87,6 +85,8 @@ func TestBlockProcessing(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			block := tui.NewBlock(tc.text, tc.width)
 			assert.Equal(tc.width, block.Width())
 			assert.Equal(tc.height, block.Height())
@@ -95,8 +95,6 @@ func TestBlockProcessing(t *testing.T) {
 }
 
 func TestBlockDraw(t *testing.T) {
-	assert := assert.New(t)
-
 	newText := func(output string) tui.Text {
 		text, _ := tui.NewText([]byte(output), tcell.Style{})
 		return text
@@ -155,6 +153,8 @@ func TestBlockDraw(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			block := tui.NewBlock(tc.text, tc.width)
 
 			content := map[int]map[int]rune{}

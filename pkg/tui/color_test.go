@@ -11,8 +11,6 @@ import (
 )
 
 func TestApplyANSI(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		in   tcell.Style
 		ansi int
@@ -110,6 +108,7 @@ func TestApplyANSI(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
 			assert.Equal(tc.out, tui.ApplyANSI(tc.in, tc.ansi))
 		})
 	}

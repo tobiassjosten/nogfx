@@ -12,8 +12,6 @@ import (
 )
 
 func TestCharClientMessages(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		message gmcp.ClientMessage
 		output  string
@@ -26,15 +24,14 @@ func TestCharClientMessages(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			assert.Equal(tc.output, tc.message.String())
 		})
 	}
 }
 
 func TestCharServerMessages(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		command []byte
 		message gmcp.ServerMessage
@@ -204,6 +201,9 @@ func TestCharServerMessages(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			message, err := gmcp.Parse(tc.command)
 
 			if tc.err != "" {
