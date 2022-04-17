@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+// TUI orchestrates different panes to make up the primary user interface.
 type TUI struct {
 	screen tcell.Screen
 
@@ -19,6 +20,7 @@ type TUI struct {
 	output *OutputPane
 }
 
+// NewTUI creates a new TUI.
 func NewTUI() (*TUI, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
@@ -50,14 +52,17 @@ func NewTUI() (*TUI, error) {
 	return tui, nil
 }
 
+// Inputs exposes the outgoing channel for player input.
 func (tui *TUI) Inputs() <-chan []byte {
 	return tui.input.inputs
 }
 
+// Outputs exposes the incoming channel for server output.
 func (tui *TUI) Outputs() chan<- []byte {
 	return tui.output.outputs
 }
 
+// Run is the main loop of the user interface, where everything is orchestrated.
 func (tui *TUI) Run(pctx context.Context) {
 	ctx, cancel := context.WithCancel(pctx)
 
@@ -101,20 +106,24 @@ func (tui *TUI) Run(pctx context.Context) {
 	}
 }
 
+// Print shows a text to the user.
 func (tui *TUI) Print(output []byte) {
 	// @todo Apply default style instead of inheriting whatever's current.
 	tui.output.Add(output)
 	tui.Draw()
 }
 
+// MaskInput hides the content of the InputPane.
 func (tui *TUI) MaskInput() {
 	tui.input.masked = true
 }
 
+// MaskInput shows the content of the InputPane.
 func (tui *TUI) UnmaskInput() {
 	tui.input.masked = false
 }
 
+// Resize calculates the layout of the various panes.
 func (tui *TUI) Resize(width, height int) {
 	tui.width, tui.height = width, height
 
@@ -131,6 +140,7 @@ func (tui *TUI) Resize(width, height int) {
 	tui.Draw()
 }
 
+// Draw updates the terminal and prints the contents of the panes.
 func (tui *TUI) Draw() {
 	tui.screen.Clear()
 

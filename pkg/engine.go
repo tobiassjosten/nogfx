@@ -31,6 +31,7 @@ type Client interface {
 	Subneg(byte, []byte) error
 }
 
+// Run is the main loop of the application, where everything is orchestrated.
 func Run(pctx context.Context, client Client, ui UI, world World) error {
 	ctx, cancel := context.WithCancel(pctx)
 

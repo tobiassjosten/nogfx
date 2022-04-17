@@ -29,6 +29,7 @@ func NewClient(data io.ReadWriter) *Client {
 	return client
 }
 
+// Commands returns the commands channel.
 func (client *Client) Commands() <-chan []byte {
 	return client.commands
 }

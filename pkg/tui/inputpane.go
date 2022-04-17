@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+// InputPane is the pane that takes input and users most often interact with.
 type InputPane struct {
 	tui *TUI
 
@@ -28,6 +29,7 @@ type InputPane struct {
 	cursor    int
 }
 
+// NewInputPane creates a new InputPane.
 func NewInputPane(tui *TUI, inputStyle, inputtedStyle tcell.Style) *InputPane {
 	return &InputPane{
 		tui:           tui,
@@ -68,6 +70,7 @@ func (pane *InputPane) Height() int {
 	return height
 }
 
+// Resize triggers a new layout to be calculated, if needed.
 func (pane *InputPane) Resize() {
 	resize := len(pane.input) >= pane.width && pane.height != pane.Height()
 	resize = resize || pane.height > 1 && len(pane.input) <= pane.width
@@ -79,6 +82,7 @@ func (pane *InputPane) Resize() {
 	}
 }
 
+// HandleEvents reacts on a user event and modifies itself from it.
 func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 	ev, ok := event.(*tcell.EventKey)
 	if !ok {
@@ -219,6 +223,7 @@ func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 	return false
 }
 
+// HandleBinding reacts to keypress events during normal mode.
 func (pane *InputPane) HandleBinding(ev *tcell.EventKey) bool {
 	if ev.Key() != tcell.KeyRune {
 		// This guard here doesn't make sense now but it will when we
@@ -267,6 +272,7 @@ func (pane *InputPane) HandleBinding(ev *tcell.EventKey) bool {
 	return false
 }
 
+// Draw prints the contents of the InputPane to the given tcell.Screen.
 func (pane *InputPane) Draw(screen tcell.Screen) {
 	if !pane.inputting {
 		screen.HideCursor()

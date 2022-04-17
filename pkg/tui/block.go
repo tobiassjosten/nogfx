@@ -7,6 +7,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+// Block is a Text word-wrapped at a specific width.
 type Block struct {
 	width int
 	Rows  []Text
@@ -31,18 +32,22 @@ func (block *Block) rowWidth() int {
 	return rwidth
 }
 
+// Width returns the max width of the Block.
 func (block *Block) Width() int {
 	return block.width
 }
 
+// Height returns the actual height of the Block.
 func (block *Block) Height() int {
 	return len(block.Rows)
 }
 
+// Size returns the Width() and Height() of the Block.
 func (block *Block) Size() (int, int) {
 	return block.Width(), block.Height()
 }
 
+// NewBlock parses a Text and performs word wrapping at the given width.
 func NewBlock(text Text, width int) Block {
 	block := Block{width: width, Rows: []Text{{}}}
 
@@ -90,29 +95,13 @@ func NewBlock(text Text, width int) Block {
 	return block
 }
 
-type DrawOptions struct {
-	X       int
-	Y       int
-	Masked  bool
-	Filling Cell
-}
-
-func (block *Block) Draw(screen tcell.Screen, opts DrawOptions) {
-	for y, row := range block.Rows {
-		for x, cell := range row {
+// Draw prints the contents of the Block to the given tcell.Screen.
+func (block *Block) Draw(screen tcell.Screen, x, y int) {
+	for yy, row := range block.Rows {
+		for xx, cell := range row {
 			content := cell.Content
-			if opts.Masked {
-				content = '*'
-			}
-			screen.SetContent(opts.X+x, opts.Y+y, content, nil, cell.Style)
+			screen.SetContent(x+xx, y+yy, content, nil, cell.Style)
 		}
 
-		if opts.Filling != (Cell{}) && len(row) < block.width {
-			c := opts.Filling
-			diff := block.width - len(row)
-			for x := block.width - diff; x < block.width; x++ {
-				screen.SetContent(opts.X+x, opts.Y+y, c.Content, nil, c.Style)
-			}
-		}
 	}
 }
