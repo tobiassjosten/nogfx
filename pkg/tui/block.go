@@ -4,30 +4,29 @@ import (
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/mattn/go-runewidth"
 )
 
 // Block is a Text word-wrapped at a specific width.
 type Block struct {
 	width int
-	Rows  []Text
+	rows  []Text
 }
 
 func (block *Block) addCell(cell Cell) {
-	block.Rows[len(block.Rows)-1] = append(
-		block.Rows[len(block.Rows)-1],
+	block.rows[len(block.rows)-1] = append(
+		block.rows[len(block.rows)-1],
 		cell,
 	)
 }
 
 func (block *Block) addRow() {
-	block.Rows = append(block.Rows, Text{})
+	block.rows = append(block.rows, Text{})
 }
 
 func (block *Block) rowWidth() int {
 	rwidth := 0
-	for _, r := range block.Rows[len(block.Rows)-1] {
-		rwidth += runewidth.RuneWidth(r.Content)
+	for _, r := range block.rows[len(block.rows)-1] {
+		rwidth += r.Width
 	}
 	return rwidth
 }
@@ -39,51 +38,46 @@ func (block *Block) Width() int {
 
 // Height returns the actual height of the Block.
 func (block *Block) Height() int {
-	return len(block.Rows)
-}
-
-// Size returns the Width() and Height() of the Block.
-func (block *Block) Size() (int, int) {
-	return block.Width(), block.Height()
+	return len(block.rows)
 }
 
 // NewBlock parses a Text and performs word wrapping at the given width.
 func NewBlock(text Text, width int) Block {
-	block := Block{width: width, Rows: []Text{{}}}
+	block := Block{width: width, rows: []Text{}}
+
+	if len(text) == 0 || width == 0 {
+		return block
+	}
+	block.addRow()
 
 	word := Text{}
+	wwidth := 0
 
 	for _, cell := range text {
-		word = append(word, cell)
-		wwidth := word.Width()
-
 		rwidth := block.rowWidth()
 
-		if unicode.IsSpace(cell.Content) {
-			word = word[:len(word)-1]
-			for i := 0; i < len(word); i++ {
-				block.addCell(word[i])
-			}
-
-			word = Text{}
-
-			if cell.Width > 0 {
-				block.addCell(cell)
-			}
-		}
-
-		if (rwidth+wwidth > width && rwidth > wwidth) || cell.Content == '\n' {
+		if rwidth >= width {
 			block.addRow()
+			rwidth = 0
+
+			if cell.Content == '\n' {
+				continue
+			}
 		}
 
-		if rwidth+wwidth > width && rwidth <= wwidth {
-			word = word[:len(word)-1]
-			for i := 0; i < len(word); i++ {
-				block.addCell(word[i])
+		word = append(word, cell)
+		wwidth += cell.Width
+
+		if unicode.IsSpace(cell.Content) || wwidth >= width {
+			for _, c := range word {
+				block.addCell(c)
 			}
 
 			word = Text{}
+			wwidth = 0
+		}
 
+		if rwidth+wwidth > width || cell.Content == '\n' {
 			block.addRow()
 		}
 	}
@@ -97,7 +91,7 @@ func NewBlock(text Text, width int) Block {
 
 // Draw prints the contents of the Block to the given tcell.Screen.
 func (block *Block) Draw(screen tcell.Screen, x, y int) {
-	for yy, row := range block.Rows {
+	for yy, row := range block.rows {
 		for xx, cell := range row {
 			content := cell.Content
 			screen.SetContent(x+xx, y+yy, content, nil, cell.Style)

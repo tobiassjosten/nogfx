@@ -82,7 +82,7 @@ func (pane *InputPane) Resize() {
 	}
 }
 
-// HandleEvents reacts on a user event and modifies itself from it.
+// HandleEvent reacts on a user event and modifies itself from it.
 func (pane *InputPane) HandleEvent(event tcell.Event) bool {
 	ev, ok := event.(*tcell.EventKey)
 	if !ok {

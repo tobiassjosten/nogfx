@@ -118,7 +118,7 @@ func (tui *TUI) MaskInput() {
 	tui.input.masked = true
 }
 
-// MaskInput shows the content of the InputPane.
+// UnmaskInput shows the content of the InputPane.
 func (tui *TUI) UnmaskInput() {
 	tui.input.masked = false
 }
