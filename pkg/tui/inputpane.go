@@ -267,7 +267,7 @@ func (pane *InputPane) handleRuneNormal(r rune) (bool, []rune) {
 	return false, nil
 }
 
-// handleevent reacts on a user event and modifies itself from it.
+// HandleEvent reacts on a user event and modifies itself from it.
 func (pane *InputPane) HandleEvent(event *tcell.EventKey) (bool, []rune) {
 	alts := []int{}
 
