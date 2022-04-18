@@ -23,24 +23,17 @@ type TUI struct {
 }
 
 // NewTUI creates a new TUI.
-func NewTUI(screen tcell.Screen) *TUI {
+func NewTUI(screen tcell.Screen, input *InputPane, output *OutputPane) *TUI {
 	var (
 		outputStyle = tcell.Style{}
-		inputStyle  = (tcell.Style{}).
-				Foreground(tcell.ColorWhite).
-				Background(tcell.ColorGray)
-		inputtedStyle = (tcell.Style{}).
-				Foreground(tcell.ColorWhite).
-				Background(tcell.ColorGray).
-				Attributes(tcell.AttrDim)
 	)
 
 	tui := &TUI{
 		screen: screen,
 		inputs: make(chan []byte),
-		input:  NewInputPane(inputStyle, inputtedStyle),
+		input:  input,
+		output: output,
 	}
-	tui.output = NewOutputPane(tui, outputStyle)
 
 	screen.SetStyle(outputStyle)
 	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
@@ -137,8 +130,7 @@ func (tui *TUI) Resize(width, height int) {
 	inputX, inputY := 0, height-inputHeight
 	tui.input.Position(inputX, inputY, inputWidth, inputHeight)
 
-	tui.output.x, tui.output.y = 0, 0
-	tui.output.width, tui.output.height = width, height-inputHeight
+	tui.output.Position(0, 0, width, height-inputHeight)
 }
 
 // Draw updates the terminal and prints the contents of the panes.

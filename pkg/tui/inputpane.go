@@ -24,7 +24,17 @@ type InputPane struct {
 }
 
 // NewInputPane creates a new InputPane.
-func NewInputPane(inputStyle, inputtedStyle tcell.Style) *InputPane {
+func NewInputPane() *InputPane {
+	var (
+		inputStyle = (tcell.Style{}).
+				Foreground(tcell.ColorWhite).
+				Background(tcell.ColorGray)
+		inputtedStyle = (tcell.Style{}).
+				Foreground(tcell.ColorWhite).
+				Background(tcell.ColorGray).
+				Attributes(tcell.AttrDim)
+	)
+
 	return &InputPane{
 		inputStyle:    inputStyle,
 		inputtedStyle: inputtedStyle,
@@ -32,7 +42,7 @@ func NewInputPane(inputStyle, inputtedStyle tcell.Style) *InputPane {
 	}
 }
 
-// Position sets the x.y coordinates for and resizes the InputPane.
+// Position sets the x.y coordinates for and resizes the pane.
 func (pane *InputPane) Position(x, y, width, height int) {
 	pane.x, pane.y = x, y
 	pane.width, pane.height = width, height

@@ -4,8 +4,6 @@ import "github.com/gdamore/tcell/v2"
 
 // OutputPane is the pane where primary game output is shown.
 type OutputPane struct {
-	tui *TUI
-
 	outputs chan []byte
 
 	x      int
@@ -19,12 +17,21 @@ type OutputPane struct {
 }
 
 // NewOutputPane creates a new OutputPane.
-func NewOutputPane(tui *TUI, style tcell.Style) *OutputPane {
+func NewOutputPane() *OutputPane {
+	var (
+		outputStyle = tcell.Style{}
+	)
+
 	return &OutputPane{
-		tui:         tui,
 		outputs:     make(chan []byte),
-		outputStyle: style,
+		outputStyle: outputStyle,
 	}
+}
+
+// Position sets the x.y coordinates for and resizes the pane.
+func (pane *OutputPane) Position(x, y, width, height int) {
+	pane.x, pane.y = x, y
+	pane.width, pane.height = width, height
 }
 
 // Add appends new paragraphs of text to be show to the user.

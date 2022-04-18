@@ -51,7 +51,7 @@ func run(mock bool) error {
 		log.Fatal(err)
 	}
 
-	ui := tui.NewTUI(screen)
+	ui := tui.NewTUI(screen, tui.NewInputPane(), tui.NewOutputPane())
 	if err != nil {
 		log.Fatal(err)
 	}

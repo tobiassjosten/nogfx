@@ -370,7 +370,7 @@ func TestInput(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/case %d", group, i), func(t *testing.T) {
 				assert := assert.New(t)
 
-				pane := tui.NewInputPane(tcell.Style{}, tcell.Style{})
+				pane := tui.NewInputPane()
 
 				if tc.masked {
 					pane.Mask()
@@ -551,7 +551,7 @@ func TestInputDraw(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			assert := assert.New(t)
 
-			pane := tui.NewInputPane(tcell.Style{}, tcell.Style{})
+			pane := tui.NewInputPane()
 			pane.Position(tc.pos[0], tc.pos[1], tc.pos[2], tc.pos[3])
 
 			if tc.masked {
