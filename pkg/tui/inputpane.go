@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"fmt"
-	"log"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
@@ -34,12 +32,18 @@ func NewInputPane(inputStyle, inputtedStyle tcell.Style) *InputPane {
 	}
 }
 
-// MaskInput replaces input with stars when printed.
+// Position sets the x.y coordinates for and resizes the InputPane.
+func (pane *InputPane) Position(x, y, width, height int) {
+	pane.x, pane.y = x, y
+	pane.width, pane.height = width, height
+}
+
+// Mask replaces input with stars when printed.
 func (pane *InputPane) Mask() {
 	pane.masked = true
 }
 
-// UnmaskInput shows the actual input when printed.
+// Unmask shows the actual input when printed.
 func (pane *InputPane) Unmask() {
 	pane.masked = false
 }
@@ -55,24 +59,39 @@ func (pane *InputPane) Height() int {
 
 	word := []rune{}
 	wwidth := 0
+	isword := false
 
 	for _, r := range pane.input {
+		if !isword && r != ' ' {
+			isword = true
+		}
+
 		word = append(word, r)
 		wwidth++
 
-		if unicode.IsSpace(r) || wwidth >= pane.width {
+		if (isword && unicode.IsSpace(r)) || wwidth >= pane.width {
 			x += wwidth
 			word = []rune{}
 			wwidth = 0
+			isword = false
 		}
 
-		if x+wwidth > pane.x+pane.width || r == '\n' {
+		if x+wwidth > pane.x+pane.width {
 			x = pane.x
 			height++
+
+			// Swallow a space if it comes right after wrapping.
+			if len(word) == 1 && word[0] == ' ' {
+				word = []rune{}
+				wwidth = 0
+				isword = false
+			}
 		}
 	}
 
 	return height
+
+	// @todo Replace this and Draw with one uniform way of painting.
 }
 
 // HandleEvent reacts on a user event and modifies itself from it.
@@ -198,11 +217,6 @@ func (pane *InputPane) HandleEvent(event tcell.Event) (bool, []rune) {
 		pane.cursor++
 
 		return true, nil
-
-	default:
-		// @todo Remove this when we're done exploring keys and their
-		// mappings.
-		log.Println(fmt.Sprintf("[Unknown key: '%d']", ev.Key()))
 	}
 
 	return false, nil
@@ -266,16 +280,20 @@ func (pane *InputPane) Draw(screen tcell.Screen) {
 
 	word := []rune{}
 	wwidth := 0
+	isword := false
 
 	for i, r := range pane.input {
 		if pane.masked {
 			r = '*'
 		}
+		if !isword && r != ' ' {
+			isword = true
+		}
 
 		word = append(word, r)
 		wwidth++
 
-		if unicode.IsSpace(r) || wwidth >= pane.width {
+		if (isword && unicode.IsSpace(r)) || wwidth >= pane.width {
 			for i, r := range word {
 				screen.SetContent(x+i, y, r, nil, style)
 			}
@@ -283,15 +301,23 @@ func (pane *InputPane) Draw(screen tcell.Screen) {
 			x += wwidth
 			word = []rune{}
 			wwidth = 0
+			isword = false
 		}
 
-		if x+wwidth > pane.x+pane.width || r == '\n' {
+		if x+wwidth > pane.x+pane.width {
 			for x < pane.x+pane.width {
 				screen.SetContent(x, y, ' ', nil, style)
 				x++
 			}
 			x = pane.x
 			y++
+
+			// Swallow a space if it comes right after wrapping.
+			if len(word) == 1 && word[0] == ' ' {
+				word = []rune{}
+				wwidth = 0
+				isword = false
+			}
 		}
 
 		if i+1 == pane.cursor {

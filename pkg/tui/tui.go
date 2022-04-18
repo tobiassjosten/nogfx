@@ -67,8 +67,6 @@ func (tui *TUI) Run(pctx context.Context) error {
 		return fmt.Errorf("failed initializing screen: %w", err)
 	}
 
-	// tui.Resize(tui.screen.Size())
-
 	go func() {
 		for {
 			event := tui.screen.PollEvent()
@@ -78,7 +76,6 @@ func (tui *TUI) Run(pctx context.Context) error {
 
 			switch ev := event.(type) {
 			case *tcell.EventResize:
-				// tui.Resize(tui.screen.Size())
 				tui.Draw()
 				tui.screen.Sync()
 
@@ -132,17 +129,16 @@ func (tui *TUI) UnmaskInput() {
 func (tui *TUI) Resize(width, height int) {
 	tui.width, tui.height = width, height
 
-	tui.input.width = width
-	tui.input.height = int(math.Min(
+	inputWidth := width
+	inputHeight := int(math.Min(
 		float64(height),
 		float64(tui.input.Height()),
 	))
-	tui.input.x, tui.input.y = 0, height-tui.input.height
+	inputX, inputY := 0, height-inputHeight
+	tui.input.Position(inputX, inputY, inputWidth, inputHeight)
 
 	tui.output.x, tui.output.y = 0, 0
-	tui.output.width, tui.output.height = width, height-tui.input.height
-
-	// tui.Draw()
+	tui.output.width, tui.output.height = width, height-inputHeight
 }
 
 // Draw updates the terminal and prints the contents of the panes.
