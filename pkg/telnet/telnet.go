@@ -17,7 +17,7 @@ type Client struct {
 }
 
 // NewClient wraps a given reader and returns a new Client.
-func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
+func NewClient(data io.ReadWriter) *Client {
 	commands := make(chan []byte)
 
 	client := &Client{
@@ -26,7 +26,12 @@ func NewClient(data io.ReadWriter) (*Client, <-chan []byte) {
 		commands: commands,
 	}
 
-	return client, commands
+	return client
+}
+
+// Commands returns the commands channel.
+func (client *Client) Commands() <-chan []byte {
+	return client.commands
 }
 
 // Scanner creates a bufio.Scanner to abstract some low-level reading.

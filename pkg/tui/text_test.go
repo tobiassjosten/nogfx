@@ -11,8 +11,6 @@ import (
 )
 
 func TestNewText(t *testing.T) {
-	assert := assert.New(t)
-
 	baseStyle := tcell.StyleDefault
 	redStyle := baseStyle.
 		Foreground(tcell.ColorRed).
@@ -25,82 +23,84 @@ func TestNewText(t *testing.T) {
 		Background(tcell.ColorTeal)
 
 	tcs := []struct {
-		output   []byte
-		text     tui.Text
+		in       []byte
 		width    int
+		text     tui.Text
 		styleIn  tcell.Style
 		styleOut tcell.Style
 	}{
 		{
-			output: []byte("xy"),
+			in:    []byte("xy"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'x', baseStyle, 1},
 				tui.Cell{'y', baseStyle, 1},
 			},
-			width: 2,
 		},
 		{
-			output: []byte("yx"),
+			in:    []byte("yx"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
 				tui.Cell{'x', baseStyle, 1},
 			},
-			width: 2,
 		},
 		{
-			output: []byte("yx"),
+			in:    []byte("yx"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', redStyle, 1},
 			},
-			width:    2,
 			styleIn:  redStyle,
 			styleOut: redStyle,
 		},
 		{
-			output: []byte("y\r\nx"),
+			in:    []byte("y\r\nx"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
 				tui.Cell{'\n', baseStyle, 0},
 				tui.Cell{'x', baseStyle, 1},
 			},
-			width: 2,
 		},
 		{
-			output: []byte("y\033[32;44mx"),
+			in:    []byte("y\033[32;44mx"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', greenStyle, 1},
 			},
-			width:    2,
 			styleIn:  redStyle,
 			styleOut: greenStyle,
 		},
 		{
-			output: []byte("y\033[34;46mx"),
+			in:    []byte("y\033[34;46mx"),
+			width: 2,
 			text: tui.Text{
 				tui.Cell{'y', greenStyle, 1},
 				tui.Cell{'x', blueStyle, 1},
 			},
-			width:    2,
 			styleIn:  greenStyle,
 			styleOut: blueStyle,
 		},
 		{
-			output: []byte("y\033{x"),
+			in:    []byte("y\033{x"),
+			width: 4,
 			text: tui.Text{
 				tui.Cell{'y', baseStyle, 1},
 				tui.Cell{'^', baseStyle, 1},
 				tui.Cell{'{', baseStyle, 1},
 				tui.Cell{'x', baseStyle, 1},
 			},
-			width: 4,
 		},
 	}
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			text, style := tui.NewText(tc.output, tc.styleIn)
+			assert := assert.New(t)
+
+			text, style := tui.NewText(tc.in, tc.styleIn)
 			assert.Equal(tc.text, text)
 			assert.Equal(tc.styleOut, style)
 			assert.Equal(tc.width, text.Width())

@@ -220,6 +220,7 @@ type CharVitalsStats struct {
 	Kai      *int    // Monk.
 	Spec     *string // Infernal, Paladin, Runewarden.
 	Stance   *string // Bard, Blademaster, Monk.
+	Karma    *int
 
 	// @todo Implement the one following (first checking keys in game).
 	// Channels // Magi.
@@ -279,6 +280,13 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
 			stats.Kai = gox.NewInt(value)
+
+		case "Karma":
+			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
+			if err != nil {
+				return fmt.Errorf("invalid charstat '%s'", item)
+			}
+			stats.Karma = gox.NewInt(value)
 
 		case "Spec":
 			stats.Spec = gox.NewString(parts[1])

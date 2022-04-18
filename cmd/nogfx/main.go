@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
 
-	"github.com/urfave/cli/v2"
-
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -42,7 +44,14 @@ func main() {
 }
 
 func run(mock bool) error {
-	ui, inputs, err := tui.NewTUI()
+	ctx := context.Background()
+
+	screen, err := tcell.NewScreen()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ui := tui.NewTUI(screen, tui.NewInputPane(), tui.NewOutputPane())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,11 +66,9 @@ func run(mock bool) error {
 		}
 	}
 
-	client, commands := telnet.NewClient(connection)
+	client := telnet.NewClient(connection)
 
 	world := NewWorld(ui, client, address)
 
-	engine := pkg.NewEngine(world, ui, client)
-
-	return engine.Run(inputs, commands)
+	return pkg.Run(ctx, client, ui, world)
 }

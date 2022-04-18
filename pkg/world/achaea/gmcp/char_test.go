@@ -12,8 +12,6 @@ import (
 )
 
 func TestCharClientMessages(t *testing.T) {
-	assert := assert.New(t)
-
 	tcs := []struct {
 		message gmcp.ClientMessage
 		output  string
@@ -26,15 +24,14 @@ func TestCharClientMessages(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+
 			assert.Equal(tc.output, tc.message.String())
 		})
 	}
 }
 
 func TestCharServerMessages(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		command []byte
 		message gmcp.ServerMessage
@@ -160,6 +157,14 @@ func TestCharServerMessages(t *testing.T) {
 			err:     "invalid charstat 'Kai: 1'",
 		},
 		{
+			command: []byte(`Char.Vitals { "charstats": [ "Karma: invalid" ] }`),
+			err:     "invalid charstat 'Karma: invalid'",
+		},
+		{
+			command: []byte(`Char.Vitals { "charstats": [ "Karma: 1" ] }`),
+			err:     "invalid charstat 'Karma: 1'",
+		},
+		{
 			command: []byte(`Char.Vitals { "charstats": [ "Stance: None" ] }`),
 			message: gmcp.CharVitals{
 				Stats: gmcp.CharVitalsStats{Stance: nil},
@@ -196,6 +201,9 @@ func TestCharServerMessages(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			message, err := gmcp.Parse(tc.command)
 
 			if tc.err != "" {

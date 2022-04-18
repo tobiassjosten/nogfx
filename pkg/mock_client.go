@@ -18,6 +18,9 @@ var _ Client = &ClientMock{}
 //
 // 		// make and configure a mocked Client
 // 		mockedClient := &ClientMock{
+// 			CommandsFunc: func() <-chan []byte {
+// 				panic("mock out the Commands method")
+// 			},
 // 			DoFunc: func(v byte) error {
 // 				panic("mock out the Do method")
 // 			},
@@ -49,6 +52,9 @@ var _ Client = &ClientMock{}
 //
 // 	}
 type ClientMock struct {
+	// CommandsFunc mocks the Commands method.
+	CommandsFunc func() <-chan []byte
+
 	// DoFunc mocks the Do method.
 	DoFunc func(v byte) error
 
@@ -75,6 +81,9 @@ type ClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Commands holds details about calls to the Commands method.
+		Commands []struct {
+		}
 		// Do holds details about calls to the Do method.
 		Do []struct {
 			// V is the v argument value.
@@ -116,14 +125,41 @@ type ClientMock struct {
 			P []byte
 		}
 	}
-	lockDo      sync.RWMutex
-	lockDont    sync.RWMutex
-	lockRead    sync.RWMutex
-	lockScanner sync.RWMutex
-	lockSubneg  sync.RWMutex
-	lockWill    sync.RWMutex
-	lockWont    sync.RWMutex
-	lockWrite   sync.RWMutex
+	lockCommands sync.RWMutex
+	lockDo       sync.RWMutex
+	lockDont     sync.RWMutex
+	lockRead     sync.RWMutex
+	lockScanner  sync.RWMutex
+	lockSubneg   sync.RWMutex
+	lockWill     sync.RWMutex
+	lockWont     sync.RWMutex
+	lockWrite    sync.RWMutex
+}
+
+// Commands calls CommandsFunc.
+func (mock *ClientMock) Commands() <-chan []byte {
+	if mock.CommandsFunc == nil {
+		panic("ClientMock.CommandsFunc: method is nil but Client.Commands was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockCommands.Lock()
+	mock.calls.Commands = append(mock.calls.Commands, callInfo)
+	mock.lockCommands.Unlock()
+	return mock.CommandsFunc()
+}
+
+// CommandsCalls gets all the calls that were made to Commands.
+// Check the length with:
+//     len(mockedClient.CommandsCalls())
+func (mock *ClientMock) CommandsCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockCommands.RLock()
+	calls = mock.calls.Commands
+	mock.lockCommands.RUnlock()
+	return calls
 }
 
 // Do calls DoFunc.

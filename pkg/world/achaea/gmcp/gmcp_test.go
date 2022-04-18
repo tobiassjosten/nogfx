@@ -11,9 +11,6 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
 	tcs := []struct {
 		command []byte
 		err     error
@@ -26,6 +23,9 @@ func TestParse(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
 			_, err := gmcp.Parse(tc.command)
 
 			if tc.err != nil {

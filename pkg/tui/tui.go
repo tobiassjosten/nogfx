@@ -1,170 +1,90 @@
 package tui
 
 import (
+	"context"
 	"fmt"
-	"strings"
+	"math"
 
 	"github.com/gdamore/tcell/v2"
 )
 
+// TUI orchestrates different panes to make up the primary user interface.
 type TUI struct {
 	screen tcell.Screen
 
-	inputting bool
-	input     []rune
-	inputs    chan []byte
-	inputMask bool
+	inputs chan []byte
 
-	outputs chan []byte
+	width  int
+	height int
 
-	style tcell.Style
+	input *InputPane
 
-	texts []Text
+	output *OutputPane
 }
 
-func NewTUI() (*TUI, <-chan []byte, error) {
-	screen, err := tcell.NewScreen()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	inputs := make(chan []byte)
+// NewTUI creates a new TUI.
+func NewTUI(screen tcell.Screen, input *InputPane, output *OutputPane) *TUI {
+	var (
+		outputStyle = tcell.Style{}
+	)
 
 	tui := &TUI{
 		screen: screen,
-		inputs: inputs,
+		inputs: make(chan []byte),
+		input:  input,
+		output: output,
 	}
 
-	if err := tui.screen.Init(); err != nil {
-		return nil, nil, err
-	}
+	screen.SetStyle(outputStyle)
+	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
 
-	return tui, inputs, nil
+	return tui
 }
 
-func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
-	tui.screen.SetStyle(tui.style)
+// Inputs exposes the outgoing channel for player input.
+func (tui *TUI) Inputs() <-chan []byte {
+	return tui.inputs
+}
 
-	tui.draw()
+// Outputs exposes the incoming channel for server output.
+func (tui *TUI) Outputs() chan<- []byte {
+	return tui.output.outputs
+}
 
-	quit := func() {
-		tui.screen.Fini()
-		done <- struct{}{}
+// Run is the main loop of the user interface, where everything is orchestrated.
+func (tui *TUI) Run(pctx context.Context) error {
+	ctx, cancel := context.WithCancel(pctx)
+
+	if err := tui.screen.Init(); err != nil {
+		cancel()
+		return fmt.Errorf("failed initializing screen: %w", err)
 	}
 
-	inputs := make(chan []byte)
 	go func() {
 		for {
-			switch ev := tui.screen.PollEvent().(type) {
+			event := tui.screen.PollEvent()
+			if event == nil {
+				return
+			}
+
+			switch ev := event.(type) {
 			case *tcell.EventResize:
-				tui.drawSync()
+				tui.Draw()
+				tui.screen.Sync()
 
 			case *tcell.EventKey:
-				switch ev.Key() {
-				case tcell.KeyCtrlC:
-					quit()
+				if ev.Key() == tcell.KeyCtrlD {
+					cancel()
+					return
+				}
+			}
 
-				case tcell.KeyESC:
-					tui.inputting = false
-					tui.screen.HideCursor()
-					tui.draw()
-
-				case tcell.KeyBackspace, tcell.KeyBackspace2:
-					if !tui.inputting {
-						continue
+			if ev, ok := event.(*tcell.EventKey); ok {
+				if ok, input := tui.input.HandleEvent(ev); ok {
+					if input != nil {
+						tui.inputs <- []byte(string(input))
 					}
-
-					if len(tui.input) > 0 {
-						tui.input = tui.input[:len(tui.input)-1]
-						tui.draw()
-					}
-
-				case tcell.KeyETB: // opt/elt+backspace
-					if !tui.inputting {
-						continue
-					}
-
-					deleted := false
-					for i := len(tui.input) - 1; i >= 0; i-- {
-						if tui.input[i] == ' ' {
-							tui.input = tui.input[0:i]
-							deleted = true
-							break
-						}
-					}
-
-					if !deleted {
-						tui.input = []rune{}
-					}
-
-					tui.draw()
-
-				case tcell.KeyNAK: // cmd/ctrl+backspace
-					if !tui.inputting {
-						continue
-					}
-
-					if len(tui.input) > 0 {
-						tui.input = []rune{}
-						tui.draw()
-					}
-
-				case tcell.KeyEnter:
-					if !tui.inputting {
-						continue
-					}
-
-					inputs <- []byte(string(tui.input))
-					tui.input = []rune{}
-					tui.draw()
-
-				case tcell.KeyRune:
-					if !tui.inputting {
-						if ev.Rune() == ' ' {
-							tui.inputting = true
-							tui.draw()
-						}
-
-						if ev.Rune() == '1' {
-							inputs <- []byte{'s', 'w'}
-						}
-						if ev.Rune() == '2' {
-							inputs <- []byte{'s'}
-						}
-						if ev.Rune() == '3' {
-							inputs <- []byte{'s', 'e'}
-						}
-						if ev.Rune() == '4' {
-							inputs <- []byte{'w'}
-						}
-						if ev.Rune() == '5' {
-							inputs <- []byte{'m', 'a', 'p'}
-						}
-						if ev.Rune() == '6' {
-							inputs <- []byte{'e'}
-						}
-						if ev.Rune() == '7' {
-							inputs <- []byte{'n', 'w'}
-						}
-						if ev.Rune() == '8' {
-							inputs <- []byte{'n'}
-						}
-						if ev.Rune() == '9' {
-							inputs <- []byte{'n', 'e'}
-						}
-
-						continue
-					}
-
-					tui.input = append(tui.input, ev.Rune())
-					tui.draw()
-
-				default:
-					// @todo Remove this when we're done
-					// exploring keys and their mappings.
-					tui.Print([]byte(fmt.Sprintf(
-						"[Unknown key pressed: '%d']", ev.Key(),
-					)))
+					tui.Draw()
 				}
 			}
 		}
@@ -172,91 +92,57 @@ func (tui *TUI) Run(outputs <-chan []byte, done chan<- struct{}) {
 
 	for {
 		select {
-		case input := <-inputs:
-			tui.inputs <- input
+		case output := <-tui.output.outputs:
+			tui.output.Add(output)
+			tui.Draw()
 
-		case output := <-outputs:
-			text, style := NewText(output, tui.style)
-
-			tui.texts = append([]Text{text}, tui.texts...)
-			tui.style = style
-
-			tui.draw()
+		case <-ctx.Done():
+			tui.screen.Fini()
+			return nil
 		}
 	}
 }
 
+// Print shows a text to the user.
 func (tui *TUI) Print(output []byte) {
-	text, _ := NewText(output, tcell.Style{})
-	tui.texts = append([]Text{text}, tui.texts...)
-	tui.draw()
+	// @todo Apply default style instead of inheriting whatever's current.
+	tui.output.Add(output)
+	tui.Draw()
 }
 
+// MaskInput hides the content of the InputPane.
 func (tui *TUI) MaskInput() {
-	tui.inputMask = true
+	tui.input.Mask()
 }
 
+// UnmaskInput shows the content of the InputPane.
 func (tui *TUI) UnmaskInput() {
-	tui.inputMask = false
+	tui.input.Unmask()
 }
 
-func (tui *TUI) draw() {
+// Resize calculates the layout of the various panes.
+func (tui *TUI) Resize(width, height int) {
+	tui.width, tui.height = width, height
+
+	inputWidth := width
+	inputHeight := int(math.Min(
+		float64(height),
+		float64(tui.input.Height()),
+	))
+	inputX, inputY := 0, height-inputHeight
+	tui.input.Position(inputX, inputY, inputWidth, inputHeight)
+
+	tui.output.Position(0, 0, width, height-inputHeight)
+}
+
+// Draw updates the terminal and prints the contents of the panes.
+func (tui *TUI) Draw() {
 	tui.screen.Clear()
 
-	width, height := tui.screen.Size()
+	tui.Resize(tui.screen.Size())
 
-	inputHeight := 0
-	if tui.inputting {
-		inputHeight = 1
-		tui.drawInput(0, height-1, width, inputHeight)
-	}
-
-	tui.drawOutput(0, 0, width, height-inputHeight)
+	tui.input.Draw(tui.screen)
+	tui.output.Draw(tui.screen)
 
 	tui.screen.Show()
-}
-
-func (tui *TUI) drawSync() {
-	tui.draw()
-	tui.screen.Sync()
-}
-
-func (tui *TUI) drawOutput(x, y, width, height int) {
-	line := y + height - 1
-
-	// @todo Fixa stöd för att kunna scrolla upp.
-
-	for _, t := range tui.texts {
-		b := NewBlock(t, width)
-		line = line - b.Height() + 1
-		b.draw(tui.screen, x, line)
-
-		line--
-		if line < y {
-			break
-		}
-	}
-}
-
-func (tui *TUI) drawInput(x, y, width, height int) {
-	style := (tcell.Style{}).
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorGray)
-
-	// @todo Fixa stöd för flera rader.
-
-	// @todo Fixa stöd för att hoppa med cursorn.
-
-	// @todo Behåll texten för att lätt kunna repetera.
-
-	input := append(tui.input, []rune(strings.Repeat(" ", width-len(tui.input)))...)
-
-	for i, r := range input {
-		if tui.inputMask && i < len(tui.input) {
-			r = '*'
-		}
-		tui.screen.SetContent(x+i, y, r, nil, style)
-	}
-
-	tui.screen.ShowCursor(x+len(tui.input), y)
 }
