@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"math"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
@@ -23,6 +24,16 @@ type InputPane struct {
 	cursor    int
 }
 
+const (
+	normalMode   = 100_000
+	inputMode    = 200_000
+	inputtedMode = 300_000
+)
+
+var (
+	inputEvents = map[int]func(rune) (bool, []rune){}
+)
+
 // NewInputPane creates a new InputPane.
 func NewInputPane() *InputPane {
 	var (
@@ -35,11 +46,37 @@ func NewInputPane() *InputPane {
 				Attributes(tcell.AttrDim)
 	)
 
-	return &InputPane{
+	pane := &InputPane{
 		inputStyle:    inputStyle,
 		inputtedStyle: inputtedStyle,
 		input:         []rune{},
 	}
+
+	inputEvents = map[int]func(rune) (bool, []rune){
+		int(tcell.KeyRune) + int(' ') + normalMode: pane.handleSpaceNormal,
+		int(tcell.KeyRune) + normalMode:            pane.handleRuneNormal,
+
+		int(tcell.KeyRune) + inputtedMode: pane.handleRuneInputted,
+
+		int(tcell.KeyBackspace) + inputtedMode:  pane.handleBackspaceInputted,
+		int(tcell.KeyBackspace2) + inputtedMode: pane.handleBackspaceInputted,
+		int(tcell.KeyETB) + inputtedMode:        pane.handleBackspaceInputted,
+		int(tcell.KeyNAK) + inputtedMode:        pane.handleBackspaceInputted,
+
+		int(tcell.KeyRune) + inputMode:  pane.handleRuneInput,
+		int(tcell.KeyEnter) + inputMode: pane.handleEnterInput,
+		int(tcell.KeyEsc) + inputMode:   pane.handleEscInput,
+		int(tcell.KeyCtrlC) + inputMode: pane.handleCtrlCInput,
+		int(tcell.KeyLeft) + inputMode:  pane.handleLeftInput,
+		int(tcell.KeyRight) + inputMode: pane.handleRightInput,
+
+		int(tcell.KeyBackspace) + inputMode:  pane.handleBackspaceInput,
+		int(tcell.KeyBackspace2) + inputMode: pane.handleBackspaceInput,
+		int(tcell.KeyETB) + inputMode:        pane.handleOptBackspaceInput,
+		int(tcell.KeyNAK) + inputMode:        pane.handleCmdBackspaceInput,
+	}
+
+	return pane
 }
 
 // Position sets the x.y coordinates for and resizes the pane.
@@ -104,143 +141,101 @@ func (pane *InputPane) Height() int {
 	// @todo Replace this and Draw with one uniform way of painting.
 }
 
-// HandleEvent reacts on a user event and modifies itself from it.
-func (pane *InputPane) HandleEvent(event tcell.Event) (bool, []rune) {
-	ev, ok := event.(*tcell.EventKey)
-	if !ok {
-		return false, nil
-	}
+func (pane *InputPane) handleSpaceNormal(_ rune) (bool, []rune) {
+	pane.inputting = true
+	return true, nil
+}
 
-	if !pane.inputting {
-		if ev.Key() == tcell.KeyRune && ev.Rune() == ' ' {
-			pane.inputting = true
-			return true, nil
-		}
-
-		return pane.HandleBinding(ev)
-	}
-
-	if pane.inputted {
-		switch ev.Key() {
-		case tcell.KeyBackspace, tcell.KeyBackspace2:
-			fallthrough
-		case tcell.KeyETB: // opt/elt+backspace
-			fallthrough
-		case tcell.KeyNAK: // cmd/ctrl+backspace
-			pane.input = []rune{}
-			pane.cursor = 0
-			pane.inputted = false
-			return true, nil
-
-		case tcell.KeyRune:
-			pane.input = []rune{}
-			pane.cursor = 0
-			pane.inputted = false
-		}
-	}
-
-	if len(pane.input) == 0 || pane.cursor == 0 {
-		switch ev.Key() {
-		case tcell.KeyBackspace, tcell.KeyBackspace2:
-			fallthrough
-		case tcell.KeyETB: // opt/elt+backspace
-			fallthrough
-		case tcell.KeyNAK: // cmd/ctrl+backspace
-			return true, nil
-		}
-	}
-
-	switch ev.Key() {
-	case tcell.KeyCtrlC:
-		pane.input = []rune{}
-		pane.cursor = 0
-		fallthrough
-
-	case tcell.KeyESC:
-		pane.inputting = false
-		return true, nil
-
-	case tcell.KeyBackspace, tcell.KeyBackspace2:
-		pane.input = append(
-			pane.input[:pane.cursor-1],
-			pane.input[pane.cursor:]...,
-		)
-		pane.cursor--
-		return true, nil
-
-	case tcell.KeyETB: // opt/elt+backspace
-		delete := false
-		for i := pane.cursor - 1; i > 0; i-- {
-			if delete && pane.input[i] == ' ' {
-				pane.input = append(
-					pane.input[:i+1],
-					pane.input[pane.cursor:]...,
-				)
-				pane.cursor = i + 1
-				return true, nil
-			}
-			if !delete && pane.input[i] != ' ' {
-				delete = true
-			}
-		}
-		pane.input = pane.input[pane.cursor:]
-		pane.cursor = 0
-		return true, nil
-
-	case tcell.KeyNAK: // cmd/ctrl+backspace
-		pane.input = pane.input[pane.cursor:]
-		pane.cursor = 0
-		return true, nil
-
-	case tcell.KeyLeft:
-		if pane.cursor > 0 {
-			pane.cursor--
-		}
-		return true, nil
-
-	case tcell.KeyRight:
-		if pane.cursor < len(pane.input) {
-			pane.cursor++
-		}
-		return true, nil
-
-	case tcell.KeyUp:
-		// Search like fish
-
-	case tcell.KeyDown:
-		// search
-
-	case tcell.KeyEnter:
-		input := pane.input
-		if pane.masked {
-			pane.input = []rune{}
-			pane.cursor = 0
-		} else {
-			pane.inputted = true
-		}
-		return true, append(input, '\n')
-
-	case tcell.KeyRune:
-		pane.input = append(pane.input[:pane.cursor], append(
-			[]rune{ev.Rune()}, pane.input[pane.cursor:]...,
-		)...)
-		pane.cursor++
-
-		return true, nil
-	}
-
+func (pane *InputPane) handleRuneInputted(r rune) (bool, []rune) {
+	_, _ = pane.handleBackspaceInputted(r)
 	return false, nil
 }
 
-// HandleBinding reacts to keypress events during normal mode.
-func (pane *InputPane) HandleBinding(ev *tcell.EventKey) (bool, []rune) {
-	if ev.Key() != tcell.KeyRune {
-		// This guard here doesn't make sense now but it will when we
-		// have non-rune key bindings in the future.
-		return false, nil
-	}
+func (pane *InputPane) handleBackspaceInputted(_ rune) (bool, []rune) {
+	pane.input = []rune{}
+	pane.cursor = 0
+	pane.inputted = false
+	return true, nil
+}
 
-	switch ev.Rune() {
+func (pane *InputPane) handleBackspaceInput(_ rune) (bool, []rune) {
+	cursor := int(math.Max(0, float64(pane.cursor-1)))
+	pane.input = append(
+		pane.input[:cursor],
+		pane.input[pane.cursor:]...,
+	)
+	pane.cursor = cursor
+	return true, nil
+}
+
+func (pane *InputPane) handleOptBackspaceInput(_ rune) (bool, []rune) {
+	delete := false
+	for i := pane.cursor - 1; i > 0; i-- {
+		if delete && pane.input[i] == ' ' {
+			pane.input = append(
+				pane.input[:i+1],
+				pane.input[pane.cursor:]...,
+			)
+			pane.cursor = i + 1
+			return true, nil
+		}
+		if !delete && pane.input[i] != ' ' {
+			delete = true
+		}
+	}
+	pane.input = pane.input[pane.cursor:]
+	pane.cursor = 0
+	return true, nil
+}
+
+func (pane *InputPane) handleCmdBackspaceInput(_ rune) (bool, []rune) {
+	pane.input = pane.input[pane.cursor:]
+	pane.cursor = 0
+	return true, nil
+}
+
+func (pane *InputPane) handleRuneInput(r rune) (bool, []rune) {
+	pane.input = append(pane.input[:pane.cursor], append(
+		[]rune{r}, pane.input[pane.cursor:]...,
+	)...)
+	pane.cursor++
+	return true, nil
+}
+
+func (pane *InputPane) handleEnterInput(_ rune) (bool, []rune) {
+	input := pane.input
+	pane.inputted = true
+	if pane.masked {
+		pane.inputted = false
+		pane.input = []rune{}
+		pane.cursor = 0
+	}
+	return true, append(input, '\n')
+}
+
+func (pane *InputPane) handleEscInput(_ rune) (bool, []rune) {
+	pane.inputting = false
+	return true, nil
+}
+
+func (pane *InputPane) handleCtrlCInput(_ rune) (bool, []rune) {
+	pane.input = []rune{}
+	pane.cursor = 0
+	return pane.handleEscInput(0)
+}
+
+func (pane *InputPane) handleLeftInput(_ rune) (bool, []rune) {
+	pane.cursor = int(math.Max(0, float64(pane.cursor-1)))
+	return true, nil
+}
+
+func (pane *InputPane) handleRightInput(_ rune) (bool, []rune) {
+	pane.cursor = int(math.Min(float64(len(pane.input)), float64(pane.cursor+1)))
+	return true, nil
+}
+
+func (pane *InputPane) handleRuneNormal(r rune) (bool, []rune) {
+	switch r {
 	case '1':
 		return true, []rune{'s', 'w'}
 
@@ -267,6 +262,35 @@ func (pane *InputPane) HandleBinding(ev *tcell.EventKey) (bool, []rune) {
 
 	case '9':
 		return true, []rune{'n', 'e'}
+	}
+
+	return false, nil
+}
+
+// handleevent reacts on a user event and modifies itself from it.
+func (pane *InputPane) HandleEvent(event *tcell.EventKey) (bool, []rune) {
+	alts := []int{}
+
+	if pane.inputting {
+		if pane.inputted {
+			alts = append(alts, int(event.Key())+int(event.Rune())+inputtedMode)
+			alts = append(alts, int(event.Key())+inputtedMode)
+		}
+		alts = append(alts, int(event.Key())+int(event.Rune())+inputMode)
+		alts = append(alts, int(event.Key())+inputMode)
+	} else {
+		alts = append(alts, int(event.Key())+int(event.Rune())+normalMode)
+		alts = append(alts, int(event.Key())+normalMode)
+	}
+	alts = append(alts, int(event.Key())+int(event.Rune()))
+	alts = append(alts, int(event.Key()))
+
+	for _, alt := range alts {
+		if f, ok := inputEvents[alt]; ok {
+			if handled, rs := f(event.Rune()); handled {
+				return true, rs
+			}
+		}
 	}
 
 	return false, nil

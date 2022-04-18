@@ -12,30 +12,24 @@ import (
 )
 
 func TestInput(t *testing.T) {
-	newEventKey := func(key tcell.Key, r rune) tcell.Event {
+	newEventKey := func(key tcell.Key, r rune) *tcell.EventKey {
 		return tcell.NewEventKey(key, r, tcell.ModNone)
 	}
 
 	tcss := map[string][]struct {
 		masked bool
-		events []tcell.Event
+		events []*tcell.EventKey
 		inputs [][]rune
 	}{
 		"invalid": {
 			{
-				events: []tcell.Event{
-					tcell.NewEventResize(1, 1),
-				},
-				inputs: [][]rune{},
-			},
-			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '}'),
 				},
 				inputs: [][]rune{},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyPrint, 0),
 				},
@@ -44,14 +38,14 @@ func TestInput(t *testing.T) {
 		},
 		"normal/input mode": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEnter, 0),
 				},
 				inputs: [][]rune{},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEnter, 0),
@@ -59,14 +53,14 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyEnter, 0),
 				},
 				inputs: [][]rune{{}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEnter, 0),
@@ -76,7 +70,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}, {'s'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEsc, 0),
@@ -85,7 +79,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEsc, 0),
@@ -95,7 +89,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyCtrlC, 0),
@@ -105,7 +99,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -116,7 +110,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a', 's', 'd', 'f'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -132,7 +126,7 @@ func TestInput(t *testing.T) {
 
 		"inputted": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEnter, 0),
@@ -142,7 +136,7 @@ func TestInput(t *testing.T) {
 			},
 			{
 				masked: true,
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyEnter, 0),
@@ -154,7 +148,7 @@ func TestInput(t *testing.T) {
 
 		"backspaces": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -166,7 +160,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a', 's', 'd'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -179,7 +173,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a', 's', ' '}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -191,7 +185,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -207,7 +201,7 @@ func TestInput(t *testing.T) {
 
 		"backspaces from start": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -217,7 +211,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -228,7 +222,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -238,7 +232,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -249,7 +243,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -259,7 +253,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyLeft, 0),
@@ -273,7 +267,7 @@ func TestInput(t *testing.T) {
 
 		"backspaces with inputted": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -284,7 +278,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a', 's'}, {}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -295,7 +289,7 @@ func TestInput(t *testing.T) {
 				inputs: [][]rune{{'a', 's'}, {}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, ' '),
 					newEventKey(tcell.KeyRune, 'a'),
 					newEventKey(tcell.KeyRune, 's'),
@@ -309,55 +303,55 @@ func TestInput(t *testing.T) {
 
 		"bindings": {
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '1'),
 				},
 				inputs: [][]rune{{'s', 'w'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '2'),
 				},
 				inputs: [][]rune{{'s'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '3'),
 				},
 				inputs: [][]rune{{'s', 'e'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '4'),
 				},
 				inputs: [][]rune{{'w'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '5'),
 				},
 				inputs: [][]rune{{'m', 'a', 'p'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '6'),
 				},
 				inputs: [][]rune{{'e'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '7'),
 				},
 				inputs: [][]rune{{'n', 'w'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '8'),
 				},
 				inputs: [][]rune{{'n'}},
 			},
 			{
-				events: []tcell.Event{
+				events: []*tcell.EventKey{
 					newEventKey(tcell.KeyRune, '9'),
 				},
 				inputs: [][]rune{{'n', 'e'}},
@@ -391,13 +385,13 @@ func TestInput(t *testing.T) {
 }
 
 func TestInputDraw(t *testing.T) {
-	newEventKey := func(key tcell.Key, r rune) tcell.Event {
+	newEventKey := func(key tcell.Key, r rune) *tcell.EventKey {
 		return tcell.NewEventKey(key, r, tcell.ModNone)
 	}
 
 	tcs := []struct {
 		pos     []int
-		events  []tcell.Event
+		events  []*tcell.EventKey
 		content map[int]map[int]rune
 		cursor  []int
 		masked  bool
@@ -411,7 +405,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Returning to normal mode gives no output.
 			pos: []int{1, 2, 2, 2},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyEsc, 0),
 			},
@@ -421,7 +415,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Pane is padded with spaces.
 			pos: []int{1, 2, 2, 2},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 				newEventKey(tcell.KeyRune, 'b'),
@@ -439,7 +433,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Hitting enter doesn't change output.
 			pos: []int{1, 2, 2, 2},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 				newEventKey(tcell.KeyRune, 'b'),
@@ -458,7 +452,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Pane position controls output coordinates.
 			pos: []int{2, 1, 2, 2},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 				newEventKey(tcell.KeyRune, 'b'),
@@ -476,7 +470,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Masked mode turns input (bot not padding) into stars.
 			pos: []int{1, 2, 2, 2},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 			},
@@ -494,7 +488,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Words are wrapped to new lines.
 			pos: []int{0, 0, 3, 3},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 				newEventKey(tcell.KeyRune, ' '),
@@ -520,7 +514,7 @@ func TestInputDraw(t *testing.T) {
 		},
 		{ // Line-length words also wrap to new lines.
 			pos: []int{0, 0, 3, 3},
-			events: []tcell.Event{
+			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
 				newEventKey(tcell.KeyRune, 's'),

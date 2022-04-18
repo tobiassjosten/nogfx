@@ -79,11 +79,13 @@ func (tui *TUI) Run(pctx context.Context) error {
 				}
 			}
 
-			if ok, input := tui.input.HandleEvent(event); ok {
-				if input != nil {
-					tui.inputs <- []byte(string(input))
+			if ev, ok := event.(*tcell.EventKey); ok {
+				if ok, input := tui.input.HandleEvent(ev); ok {
+					if input != nil {
+						tui.inputs <- []byte(string(input))
+					}
+					tui.Draw()
 				}
-				tui.Draw()
 			}
 		}
 	}()
