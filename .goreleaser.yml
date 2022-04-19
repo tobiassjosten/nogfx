@@ -5,7 +5,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - darwin
-      - freebsd
       - linux
       - windows
     ldflags:
