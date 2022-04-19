@@ -87,6 +87,8 @@ func (pane *InputPane) Position(x, y, width, height int) {
 
 // Mask replaces input with stars when printed.
 func (pane *InputPane) Mask() {
+	pane.input = []rune{}
+	pane.cursor = 0
 	pane.masked = true
 }
 
@@ -210,7 +212,7 @@ func (pane *InputPane) handleEnterInput(_ rune) (bool, []rune) {
 		pane.input = []rune{}
 		pane.cursor = 0
 	}
-	return true, append(input, '\n')
+	return true, input
 }
 
 func (pane *InputPane) handleEscInput(_ rune) (bool, []rune) {

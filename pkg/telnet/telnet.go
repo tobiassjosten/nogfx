@@ -29,11 +29,6 @@ func NewClient(data io.ReadWriter) *Client {
 	return client
 }
 
-// Commands returns the commands channel.
-func (client *Client) Commands() <-chan []byte {
-	return client.commands
-}
-
 // Scanner creates a bufio.Scanner to abstract some low-level reading.
 func (client *Client) Scanner() *bufio.Scanner {
 	scanner := bufio.NewScanner(client)
@@ -54,11 +49,6 @@ func (client *Client) Scanner() *bufio.Scanner {
 	})
 
 	return scanner
-}
-
-// Write sends data to the server.
-func (client *Client) Write(data []byte) (int, error) {
-	return client.data.Write(data)
 }
 
 // Read parses and returns data received from the server.
@@ -112,6 +102,21 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 	}
 
 	return count, nil
+}
+
+// Write sends data to the server.
+func (client *Client) Write(data []byte) (int, error) {
+	// Telnet specifies <CR><LF> endings, so we make sure we adhere.
+	if len(data) == 0 || data[0] != IAC {
+		data = append(bytes.TrimRight(data, "\r\n"), '\r', '\n')
+	}
+
+	return client.data.Write(data)
+}
+
+// Commands returns the commands channel.
+func (client *Client) Commands() <-chan []byte {
+	return client.commands
 }
 
 // CommandToString creates a string representation of a telnet command sequence.

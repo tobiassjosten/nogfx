@@ -74,28 +74,30 @@ func Run(pctx context.Context, client Client, ui UI, world World) error {
 
 		case input := <-ui.Inputs():
 			input = world.Input(input)
-			if len(input) > 0 {
-				_, err := client.Write(append(input, '\r', '\n'))
-				if err != nil {
-					return fmt.Errorf(
-						"failed sending input: %w", err,
-					)
-				}
+			if input == nil {
+				continue
+			}
+
+			if _, err := client.Write(input); err != nil {
+				return fmt.Errorf(
+					"failed sending input: %w", err,
+				)
 			}
 
 		case output := <-clientOutput:
 			output = world.Output(output)
-			if len(output) > 0 {
-				ui.Outputs() <- output
+			if output == nil {
+				continue
 			}
+
+			ui.Outputs() <- output
 
 		case command, ok := <-client.Commands():
 			if !ok {
 				continue
 			}
 
-			err := world.Command(command)
-			if err != nil {
+			if err := world.Command(command); err != nil {
 				return fmt.Errorf(
 					"failed processing command '%s': %w",
 					command, err,
