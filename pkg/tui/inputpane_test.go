@@ -17,7 +17,6 @@ func TestInput(t *testing.T) {
 	}
 
 	tcss := map[string][]struct {
-		masked bool
 		events []*tcell.EventKey
 		inputs [][]rune
 	}{
@@ -133,16 +132,6 @@ func TestInput(t *testing.T) {
 					newEventKey(tcell.KeyEnter, 0),
 				},
 				inputs: [][]rune{{'a'}, {'a'}},
-			},
-			{
-				masked: true,
-				events: []*tcell.EventKey{
-					newEventKey(tcell.KeyRune, ' '),
-					newEventKey(tcell.KeyRune, 'a'),
-					newEventKey(tcell.KeyEnter, 0),
-					newEventKey(tcell.KeyEnter, 0),
-				},
-				inputs: [][]rune{{'a'}, {}},
 			},
 		},
 
@@ -366,10 +355,6 @@ func TestInput(t *testing.T) {
 
 				pane := tui.NewInputPane()
 
-				if tc.masked {
-					pane.Mask()
-				}
-
 				inputs := [][]rune{}
 				for _, event := range tc.events {
 					handled, input := pane.HandleEvent(event)
@@ -394,7 +379,6 @@ func TestInputDraw(t *testing.T) {
 		events  []*tcell.EventKey
 		content map[int]map[int]rune
 		cursor  []int
-		masked  bool
 		height  int
 	}{
 		{ // Normal mode gives no output.
@@ -468,24 +452,6 @@ func TestInputDraw(t *testing.T) {
 			cursor: []int{4, 1},
 			height: 1,
 		},
-		{ // Masked mode turns input (bot not padding) into stars.
-			pos: []int{1, 2, 2, 2},
-			events: []*tcell.EventKey{
-				newEventKey(tcell.KeyRune, ' '),
-				newEventKey(tcell.KeyRune, 'a'),
-			},
-			content: map[int]map[int]rune{
-				1: map[int]rune{
-					2: '*',
-				},
-				2: map[int]rune{
-					2: ' ',
-				},
-			},
-			cursor: []int{2, 2},
-			masked: true,
-			height: 1,
-		},
 		{ // Words are wrapped to new lines.
 			pos: []int{0, 0, 3, 3},
 			events: []*tcell.EventKey{
@@ -548,10 +514,6 @@ func TestInputDraw(t *testing.T) {
 			pane := tui.NewInputPane()
 			pane.Position(tc.pos[0], tc.pos[1], tc.pos[2], tc.pos[3])
 
-			if tc.masked {
-				pane.Mask()
-			}
-
 			content := map[int]map[int]rune{}
 			cursor := []int{}
 
@@ -581,4 +543,82 @@ func TestInputDraw(t *testing.T) {
 			assert.Equal(tc.cursor, cursor)
 		})
 	}
+}
+
+func TestInputDrawMasked(t *testing.T) {
+	newEventKey := func(key tcell.Key, r rune) *tcell.EventKey {
+		return tcell.NewEventKey(key, r, tcell.ModNone)
+	}
+
+	assert := assert.New(t)
+
+	pane := tui.NewInputPane()
+	pane.Position(0, 0, 2, 2)
+
+	cursor := []int{}
+	content := map[int]map[int]rune{}
+
+	screen := &pkg.ScreenMock{
+		HideCursorFunc: func() {
+			cursor = []int{-1, -1}
+		},
+		SetContentFunc: func(x int, y int, r rune, _ []rune, _ tcell.Style) {
+			if _, ok := content[x]; !ok {
+				content[x] = map[int]rune{}
+			}
+			content[x][y] = r
+		},
+		ShowCursorFunc: func(x, y int) {
+			cursor = []int{x, y}
+		},
+	}
+
+	_, _ = pane.HandleEvent(newEventKey(tcell.KeyRune, ' '))
+	_, _ = pane.HandleEvent(newEventKey(tcell.KeyRune, 'a'))
+
+	pane.Mask()
+
+	pane.Draw(screen)
+
+	// Enabling mask wipes the input.
+	assert.Equal(map[int]map[int]rune{
+		0: map[int]rune{
+			0: ' ',
+		},
+		1: map[int]rune{
+			0: ' ',
+		},
+	}, content)
+	assert.Equal([]int{0, 0}, cursor)
+
+	_, _ = pane.HandleEvent(newEventKey(tcell.KeyRune, 'a'))
+
+	pane.Draw(screen)
+
+	// Typing with mask shows input as stars.
+	assert.Equal(map[int]map[int]rune{
+		0: map[int]rune{
+			0: '*',
+		},
+		1: map[int]rune{
+			0: ' ',
+		},
+	}, content)
+	assert.Equal([]int{1, 0}, cursor)
+
+	_, _ = pane.HandleEvent(newEventKey(tcell.KeyRune, 'a'))
+	_, _ = pane.HandleEvent(newEventKey(tcell.KeyEnter, 0))
+
+	pane.Draw(screen)
+
+	// Hitting enter wipes the input (instead of going into inputted mode).
+	assert.Equal(map[int]map[int]rune{
+		0: map[int]rune{
+			0: ' ',
+		},
+		1: map[int]rune{
+			0: ' ',
+		},
+	}, content)
+	assert.Equal([]int{0, 0}, cursor)
 }
