@@ -1,16 +1,27 @@
-env:
+---
+builds:
+  - dir: cmd/nogfx
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
+    hooks:
+      post:
+        - upx --brute "{{ .Path }}"
 
 brews:
   - name: nogfx
     license: "MIT"
-
     tap:
       owner: tobiassjosten
       name: homebrew-nogfx
       token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
-
-    url_template: "https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-
+    url_template: >-
+      https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}
+      /{{ .ArtifactName }}
     commit_msg_template: "Update brew formula: {{ .ProjectName }} {{ .Tag }}"
     commit_author:
       name: "{{ .Env.GORELEASER_COMMIT_NAME }}"
