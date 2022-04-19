@@ -8,7 +8,6 @@ import (
 	tn "github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
-	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,19 +69,9 @@ func TestCommands(t *testing.T) {
 		sent    []byte
 	}{
 		{
-			command: []byte{tn.IAC, tn.WILL, tn.ECHO},
-			masked:  gox.NewBool(true),
-			printed: []byte("[Telnet command: IAC WILL ECHO]"),
-		},
-		{
-			command: []byte{tn.IAC, tn.WONT, tn.ECHO},
-			masked:  gox.NewBool(false),
-			printed: []byte("[Telnet command: IAC WONT ECHO]"),
-		},
-		{
 			command: []byte{tn.IAC, tn.WILL, tn.GMCP},
 			sent: wrapGMCP([]string{
-				`Core.Hello {"client":"NoGFX","version":"0.0.1"}`,
+				`Core.Hello {"client":"NoGFX","version":"0.0.0"}`,
 				`Core.Supports.Set ["Char 1","Char.Skills 1","Char.Items 1","Comm.Channel 1","Room 1","IRE.Rift 1"]`,
 			}),
 		},

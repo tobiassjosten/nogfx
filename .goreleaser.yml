@@ -8,6 +8,8 @@ builds:
       - freebsd
       - linux
       - windows
+    ldflags:
+      - -s -w -X pkg.Version={{ .Version }}
     hooks:
       post:
         - upx --brute "{{ .Path }}"

@@ -29,34 +29,34 @@ func (msg CoreHello) String() string {
 
 // CoreSupportsSet is a client-sent GMCP message containing packages supported.
 type CoreSupportsSet struct {
-	Char        bool
-	CharSkills  bool
-	CharItems   bool
-	CommChannel bool
-	Room        bool
-	IRERift     bool
+	Char        *int
+	CharSkills  *int
+	CharItems   *int
+	CommChannel *int
+	Room        *int
+	IRERift     *int
 }
 
 // String is the message's string representation.
 func (msg CoreSupportsSet) String() string {
 	list := []string{}
-	if msg.Char {
-		list = append(list, "Char 1")
+	if msg.Char != nil {
+		list = append(list, fmt.Sprintf("Char %d", *msg.Char))
 	}
-	if msg.CharSkills {
-		list = append(list, "Char.Skills 1")
+	if msg.CharSkills != nil {
+		list = append(list, fmt.Sprintf("Char.Skills %d", *msg.CharSkills))
 	}
-	if msg.CharItems {
-		list = append(list, "Char.Items 1")
+	if msg.CharItems != nil {
+		list = append(list, fmt.Sprintf("Char.Items %d", *msg.CharItems))
 	}
-	if msg.CommChannel {
-		list = append(list, "Comm.Channel 1")
+	if msg.CommChannel != nil {
+		list = append(list, fmt.Sprintf("Comm.Channel %d", *msg.CommChannel))
 	}
-	if msg.Room {
-		list = append(list, "Room 1")
+	if msg.Room != nil {
+		list = append(list, fmt.Sprintf("Room %d", *msg.Room))
 	}
-	if msg.IRERift {
-		list = append(list, "IRE.Rift 1")
+	if msg.IRERift != nil {
+		list = append(list, fmt.Sprintf("IRE.Rift %d", *msg.IRERift))
 	}
 
 	data, err := json.Marshal(list)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
@@ -33,8 +34,6 @@ func (world *World) Output(output []byte) []byte {
 	return output
 }
 
-// func(command []byte) (responses [][]byte, error)
-
 func (world *World) Command(command []byte) error {
 	willEcho := []byte{telnet.IAC, telnet.WILL, telnet.ECHO}
 	wontEcho := []byte{telnet.IAC, telnet.WONT, telnet.ECHO}
@@ -42,14 +41,6 @@ func (world *World) Command(command []byte) error {
 	willGMCP := []byte{telnet.IAC, telnet.WILL, telnet.GMCP}
 	prefixGMCP := []byte{telnet.IAC, telnet.SB, telnet.GMCP}
 	suffixGMCP := []byte{telnet.IAC, telnet.SE}
-
-	// @todo Remove when we're more confident we've covered everything.
-	if !bytes.HasPrefix(command, prefixGMCP) {
-		world.ui.Print([]byte(fmt.Sprintf(
-			"[Telnet command: %s]",
-			telnet.CommandToString(command),
-		)))
-	}
 
 	switch {
 	case bytes.Equal(command, willEcho):
@@ -62,19 +53,19 @@ func (world *World) Command(command []byte) error {
 		// @todo Use the actual version number when we have one.
 		err := world.gmcp(gmcp.CoreHello{
 			Client:  "NoGFX",
-			Version: "0.0.1",
+			Version: pkg.Version,
 		})
 		if err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)
 		}
 
 		err = world.gmcp(gmcp.CoreSupportsSet{
-			Char:        true,
-			CharSkills:  true,
-			CharItems:   true,
-			CommChannel: true,
-			Room:        true,
-			IRERift:     true,
+			Char:        gox.NewInt(1),
+			CharSkills:  gox.NewInt(1),
+			CharItems:   gox.NewInt(1),
+			CommChannel: gox.NewInt(1),
+			Room:        gox.NewInt(1),
+			IRERift:     gox.NewInt(1),
 		})
 		if err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)
