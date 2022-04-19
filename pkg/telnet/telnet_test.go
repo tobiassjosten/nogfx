@@ -173,8 +173,8 @@ func TestWriter(t *testing.T) {
 		err    error
 	}{
 		{
-			data:   []byte("xyz\n"),
-			length: 4,
+			data:   []byte("xyz\r\n"),
+			length: 5,
 		},
 	}
 

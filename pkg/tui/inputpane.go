@@ -212,7 +212,7 @@ func (pane *InputPane) handleEnterInput(_ rune) (bool, []rune) {
 		pane.input = []rune{}
 		pane.cursor = 0
 	}
-	return true, append(input, '\n')
+	return true, input
 }
 
 func (pane *InputPane) handleEscInput(_ rune) (bool, []rune) {

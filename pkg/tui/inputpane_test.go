@@ -2,7 +2,6 @@ package tui_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
@@ -358,8 +357,8 @@ func TestInput(t *testing.T) {
 				inputs := [][]rune{}
 				for _, event := range tc.events {
 					handled, input := pane.HandleEvent(event)
-					if handled && len(input) > 0 {
-						inputs = append(inputs, []rune(strings.TrimRight(string(input), "\n")))
+					if handled && input != nil {
+						inputs = append(inputs, input)
 					}
 				}
 
