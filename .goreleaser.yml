@@ -9,9 +9,6 @@ builds:
       - windows
     ldflags:
       - -s -w -X pkg.Version={{ .Version }}
-    hooks:
-      post:
-        - upx "{{ .Path }}"
 
 brews:
   - name: nogfx
