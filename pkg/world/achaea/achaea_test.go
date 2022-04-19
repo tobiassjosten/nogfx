@@ -71,7 +71,7 @@ func TestCommands(t *testing.T) {
 		{
 			command: []byte{tn.IAC, tn.WILL, tn.GMCP},
 			sent: wrapGMCP([]string{
-				`Core.Hello {"client":"NoGFX","version":"0.0.1"}`,
+				`Core.Hello {"client":"NoGFX","version":"0.0.0"}`,
 				`Core.Supports.Set ["Char 1","Char.Skills 1","Char.Items 1","Comm.Channel 1","Room 1","IRE.Rift 1"]`,
 			}),
 		},

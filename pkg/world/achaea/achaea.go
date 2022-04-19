@@ -53,7 +53,7 @@ func (world *World) Command(command []byte) error {
 		// @todo Use the actual version number when we have one.
 		err := world.gmcp(gmcp.CoreHello{
 			Client:  "NoGFX",
-			Version: "0.0.1",
+			Version: pkg.Version,
 		})
 		if err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)
