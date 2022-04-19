@@ -11,7 +11,7 @@ builds:
       - -s -w -X pkg.Version={{ .Version }}
     hooks:
       post:
-        - upx --brute "{{ .Path }}"
+        - upx "{{ .Path }}"
 
 brews:
   - name: nogfx
