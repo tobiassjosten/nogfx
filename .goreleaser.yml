@@ -1,4 +1,8 @@
 ---
+env:
+  GH_URL=https://github.com/tobiassjosten/nogfx
+  GH_DL_PATH=releases/download/{{ .Tag }}/{{ .ArtifactName }}
+
 builds:
   - dir: cmd/nogfx
     env:
@@ -19,7 +23,7 @@ brews:
       owner: tobiassjosten
       name: homebrew-nogfx
       token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
-    url_template: "https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "{{ .Env.GH_URL }}/{{ .Env.GH_DL_PATH }}"
     commit_msg_template: "Update brew formula: {{ .ProjectName }} {{ .Tag }}"
     commit_author:
       name: "{{ .Env.GORELEASER_COMMIT_NAME }}"
