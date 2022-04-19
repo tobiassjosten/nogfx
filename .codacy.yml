@@ -4,4 +4,4 @@ engines:
     exclude_paths:
       - "**/*_test.go"
 exclude_paths:
-    - "**/mock_*.go"
+  - "**/mock_*.go"

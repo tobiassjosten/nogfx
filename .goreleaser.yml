@@ -14,7 +14,7 @@ builds:
       - windows
     hooks:
       post:
-       - upx --brute "{{ .Path }}"
+        - upx --brute "{{ .Path }}"
 
 brews:
   - name: nogfx
