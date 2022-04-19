@@ -35,7 +35,6 @@ jobs:
         with:
           version: latest
           args: -f .goreleaser.yml release --rm-dist
-          workdir: cmd/nogfx
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
