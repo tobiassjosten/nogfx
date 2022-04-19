@@ -50,9 +50,8 @@ func (world *World) Command(command []byte) error {
 		world.ui.UnmaskInput()
 
 	case bytes.Equal(command, willGMCP):
-		// @todo Use the actual version number when we have one.
 		err := world.gmcp(gmcp.CoreHello{
-			Client:  "NoGFX",
+			Client:  "nogfx",
 			Version: pkg.Version,
 		})
 		if err != nil {
@@ -60,12 +59,14 @@ func (world *World) Command(command []byte) error {
 		}
 
 		err = world.gmcp(gmcp.CoreSupportsSet{
-			Char:        gox.NewInt(1),
-			CharSkills:  gox.NewInt(1),
-			CharItems:   gox.NewInt(1),
-			CommChannel: gox.NewInt(1),
-			Room:        gox.NewInt(1),
-			IRERift:     gox.NewInt(1),
+			CoreSupports: gmcp.CoreSupports{
+				Char:        gox.NewInt(1),
+				CharSkills:  gox.NewInt(1),
+				CharItems:   gox.NewInt(1),
+				CommChannel: gox.NewInt(1),
+				Room:        gox.NewInt(1),
+				IRERift:     gox.NewInt(1),
+			},
 		})
 		if err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)

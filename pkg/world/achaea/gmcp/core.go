@@ -6,9 +6,24 @@ import (
 )
 
 var (
+	_ ServerMessage = &CoreGoodbye{}
 	_ ClientMessage = &CoreHello{}
+	_ ClientMessage = &CoreKeepAlive{}
+	_ ClientMessage = &CorePing{}
+	_ ServerMessage = &CorePing{}
 	_ ClientMessage = &CoreSupportsSet{}
+	_ ClientMessage = &CoreSupportsAdd{}
+	_ ClientMessage = &CoreSupportsRemove{}
 )
+
+// CoreGoodbye is a server-sent GMCP message finishing a game session.
+type CoreGoodbye struct {
+}
+
+// Hydrate populates the message with data.
+func (msg CoreGoodbye) Hydrate(_ []byte) (ServerMessage, error) {
+	return msg, nil
+}
 
 // CoreHello is a client-sent GMCP message used to identify the client. It has
 // to be the first message sent.
@@ -19,16 +34,39 @@ type CoreHello struct {
 
 // String is the message's string representation.
 func (msg CoreHello) String() string {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		data = []byte("{}")
-	}
-
+	data, _ := json.Marshal(msg)
 	return fmt.Sprintf("Core.Hello %s", data)
 }
 
-// CoreSupportsSet is a client-sent GMCP message containing packages supported.
-type CoreSupportsSet struct {
+// CoreKeepAlive is a client-sent GMCP message resetting the timeout counter.
+type CoreKeepAlive struct {
+}
+
+// String is the message's string representation.
+func (msg CoreKeepAlive) String() string {
+	return "Core.KeepAlive"
+}
+
+// CorePing is a client- and server-sent GMCP message measuring latency.
+type CorePing struct {
+	Latency *int
+}
+
+// Hydrate populates the message with data.
+func (msg CorePing) Hydrate(_ []byte) (ServerMessage, error) {
+	return msg, nil
+}
+
+// String is the message's string representation.
+func (msg CorePing) String() string {
+	if msg.Latency != nil {
+		return fmt.Sprintf("Core.Ping %d", *msg.Latency)
+	}
+	return "Core.Ping"
+}
+
+// CoreSupports is a list of potentially supported modules.
+type CoreSupports struct {
 	Char        *int
 	CharSkills  *int
 	CharItems   *int
@@ -37,8 +75,7 @@ type CoreSupportsSet struct {
 	IRERift     *int
 }
 
-// String is the message's string representation.
-func (msg CoreSupportsSet) String() string {
+func coreSupportsList(msg CoreSupports) []byte {
 	list := []string{}
 	if msg.Char != nil {
 		list = append(list, fmt.Sprintf("Char %d", *msg.Char))
@@ -64,5 +101,35 @@ func (msg CoreSupportsSet) String() string {
 		data = []byte("[]")
 	}
 
-	return fmt.Sprintf("Core.Supports.Set %s", data)
+	return data
+}
+
+// CoreSupportsSet is a client-sent GMCP message containing supported modules.
+type CoreSupportsSet struct {
+	CoreSupports
+}
+
+// String is the message's string representation.
+func (msg CoreSupportsSet) String() string {
+	return fmt.Sprintf("Core.Supports.Set %s", coreSupportsList(msg.CoreSupports))
+}
+
+// CoreSupportsAdd is a client-sent GMCP message adding supported modules.
+type CoreSupportsAdd struct {
+	CoreSupports
+}
+
+// String is the message's string representation.
+func (msg CoreSupportsAdd) String() string {
+	return fmt.Sprintf("Core.Supports.Add %s", coreSupportsList(msg.CoreSupports))
+}
+
+// CoreSupportsAdd is a client-sent GMCP message removing supported modules.
+type CoreSupportsRemove struct {
+	CoreSupports
+}
+
+// String is the message's string representation.
+func (msg CoreSupportsRemove) String() string {
+	return fmt.Sprintf("Core.Supports.Remove %s", coreSupportsList(msg.CoreSupports))
 }

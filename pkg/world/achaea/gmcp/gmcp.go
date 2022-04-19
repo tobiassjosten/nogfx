@@ -5,11 +5,6 @@ import (
 	"fmt"
 )
 
-// @todo Implement the full set:
-// - https://nexus.ironrealms.com/GMCP
-// - https://nexus.ironrealms.com/GMCP_Data
-// - https://github.com/keneanung/GMCPAdditions
-
 // ClientMessage is a GMCP message sent from the client.
 type ClientMessage interface {
 	String() string
@@ -33,6 +28,12 @@ func Parse(command []byte) (ServerMessage, error) {
 	var hydrator ServerMessage
 
 	switch string(parts[0]) {
+	case "Core.Goodbye":
+		return CoreGoodbye{}, nil
+
+	case "Core.Ping":
+		return CorePing{}, nil
+
 	case "Char.Name":
 		hydrator = CharName{}
 
