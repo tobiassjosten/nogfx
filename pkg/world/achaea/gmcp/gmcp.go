@@ -21,35 +21,34 @@ type ClientServerMessage interface {
 	ServerMessage
 }
 
+var serverMessages = map[string]ServerMessage{
+	"Char.Name":    CharName{},
+	"Char.Status":  CharStatus{},
+	"Char.Vitals":  CharVitals{},
+	"Core.Goodbye": CoreGoodbye{},
+	"Core.Ping":    CorePing{},
+}
+
 // Parse converts a byte slice into a GMCP message.
 func Parse(command []byte) (ServerMessage, error) {
 	parts := bytes.SplitN(command, []byte{' '}, 2)
 
-	var hydrator ServerMessage
-
-	switch string(parts[0]) {
-	case "Core.Goodbye":
-		return CoreGoodbye{}, nil
-
-	case "Core.Ping":
-		return CorePing{}, nil
-
-	case "Char.Name":
-		hydrator = CharName{}
-
-	case "Char.Status":
-		hydrator = CharStatus{}
-
-	case "Char.Vitals":
-		hydrator = CharVitals{}
-
-	default:
+	message, ok := serverMessages[string(parts[0])]
+	if !ok {
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
 
 	if len(parts) == 1 {
-		return nil, fmt.Errorf("missing '%T' data", hydrator)
+		parts = append(parts, []byte{})
 	}
 
-	return hydrator.Hydrate(parts[1])
+	message, err := message.Hydrate(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed hydrating %T (%s): %w",
+			message, parts[1], err,
+		)
+	}
+
+	return message, nil
 }

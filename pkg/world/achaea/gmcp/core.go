@@ -96,10 +96,7 @@ func coreSupportsList(msg CoreSupports) []byte {
 		list = append(list, fmt.Sprintf("IRE.Rift %d", *msg.IRERift))
 	}
 
-	data, err := json.Marshal(list)
-	if err != nil {
-		data = []byte("[]")
-	}
+	data, _ := json.Marshal(list)
 
 	return data
 }
@@ -124,7 +121,7 @@ func (msg CoreSupportsAdd) String() string {
 	return fmt.Sprintf("Core.Supports.Add %s", coreSupportsList(msg.CoreSupports))
 }
 
-// CoreSupportsAdd is a client-sent GMCP message removing supported modules.
+// CoreSupportsRemove is a client-sent GMCP message removing supported modules.
 type CoreSupportsRemove struct {
 	CoreSupports
 }
