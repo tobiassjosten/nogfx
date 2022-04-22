@@ -37,6 +37,7 @@ var (
 	_ ServerMessage = &CharVitals{}
 )
 
+// CharAffliction is an affliction ailing a character.
 type CharAffliction struct {
 	Name        string `json:"name"`
 	Cure        string `json:"cure"`
@@ -91,6 +92,7 @@ func (msg CharAfflictionsRemove) Hydrate(data []byte) (ServerMessage, error) {
 	return msg, nil
 }
 
+// CharDefence is a defence protecting a character.
 type CharDefence struct {
 	Name        string `json:"name"`
 	Cure        string `json:"cure"`
@@ -176,6 +178,8 @@ func (msg CharItemsRoom) String() string {
 	return fmt.Sprintf("Char.Items.Room")
 }
 
+// CharItem is an item within a player's inventory, the current room, or any
+// other container.
 type CharItem struct {
 	ID         string             `json:"id"`
 	Name       string             `json:"name"`
@@ -183,6 +187,7 @@ type CharItem struct {
 	Icon       string             `json:"icon"`
 }
 
+// CharItemAttributes is a set of flags denoting how to interact with an item.
 type CharItemAttributes struct {
 	Container    bool
 	Dangerous    bool

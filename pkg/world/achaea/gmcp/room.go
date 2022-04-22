@@ -15,6 +15,7 @@ var (
 	// _ ServerMessage = &RoomWrongDir{}
 )
 
+// RoomDetails is a set of flags denoting how to interact with a room.
 type RoomDetails struct {
 	Shop bool
 	Bank bool
@@ -124,6 +125,7 @@ func (msg RoomInfo) Hydrate(data []byte) (ServerMessage, error) {
 	return msg, nil
 }
 
+// RoomPlayer is a player joining, exiting in, or leaving a room.
 type RoomPlayer struct {
 	Name     string `json:"name"`
 	Fullname string `json:"fullname"`
