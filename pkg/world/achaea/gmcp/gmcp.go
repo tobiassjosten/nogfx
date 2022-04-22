@@ -3,6 +3,8 @@ package gmcp
 import (
 	"bytes"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // ClientMessage is a GMCP message sent from the client.
@@ -15,18 +17,45 @@ type ServerMessage interface {
 	Hydrate([]byte) (ServerMessage, error)
 }
 
-// ClientServerMessage is a GMCP message sent from both server and client.
-type ClientServerMessage interface {
-	ClientMessage
-	ServerMessage
-}
-
 var serverMessages = map[string]ServerMessage{
-	"Char.Name":    CharName{},
-	"Char.Status":  CharStatus{},
-	"Char.Vitals":  CharVitals{},
+	"Comm.Channel.End":     CommChannelEnd(""),
+	"Comm.Channel.List":    CommChannelList{},
+	"Comm.Channel.Players": CommChannelPlayers{},
+	"Comm.Channel.Start":   CommChannelStart(""),
+	"Comm.Channel.Text":    CommChannelText{},
+
+	"Char.Afflictions.Add":    CharAfflictionsAdd{},
+	"Char.Afflictions.List":   CharAfflictionsList{},
+	"Char.Afflictions.Remove": CharAfflictionsRemove{},
+
+	"Char.Defences.Add":    CharDefencesAdd{},
+	"Char.Defences.List":   CharDefencesList{},
+	"Char.Defences.Remove": CharDefencesRemove{},
+
+	"Char.Items.Add":    CharItemsAdd{},
+	"Char.Items.List":   CharItemsList{},
+	"Char.Items.Remove": CharItemsRemove{},
+	"Char.Items.Update": CharItemsUpdate{},
+
+	"Char.Name": CharName{},
+
+	"Char.Skills.Groups": CharSkillsGroups{},
+	"Char.Skills.Info":   CharSkillsInfo{},
+	"Char.Skills.List":   CharSkillsList{},
+
+	"Char.Status":     CharStatus{},
+	"Char.StatusVars": CharStatusVars{},
+
+	"Char.Vitals": CharVitals{},
+
 	"Core.Goodbye": CoreGoodbye{},
 	"Core.Ping":    CorePing{},
+
+	"Room.Info":         RoomInfo{},
+	"Room.Players":      RoomPlayers{},
+	"Room.AddPlayer":    RoomAddPlayer{},
+	"Room.RemovePlayer": RoomRemovePlayer{},
+	"Room.WrongDir":     RoomWrongDir(""),
 }
 
 // Parse converts a byte slice into a GMCP message.
@@ -42,7 +71,7 @@ func Parse(command []byte) (ServerMessage, error) {
 		parts = append(parts, []byte{})
 	}
 
-	message, err := message.Hydrate(parts[1])
+	msg, err := message.Hydrate(parts[1])
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed hydrating %T (%s): %w",
@@ -50,5 +79,27 @@ func Parse(command []byte) (ServerMessage, error) {
 		)
 	}
 
-	return message, nil
+	return msg, nil
+}
+
+func splitRank(str string) (string, *int) {
+	parts := strings.SplitN(str, "(", 2)
+	name := strings.Trim(parts[0], " ")
+
+	var rank *int
+	if len(parts) > 1 {
+		r, err := strconv.Atoi(strings.Trim(parts[1], "%)"))
+		if err == nil {
+			rank = &r
+		}
+	}
+
+	return name, rank
+}
+
+func splitLevelRank(str string) (int, *int) {
+	name, rank := splitRank(str)
+	level, _ := strconv.Atoi(name)
+
+	return level, rank
 }

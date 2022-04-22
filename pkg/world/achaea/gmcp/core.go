@@ -6,14 +6,15 @@ import (
 )
 
 var (
-	_ ServerMessage = &CoreGoodbye{}
 	_ ClientMessage = &CoreHello{}
 	_ ClientMessage = &CoreKeepAlive{}
 	_ ClientMessage = &CorePing{}
-	_ ServerMessage = &CorePing{}
-	_ ClientMessage = &CoreSupportsSet{}
 	_ ClientMessage = &CoreSupportsAdd{}
 	_ ClientMessage = &CoreSupportsRemove{}
+	_ ClientMessage = &CoreSupportsSet{}
+
+	_ ServerMessage = &CoreGoodbye{}
+	_ ServerMessage = &CorePing{}
 )
 
 // CoreGoodbye is a server-sent GMCP message finishing a game session.
