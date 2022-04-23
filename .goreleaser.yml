@@ -17,9 +17,8 @@ brews:
       owner: tobiassjosten
       name: homebrew-nogfx
       token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
-    url_template: >-
-      https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}
-      /{{ .ArtifactName }}
+    # yamllint disable-line rule:line-length
+    url_template: "https://github.com/tobiassjosten/nogfx/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_msg_template: "Update brew formula: {{ .ProjectName }} {{ .Tag }}"
     commit_author:
       name: "{{ .Env.GORELEASER_COMMIT_NAME }}"
