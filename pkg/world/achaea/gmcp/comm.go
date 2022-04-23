@@ -1,7 +1,6 @@
 package gmcp
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -33,7 +32,14 @@ type CommChannelEnd string
 
 // Hydrate populates the message with data.
 func (msg CommChannelEnd) Hydrate(data []byte) (ServerMessage, error) {
-	return CommChannelEnd(string(bytes.Trim(data, `"`))), nil
+	var channel string
+
+	err := json.Unmarshal(data, &channel)
+	if err != nil {
+		return nil, err
+	}
+
+	return CommChannelEnd(channel), nil
 }
 
 // CommChannel contains information about an in-game channel.
@@ -89,7 +95,14 @@ type CommChannelStart string
 
 // Hydrate populates the message with data.
 func (msg CommChannelStart) Hydrate(data []byte) (ServerMessage, error) {
-	return CommChannelStart(string(bytes.Trim(data, `"`))), nil
+	var channel string
+
+	err := json.Unmarshal(data, &channel)
+	if err != nil {
+		return nil, err
+	}
+
+	return CommChannelStart(channel), nil
 }
 
 // CommChannelText is both a client-sent and server-sent GMCP message, to

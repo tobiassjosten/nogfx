@@ -17,6 +17,7 @@ type ServerMessage interface {
 	Hydrate([]byte) (ServerMessage, error)
 }
 
+// @todo Consider turning all messages into structs, for consistency.
 var serverMessages = map[string]ServerMessage{
 	"Comm.Channel.End":     CommChannelEnd(""),
 	"Comm.Channel.List":    CommChannelList{},
@@ -50,6 +51,12 @@ var serverMessages = map[string]ServerMessage{
 
 	"Core.Goodbye": CoreGoodbye{},
 	"Core.Ping":    CorePing{},
+
+	"IRE.Rift.Change": IRERiftChange{},
+	"IRE.Rift.List":   IRERiftList{},
+
+	"IRE.Target.Set":  IRETargetSet(""),
+	"IRE.Target.Info": &IRETargetInfo{},
 
 	"Room.Info":         RoomInfo{},
 	"Room.Players":      RoomPlayers{},

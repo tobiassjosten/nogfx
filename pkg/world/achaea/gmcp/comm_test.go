@@ -42,13 +42,17 @@ func TestCommServerMessages(t *testing.T) {
 	}{
 		{
 			command: []byte("Comm.Channel.End"),
-			message: gmcp.CommChannelEnd(""),
+			err:     "failed hydrating gmcp.CommChannelEnd (): unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.End "tell Jeremy"`),
 			message: gmcp.CommChannelEnd("tell Jeremy"),
 		},
 
+		{
+			command: []byte(`Comm.Channel.List`),
+			err:     "failed hydrating gmcp.CommChannelList (): unexpected end of JSON input",
+		},
 		{
 			command: []byte(`Comm.Channel.List [}`),
 			err:     `failed hydrating gmcp.CommChannelList ([}): invalid character '}' looking for beginning of value`,
@@ -66,6 +70,10 @@ func TestCommServerMessages(t *testing.T) {
 			}},
 		},
 
+		{
+			command: []byte("Comm.Channel.Players"),
+			err:     "failed hydrating gmcp.CommChannelPlayers (): unexpected end of JSON input",
+		},
 		{
 			command: []byte(`Comm.Channel.Players [}`),
 			err:     `failed hydrating gmcp.CommChannelPlayers ([}): invalid character '}' looking for beginning of value`,
@@ -87,6 +95,10 @@ func TestCommServerMessages(t *testing.T) {
 			},
 		},
 
+		{
+			command: []byte("Comm.Channel.Text"),
+			err:     "failed hydrating gmcp.CommChannelText (): unexpected end of JSON input",
+		},
 		{
 			command: []byte(`Comm.Channel.Text [}`),
 			err:     `failed hydrating gmcp.CommChannelText ([}): invalid character '}' looking for beginning of value`,
@@ -114,7 +126,7 @@ func TestCommServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Comm.Channel.Start"),
-			message: gmcp.CommChannelStart(""),
+			err:     "failed hydrating gmcp.CommChannelStart (): unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.Start "ct"`),

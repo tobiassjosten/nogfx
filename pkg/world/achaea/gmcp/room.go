@@ -12,7 +12,7 @@ var (
 	_ ServerMessage = &RoomPlayers{}
 	_ ServerMessage = &RoomAddPlayer{}
 	_ ServerMessage = &RoomRemovePlayer{}
-	// _ ServerMessage = &RoomWrongDir{}
+	_ ServerMessage = RoomWrongDir("")
 )
 
 // RoomDetails is a set of flags denoting how to interact with a room.
