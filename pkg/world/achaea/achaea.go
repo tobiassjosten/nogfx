@@ -7,17 +7,23 @@ import (
 	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
+	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 type World struct {
-	ui     pkg.UI
+	ui     *tui.TUI
 	client pkg.Client
 
 	character Character
 }
 
-func NewWorld(ui pkg.UI, client pkg.Client) *World {
+func NewWorld(ui *tui.TUI, client pkg.Client) *World {
+	ui.VitalsAdd("health", tui.HealthVital)
+	ui.VitalsAdd("mana", tui.ManaVital)
+	ui.VitalsAdd("endurance", tui.EnduranceVital)
+	ui.VitalsAdd("willpower", tui.WillpowerVital)
+
 	return &World{
 		ui:     ui,
 		client: client,
@@ -102,6 +108,23 @@ func (world *World) Command(command []byte) error {
 
 		case gmcp.CharVitals:
 			world.character.fromCharVitals(msg)
+
+			world.ui.VitalsUpdate("health",
+				world.character.Health,
+				world.character.MaxHealth,
+			)
+			world.ui.VitalsUpdate("mana",
+				world.character.Mana,
+				world.character.MaxMana,
+			)
+			world.ui.VitalsUpdate("endurance",
+				world.character.Endurance,
+				world.character.MaxEndurance,
+			)
+			world.ui.VitalsUpdate("willpower",
+				world.character.Willpower,
+				world.character.MaxWillpower,
+			)
 		}
 	}
 

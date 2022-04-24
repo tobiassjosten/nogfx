@@ -3,27 +3,36 @@ package tui
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/gdamore/tcell/v2"
 )
 
+// Panes is a collection of various panes used throughout the user interface.
+type Panes struct {
+	input  *InputPane
+	output *OutputPane
+	vitals *VitalsPane
+}
+
+// NewPanes creates a new Panes with the standard collection of panes.
+func NewPanes() Panes {
+	return Panes{
+		input:  NewInputPane(),
+		output: NewOutputPane(),
+		vitals: NewVitalsPane(),
+	}
+}
+
 // TUI orchestrates different panes to make up the primary user interface.
 type TUI struct {
-	screen tcell.Screen
-
-	inputs chan []byte
-
-	width  int
-	height int
-
-	input *InputPane
-
-	output *OutputPane
+	screen  tcell.Screen
+	panes   Panes
+	inputs  chan []byte
+	running bool
 }
 
 // NewTUI creates a new TUI.
-func NewTUI(screen tcell.Screen, input *InputPane, output *OutputPane) *TUI {
+func NewTUI(screen tcell.Screen, panes Panes) *TUI {
 	var (
 		outputStyle = tcell.Style{}
 	)
@@ -31,8 +40,7 @@ func NewTUI(screen tcell.Screen, input *InputPane, output *OutputPane) *TUI {
 	tui := &TUI{
 		screen: screen,
 		inputs: make(chan []byte),
-		input:  input,
-		output: output,
+		panes:  panes,
 	}
 
 	screen.SetStyle(outputStyle)
@@ -46,14 +54,12 @@ func (tui *TUI) Inputs() <-chan []byte {
 	return tui.inputs
 }
 
-// Outputs exposes the incoming channel for server output.
-func (tui *TUI) Outputs() chan<- []byte {
-	return tui.output.outputs
-}
-
 // Run is the main loop of the user interface, where everything is orchestrated.
 func (tui *TUI) Run(pctx context.Context) error {
 	ctx, cancel := context.WithCancel(pctx)
+
+	tui.running = true
+	defer func() { tui.running = false }()
 
 	if err := tui.screen.Init(); err != nil {
 		cancel()
@@ -80,7 +86,7 @@ func (tui *TUI) Run(pctx context.Context) error {
 			}
 
 			if ev, ok := event.(*tcell.EventKey); ok {
-				if ok, input := tui.input.HandleEvent(ev); ok {
+				if ok, input := tui.panes.input.HandleEvent(ev); ok {
 					if input != nil {
 						tui.inputs <- []byte(string(input))
 					}
@@ -92,8 +98,8 @@ func (tui *TUI) Run(pctx context.Context) error {
 
 	for {
 		select {
-		case output := <-tui.output.outputs:
-			tui.output.Add(output)
+		case output := <-tui.panes.output.outputs:
+			tui.panes.output.Add(output)
 			tui.Draw()
 
 		case <-ctx.Done():
@@ -103,46 +109,35 @@ func (tui *TUI) Run(pctx context.Context) error {
 	}
 }
 
-// Print shows a text to the user.
-func (tui *TUI) Print(output []byte) {
-	// @todo Apply default style instead of inheriting whatever's current.
-	tui.output.Add(output)
-	tui.Draw()
-}
-
-// MaskInput hides the content of the InputPane.
-func (tui *TUI) MaskInput() {
-	tui.input.Mask()
-}
-
-// UnmaskInput shows the content of the InputPane.
-func (tui *TUI) UnmaskInput() {
-	tui.input.Unmask()
-}
-
 // Resize calculates the layout of the various panes.
 func (tui *TUI) Resize(width, height int) {
-	tui.width, tui.height = width, height
+	outputWidth := int(min(120, width))
 
-	inputWidth := width
-	inputHeight := int(math.Min(
-		float64(height),
-		float64(tui.input.Height()),
-	))
+	inputWidth := outputWidth
+	inputHeight := int(min(height, tui.panes.input.Height()))
 	inputX, inputY := 0, height-inputHeight
-	tui.input.Position(inputX, inputY, inputWidth, inputHeight)
+	tui.panes.input.Position(inputX, inputY, inputWidth, inputHeight)
 
-	tui.output.Position(0, 0, width, height-inputHeight)
+	// Draw VitalsPane if OutputPane has at least one row.
+	vitalsHeight := min(tui.panes.vitals.Height(), max(0, height-inputHeight-1))
+	tui.panes.vitals.Position(inputX, inputY-1, outputWidth, vitalsHeight)
+
+	tui.panes.output.Position(0, 0, outputWidth, height-inputHeight-vitalsHeight)
 }
 
 // Draw updates the terminal and prints the contents of the panes.
 func (tui *TUI) Draw() {
+	if !tui.running {
+		return
+	}
+
 	tui.screen.Clear()
 
 	tui.Resize(tui.screen.Size())
 
-	tui.input.Draw(tui.screen)
-	tui.output.Draw(tui.screen)
+	tui.panes.input.Draw(tui.screen)
+	tui.panes.vitals.Draw(tui.screen)
+	tui.panes.output.Draw(tui.screen)
 
 	tui.screen.Show()
 }

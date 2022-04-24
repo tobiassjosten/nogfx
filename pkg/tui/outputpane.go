@@ -2,6 +2,18 @@ package tui
 
 import "github.com/gdamore/tcell/v2"
 
+// Outputs exposes the incoming channel for server output.
+func (tui *TUI) Outputs() chan<- []byte {
+	return tui.panes.output.outputs
+}
+
+// Print shows a text to the user.
+func (tui *TUI) Print(output []byte) {
+	// @todo Apply default style instead of inheriting whatever's current.
+	tui.panes.output.Add(output)
+	tui.Draw()
+}
+
 // OutputPane is the pane where primary game output is shown.
 type OutputPane struct {
 	outputs chan []byte
@@ -45,6 +57,10 @@ func (pane *OutputPane) Add(output []byte) {
 
 // Draw prints the contents of the OutputPane to the given tcell.Screen.
 func (pane *OutputPane) Draw(screen tcell.Screen) {
+	if pane.height == 0 {
+		return
+	}
+
 	x, y := pane.x, pane.y+pane.height-1
 
 	for _, t := range pane.texts {

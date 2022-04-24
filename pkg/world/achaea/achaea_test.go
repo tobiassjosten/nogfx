@@ -6,8 +6,10 @@ import (
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	tn "github.com/tobiassjosten/nogfx/pkg/telnet"
+	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +17,15 @@ import (
 func TestWorldBasics(t *testing.T) {
 	assert := assert.New(t)
 
-	ui := &pkg.UIMock{}
+	screen := &pkg.ScreenMock{
+		SetStyleFunc: func(_ tcell.Style) {
+		},
+		SetCursorStyleFunc: func(_ tcell.CursorStyle) {
+		},
+	}
+
+	ui := tui.NewTUI(screen, tui.NewPanes())
+
 	client := &pkg.ClientMock{}
 
 	world := achaea.NewWorld(ui, client)
@@ -28,20 +38,6 @@ func TestWorldBasics(t *testing.T) {
 }
 
 func TestCommands(t *testing.T) {
-	var masked bool
-	var printed []byte
-	ui := &pkg.UIMock{
-		MaskInputFunc: func() {
-			masked = true
-		},
-		UnmaskInputFunc: func() {
-			masked = false
-		},
-		PrintFunc: func(data []byte) {
-			printed = data
-		},
-	}
-
 	var sent []byte
 	client := &pkg.ClientMock{
 		WriteFunc: func(data []byte) (int, error) {
@@ -50,6 +46,14 @@ func TestCommands(t *testing.T) {
 		},
 	}
 
+	screen := &pkg.ScreenMock{
+		SetStyleFunc: func(_ tcell.Style) {
+		},
+		SetCursorStyleFunc: func(_ tcell.CursorStyle) {
+		},
+	}
+
+	ui := tui.NewTUI(screen, tui.NewPanes())
 	world := achaea.NewWorld(ui, client)
 
 	wrapGMCP := func(msgs []string) []byte {
@@ -64,8 +68,6 @@ func TestCommands(t *testing.T) {
 
 	tcs := []struct {
 		command []byte
-		masked  *bool
-		printed []byte
 		sent    []byte
 	}{
 		{
@@ -74,10 +76,6 @@ func TestCommands(t *testing.T) {
 				`Core.Hello {"client":"nogfx","version":"0.0.0"}`,
 				`Core.Supports.Set ["Char 1","Char.Skills 1","Char.Items 1","Comm.Channel 1","Room 1","IRE.Rift 1"]`,
 			}),
-		},
-		{
-			command: wrapGMCP([]string{`Invalid ""`}),
-			printed: []byte("[GMCP error: unknown message 'Invalid']"),
 		},
 		{
 			command: wrapGMCP([]string{
@@ -96,19 +94,10 @@ func TestCommands(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			printed = []byte{}
 			sent = []byte{}
 
 			err := world.Command(tc.command)
 			require.Nil(err)
-
-			if tc.masked != nil {
-				assert.Equal(masked, *tc.masked)
-			}
-
-			if len(tc.printed) > 0 {
-				assert.Equal(tc.printed, printed, string(printed))
-			}
 
 			if len(tc.sent) > 0 {
 				assert.Equal(tc.sent, sent, string(sent))
