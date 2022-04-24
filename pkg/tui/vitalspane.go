@@ -39,8 +39,8 @@ type Vital struct {
 	EmptyStyle tcell.Style
 }
 
+// Default vitals suitable for most games.
 var (
-	// Default vitals suitable for most games.
 	HealthVital = Vital{
 		FullStyle:  tcell.StyleDefault.Background(tcell.ColorGreen).Foreground(tcell.ColorBlack),
 		EmptyStyle: tcell.StyleDefault.Background(tcell.ColorDarkGreen).Foreground(tcell.ColorBlack),
