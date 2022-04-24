@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -9,19 +9,19 @@ import (
 )
 
 // AddVital adds a new Vital to be displayed in the VitalsPane.
-func (tui *TUI) AddVital(name string, v interface{}) error {
-	vital, ok := v.(Vital)
-	if !ok {
-		return fmt.Errorf("only tui.Vital vitals are supported")
+func (tui *TUI) AddVital(name string, v interface{}) {
+	if vital, ok := v.(Vital); !ok {
+		tui.panes.vitals.AddVital(name, vital)
+	} else {
+		log.Printf("couldn't add 'health' vital: only tui.Vital is supported")
 	}
 
-	return tui.panes.vitals.AddVital(name, vital)
 }
 
 // UpdateVital updates a given Vital with new current and max values.
-func (tui *TUI) UpdateVital(name string, value, max int) error {
-	defer tui.Draw()
-	return tui.panes.vitals.UpdateVital(name, value, max)
+func (tui *TUI) UpdateVital(name string, value, max int) {
+	tui.panes.vitals.UpdateVital(name, value, max)
+	tui.Draw()
 }
 
 // Vital is a metric (health, mana, etc) visualised in a VitalsPane.
@@ -75,29 +75,22 @@ func NewVitalsPane() *VitalsPane {
 }
 
 // AddVital adds a new Vital to be displayed in the VitalsPane.
-func (pane *VitalsPane) AddVital(name string, vital Vital) error {
-	if _, ok := pane.vitals[name]; ok {
-		return fmt.Errorf("vital already added '%s'", name)
+func (pane *VitalsPane) AddVital(name string, vital Vital) {
+	if _, ok := pane.vitals[name]; !ok {
+		pane.vitals[name] = vital
+		pane.vorder = append(pane.vorder, name)
 	}
-
-	pane.vitals[name] = vital
-	pane.vorder = append(pane.vorder, name)
-
-	return nil
 }
 
 // UpdateVital updates a given Vital with new current and max values.
-func (pane *VitalsPane) UpdateVital(name string, value, max int) error {
-	vital, ok := pane.vitals[name]
-	if !ok {
-		return fmt.Errorf("non-existent vital '%s'", name)
+func (pane *VitalsPane) UpdateVital(name string, value, max int) {
+	if vital, ok := pane.vitals[name]; ok {
+		vital.Value = value
+		vital.Max = max
+		pane.vitals[name] = vital
+	} else {
+		log.Printf("couldn't update non-existent 'health' vital")
 	}
-
-	vital.Value = value
-	vital.Max = max
-	pane.vitals[name] = vital
-
-	return nil
 }
 
 // Position sets the x.y coordinates for and resizes the pane.

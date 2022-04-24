@@ -19,9 +19,7 @@ func TestWorldBasics(t *testing.T) {
 
 	client := &pkg.ClientMock{}
 	ui := &pkg.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) error {
-			return nil
-		},
+		AddVitalFunc: func(_ string, _ interface{}) {},
 	}
 
 	world := achaea.NewWorld(ui, client)
@@ -110,9 +108,7 @@ func TestMasking(t *testing.T) {
 	var masked bool
 
 	ui := &pkg.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) error {
-			return nil
-		},
+		AddVitalFunc: func(_ string, _ interface{}) {},
 		MaskInputFunc: func() {
 			masked = true
 		},

@@ -18,8 +18,8 @@ type UI interface {
 	MaskInput()
 	UnmaskInput()
 
-	AddVital(string, interface{}) error
-	UpdateVital(string, int, int) error
+	AddVital(string, interface{})
+	UpdateVital(string, int, int)
 }
 
 // Client is the application's main connection to the game server.

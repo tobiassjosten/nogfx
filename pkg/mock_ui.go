@@ -18,7 +18,7 @@ var _ UI = &UIMock{}
 //
 // 		// make and configure a mocked UI
 // 		mockedUI := &UIMock{
-// 			AddVitalFunc: func(s string, ifaceVal interface{}) error {
+// 			AddVitalFunc: func(s string, ifaceVal interface{})  {
 // 				panic("mock out the AddVital method")
 // 			},
 // 			InputsFunc: func() <-chan []byte {
@@ -39,7 +39,7 @@ var _ UI = &UIMock{}
 // 			UnmaskInputFunc: func()  {
 // 				panic("mock out the UnmaskInput method")
 // 			},
-// 			UpdateVitalFunc: func(s string, n1 int, n2 int) error {
+// 			UpdateVitalFunc: func(s string, n1 int, n2 int)  {
 // 				panic("mock out the UpdateVital method")
 // 			},
 // 		}
@@ -50,7 +50,7 @@ var _ UI = &UIMock{}
 // 	}
 type UIMock struct {
 	// AddVitalFunc mocks the AddVital method.
-	AddVitalFunc func(s string, ifaceVal interface{}) error
+	AddVitalFunc func(s string, ifaceVal interface{})
 
 	// InputsFunc mocks the Inputs method.
 	InputsFunc func() <-chan []byte
@@ -71,7 +71,7 @@ type UIMock struct {
 	UnmaskInputFunc func()
 
 	// UpdateVitalFunc mocks the UpdateVital method.
-	UpdateVitalFunc func(s string, n1 int, n2 int) error
+	UpdateVitalFunc func(s string, n1 int, n2 int)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -125,7 +125,7 @@ type UIMock struct {
 }
 
 // AddVital calls AddVitalFunc.
-func (mock *UIMock) AddVital(s string, ifaceVal interface{}) error {
+func (mock *UIMock) AddVital(s string, ifaceVal interface{}) {
 	if mock.AddVitalFunc == nil {
 		panic("UIMock.AddVitalFunc: method is nil but UI.AddVital was just called")
 	}
@@ -139,7 +139,7 @@ func (mock *UIMock) AddVital(s string, ifaceVal interface{}) error {
 	mock.lockAddVital.Lock()
 	mock.calls.AddVital = append(mock.calls.AddVital, callInfo)
 	mock.lockAddVital.Unlock()
-	return mock.AddVitalFunc(s, ifaceVal)
+	mock.AddVitalFunc(s, ifaceVal)
 }
 
 // AddVitalCalls gets all the calls that were made to AddVital.
@@ -326,7 +326,7 @@ func (mock *UIMock) UnmaskInputCalls() []struct {
 }
 
 // UpdateVital calls UpdateVitalFunc.
-func (mock *UIMock) UpdateVital(s string, n1 int, n2 int) error {
+func (mock *UIMock) UpdateVital(s string, n1 int, n2 int) {
 	if mock.UpdateVitalFunc == nil {
 		panic("UIMock.UpdateVitalFunc: method is nil but UI.UpdateVital was just called")
 	}
@@ -342,7 +342,7 @@ func (mock *UIMock) UpdateVital(s string, n1 int, n2 int) error {
 	mock.lockUpdateVital.Lock()
 	mock.calls.UpdateVital = append(mock.calls.UpdateVital, callInfo)
 	mock.lockUpdateVital.Unlock()
-	return mock.UpdateVitalFunc(s, n1, n2)
+	mock.UpdateVitalFunc(s, n1, n2)
 }
 
 // UpdateVitalCalls gets all the calls that were made to UpdateVital.

@@ -16,7 +16,7 @@ type World struct {
 	ui     pkg.UI
 	client pkg.Client
 
-	character Character
+	character *Character
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
@@ -30,7 +30,7 @@ func NewWorld(ui pkg.UI, client pkg.Client) *World {
 		ui:     ui,
 		client: client,
 
-		character: Character{},
+		character: &Character{},
 	}
 }
 
