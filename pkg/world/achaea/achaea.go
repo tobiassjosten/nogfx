@@ -87,8 +87,7 @@ func (world *World) Command(command []byte) error {
 		data := command[len(prefixGMCP) : len(command)-len(suffixGMCP)]
 		message, err := gmcp.Parse(data)
 		if err != nil {
-			world.ui.Print([]byte(fmt.Sprintf("[GMCP error: %s]", err)))
-			return nil
+			return fmt.Errorf("failed parsing GMCP: %w", err)
 		}
 
 		switch msg := message.(type) {
