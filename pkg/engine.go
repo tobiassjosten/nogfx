@@ -12,9 +12,14 @@ type UI interface {
 	Inputs() <-chan []byte
 	Outputs() chan<- []byte
 	Run(context.Context) error
+
 	Print([]byte)
+
 	MaskInput()
 	UnmaskInput()
+
+	AddVital(string, interface{}) error
+	UpdateVital(string, int, int) error
 }
 
 // Client is the application's main connection to the game server.

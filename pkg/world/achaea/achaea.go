@@ -13,14 +13,14 @@ import (
 
 // World is an Achaea-specific implementation of the pkg.World interface.
 type World struct {
-	ui     *tui.TUI
+	ui     pkg.UI
 	client pkg.Client
 
 	character Character
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
-func NewWorld(ui *tui.TUI, client pkg.Client) *World {
+func NewWorld(ui pkg.UI, client pkg.Client) *World {
 	ui.AddVital("health", tui.HealthVital)
 	ui.AddVital("mana", tui.ManaVital)
 	ui.AddVital("endurance", tui.EnduranceVital)
@@ -93,7 +93,7 @@ func (world *World) Command(command []byte) error {
 
 		switch msg := message.(type) {
 		case gmcp.CharName:
-			world.character.fromCharName(msg)
+			world.character.FromCharName(msg)
 
 			// We have just logged in, so let's do an inventory.
 			err := world.gmcp(gmcp.IRERiftRequest{})
@@ -112,7 +112,7 @@ func (world *World) Command(command []byte) error {
 			}
 
 		case gmcp.CharVitals:
-			world.character.fromCharVitals(msg)
+			world.character.FromCharVitals(msg)
 
 			world.ui.UpdateVital("health",
 				world.character.Health,

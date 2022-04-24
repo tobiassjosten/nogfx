@@ -17,16 +17,12 @@ import (
 func TestWorldBasics(t *testing.T) {
 	assert := assert.New(t)
 
-	screen := &pkg.ScreenMock{
-		SetStyleFunc: func(_ tcell.Style) {
-		},
-		SetCursorStyleFunc: func(_ tcell.CursorStyle) {
+	client := &pkg.ClientMock{}
+	ui := &pkg.UIMock{
+		AddVitalFunc: func(_ string, _ interface{}) error {
+			return nil
 		},
 	}
-
-	ui := tui.NewTUI(screen, tui.NewPanes())
-
-	client := &pkg.ClientMock{}
 
 	world := achaea.NewWorld(ui, client)
 
@@ -38,24 +34,6 @@ func TestWorldBasics(t *testing.T) {
 }
 
 func TestCommands(t *testing.T) {
-	var sent []byte
-	client := &pkg.ClientMock{
-		WriteFunc: func(data []byte) (int, error) {
-			sent = append(sent, data...)
-			return len(data), nil
-		},
-	}
-
-	screen := &pkg.ScreenMock{
-		SetStyleFunc: func(_ tcell.Style) {
-		},
-		SetCursorStyleFunc: func(_ tcell.CursorStyle) {
-		},
-	}
-
-	ui := tui.NewTUI(screen, tui.NewPanes())
-	world := achaea.NewWorld(ui, client)
-
 	wrapGMCP := func(msgs []string) []byte {
 		var bs []byte
 		for _, msg := range msgs {
@@ -94,7 +72,24 @@ func TestCommands(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			sent = []byte{}
+			var sent []byte
+			client := &pkg.ClientMock{
+				WriteFunc: func(data []byte) (int, error) {
+					sent = append(sent, data...)
+					return len(data), nil
+				},
+			}
+
+			screen := &pkg.ScreenMock{
+				SetStyleFunc: func(_ tcell.Style) {
+				},
+				SetCursorStyleFunc: func(_ tcell.CursorStyle) {
+				},
+			}
+
+			ui := tui.NewTUI(screen, tui.NewPanes())
+
+			world := achaea.NewWorld(ui, client)
 
 			err := world.Command(tc.command)
 			require.Nil(err)
@@ -104,4 +99,37 @@ func TestCommands(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMasking(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	client := &pkg.ClientMock{}
+
+	var masked bool
+
+	ui := &pkg.UIMock{
+		AddVitalFunc: func(_ string, _ interface{}) error {
+			return nil
+		},
+		MaskInputFunc: func() {
+			masked = true
+		},
+		UnmaskInputFunc: func() {
+			masked = false
+		},
+	}
+
+	world := achaea.NewWorld(ui, client)
+
+	err := world.Command([]byte{tn.IAC, tn.WILL, tn.ECHO})
+	require.Nil(err)
+
+	assert.Equal(true, masked)
+
+	err = world.Command([]byte{tn.IAC, tn.WONT, tn.ECHO})
+	require.Nil(err)
+
+	assert.Equal(false, masked)
 }

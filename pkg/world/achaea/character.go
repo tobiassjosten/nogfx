@@ -2,8 +2,10 @@ package achaea
 
 import "github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 
+// Character is the currently logged in character.
 type Character struct {
-	Name string
+	Name  string
+	Title string
 
 	Level int
 	XP    int
@@ -21,11 +23,14 @@ type Character struct {
 	MaxWillpower int
 }
 
-func (c *Character) fromCharName(msg gmcp.CharName) {
+// FromCharName updates the character from a Char.Name GMCP message.
+func (c *Character) FromCharName(msg gmcp.CharName) {
 	c.Name = msg.Name
+	c.Title = msg.Fullname
 }
 
-func (c *Character) fromCharVitals(msg gmcp.CharVitals) {
+// FromCharVitals updates the character from a Char.Vitals GMCP message.
+func (c *Character) FromCharVitals(msg gmcp.CharVitals) {
 	c.XP = msg.NL
 
 	c.Balance = msg.Bal

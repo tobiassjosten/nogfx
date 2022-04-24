@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -8,14 +9,19 @@ import (
 )
 
 // AddVital adds a new Vital to be displayed in the VitalsPane.
-func (tui *TUI) AddVital(name string, vital Vital) {
-	tui.panes.vitals.AddVital(name, vital)
+func (tui *TUI) AddVital(name string, v interface{}) error {
+	vital, ok := v.(Vital)
+	if !ok {
+		return fmt.Errorf("only tui.Vital vitals are supported")
+	}
+
+	return tui.panes.vitals.AddVital(name, vital)
 }
 
 // UpdateVital updates a given Vital with new current and max values.
-func (tui *TUI) UpdateVital(name string, value, max int) {
-	tui.panes.vitals.UpdateVital(name, value, max)
-	tui.Draw()
+func (tui *TUI) UpdateVital(name string, value, max int) error {
+	defer tui.Draw()
+	return tui.panes.vitals.UpdateVital(name, value, max)
 }
 
 // Vital is a metric (health, mana, etc) visualised in a VitalsPane.
@@ -69,25 +75,29 @@ func NewVitalsPane() *VitalsPane {
 }
 
 // AddVital adds a new Vital to be displayed in the VitalsPane.
-func (pane *VitalsPane) AddVital(name string, vital Vital) {
+func (pane *VitalsPane) AddVital(name string, vital Vital) error {
 	if _, ok := pane.vitals[name]; ok {
-		return
+		return fmt.Errorf("vital already added '%s'", name)
 	}
 
 	pane.vitals[name] = vital
 	pane.vorder = append(pane.vorder, name)
+
+	return nil
 }
 
 // UpdateVital updates a given Vital with new current and max values.
-func (pane *VitalsPane) UpdateVital(name string, value, max int) {
+func (pane *VitalsPane) UpdateVital(name string, value, max int) error {
 	vital, ok := pane.vitals[name]
 	if !ok {
-		return
+		return fmt.Errorf("non-existent vital '%s'", name)
 	}
 
 	vital.Value = value
 	vital.Max = max
 	pane.vitals[name] = vital
+
+	return nil
 }
 
 // Position sets the x.y coordinates for and resizes the pane.
