@@ -21,10 +21,10 @@ type World struct {
 
 // NewWorld creates a new Achaea-specific pkg.World.
 func NewWorld(ui *tui.TUI, client pkg.Client) *World {
-	ui.VitalsAdd("health", tui.HealthVital)
-	ui.VitalsAdd("mana", tui.ManaVital)
-	ui.VitalsAdd("endurance", tui.EnduranceVital)
-	ui.VitalsAdd("willpower", tui.WillpowerVital)
+	ui.AddVital("health", tui.HealthVital)
+	ui.AddVital("mana", tui.ManaVital)
+	ui.AddVital("endurance", tui.EnduranceVital)
+	ui.AddVital("willpower", tui.WillpowerVital)
 
 	return &World{
 		ui:     ui,
@@ -114,19 +114,19 @@ func (world *World) Command(command []byte) error {
 		case gmcp.CharVitals:
 			world.character.fromCharVitals(msg)
 
-			world.ui.VitalsUpdate("health",
+			world.ui.UpdateVital("health",
 				world.character.Health,
 				world.character.MaxHealth,
 			)
-			world.ui.VitalsUpdate("mana",
+			world.ui.UpdateVital("mana",
 				world.character.Mana,
 				world.character.MaxMana,
 			)
-			world.ui.VitalsUpdate("endurance",
+			world.ui.UpdateVital("endurance",
 				world.character.Endurance,
 				world.character.MaxEndurance,
 			)
-			world.ui.VitalsUpdate("willpower",
+			world.ui.UpdateVital("willpower",
 				world.character.Willpower,
 				world.character.MaxWillpower,
 			)

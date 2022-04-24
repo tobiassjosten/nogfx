@@ -53,14 +53,14 @@ func run(mock bool) error {
 
 	ui := tui.NewTUI(screen, tui.NewPanes())
 	if mock {
-		ui.VitalsAdd("health", tui.HealthVital)
-		ui.VitalsUpdate("health", 123, 234)
-		ui.VitalsAdd("mana", tui.ManaVital)
-		ui.VitalsUpdate("mana", 100, 200)
-		ui.VitalsAdd("endurance", tui.EnduranceVital)
-		ui.VitalsUpdate("endurance", 1000, 1200)
-		ui.VitalsAdd("willpower", tui.WillpowerVital)
-		ui.VitalsUpdate("willpower", 1000, 2000)
+		ui.AddVital("health", tui.HealthVital)
+		ui.UpdateVital("health", 123, 234)
+		ui.AddVital("mana", tui.ManaVital)
+		ui.UpdateVital("mana", 100, 200)
+		ui.AddVital("endurance", tui.EnduranceVital)
+		ui.UpdateVital("endurance", 1000, 1200)
+		ui.AddVital("willpower", tui.WillpowerVital)
+		ui.UpdateVital("willpower", 1000, 2000)
 	}
 
 	address := "achaea.com:23"

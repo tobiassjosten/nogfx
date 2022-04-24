@@ -7,27 +7,14 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-// VitalsAdd adds a new Vital to be displayed in the VitalsPane.
-func (tui *TUI) VitalsAdd(name string, vital Vital) {
-	if _, ok := tui.panes.vitals.vitals[name]; ok {
-		return
-	}
-
-	tui.panes.vitals.vitals[name] = vital
-	tui.panes.vitals.vorder = append(tui.panes.vitals.vorder, name)
+// AddVital adds a new Vital to be displayed in the VitalsPane.
+func (tui *TUI) AddVital(name string, vital Vital) {
+	tui.panes.vitals.AddVital(name, vital)
 }
 
-// VitalsUpdate updates a given Vital with new current and max values.
-func (tui *TUI) VitalsUpdate(name string, value, max int) {
-	vital, ok := tui.panes.vitals.vitals[name]
-	if !ok {
-		return
-	}
-
-	vital.Value = value
-	vital.Max = max
-	tui.panes.vitals.vitals[name] = vital
-
+// UpdateVital updates a given Vital with new current and max values.
+func (tui *TUI) UpdateVital(name string, value, max int) {
+	tui.panes.vitals.UpdateVital(name, value, max)
 	tui.Draw()
 }
 
@@ -79,6 +66,28 @@ func NewVitalsPane() *VitalsPane {
 	return &VitalsPane{
 		vitals: map[string]Vital{},
 	}
+}
+
+// AddVital adds a new Vital to be displayed in the VitalsPane.
+func (pane *VitalsPane) AddVital(name string, vital Vital) {
+	if _, ok := pane.vitals[name]; ok {
+		return
+	}
+
+	pane.vitals[name] = vital
+	pane.vorder = append(pane.vorder, name)
+}
+
+// UpdateVital updates a given Vital with new current and max values.
+func (pane *VitalsPane) UpdateVital(name string, value, max int) {
+	vital, ok := pane.vitals[name]
+	if !ok {
+		return
+	}
+
+	vital.Value = value
+	vital.Max = max
+	pane.vitals[name] = vital
 }
 
 // Position sets the x.y coordinates for and resizes the pane.
