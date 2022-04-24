@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
+// VitalsAdd adds a new Vital to be displayed in the VitalsPane.
 func (tui *TUI) VitalsAdd(name string, vital Vital) {
 	if _, ok := tui.panes.vitals.vitals[name]; ok {
 		return
@@ -16,6 +17,7 @@ func (tui *TUI) VitalsAdd(name string, vital Vital) {
 	tui.panes.vitals.vorder = append(tui.panes.vitals.vorder, name)
 }
 
+// VitalsUpdate updates a given Vital with new current and max values.
 func (tui *TUI) VitalsUpdate(name string, value, max int) {
 	vital, ok := tui.panes.vitals.vitals[name]
 	if !ok {
@@ -29,6 +31,7 @@ func (tui *TUI) VitalsUpdate(name string, value, max int) {
 	tui.Draw()
 }
 
+// Vital is a metric (health, mana, etc) visualised in a VitalsPane.
 type Vital struct {
 	Value      int
 	Max        int
@@ -37,6 +40,7 @@ type Vital struct {
 }
 
 var (
+	// Default vitals suitable for most games.
 	HealthVital = Vital{
 		FullStyle:  tcell.StyleDefault.Background(tcell.ColorGreen).Foreground(tcell.ColorBlack),
 		EmptyStyle: tcell.StyleDefault.Background(tcell.ColorDarkGreen).Foreground(tcell.ColorBlack),

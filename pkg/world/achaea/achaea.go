@@ -11,6 +11,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
+// World is an Achaea-specific implementation of the pkg.World interface.
 type World struct {
 	ui     *tui.TUI
 	client pkg.Client
@@ -18,6 +19,7 @@ type World struct {
 	character Character
 }
 
+// NewWorld creates a new Achaea-specific pkg.World.
 func NewWorld(ui *tui.TUI, client pkg.Client) *World {
 	ui.VitalsAdd("health", tui.HealthVital)
 	ui.VitalsAdd("mana", tui.ManaVital)
@@ -32,14 +34,17 @@ func NewWorld(ui *tui.TUI, client pkg.Client) *World {
 	}
 }
 
+// Input processes player input.
 func (world *World) Input(input []byte) []byte {
 	return input
 }
 
+// Output processes game output.
 func (world *World) Output(output []byte) []byte {
 	return output
 }
 
+// Command processes telnet commands.
 func (world *World) Command(command []byte) error {
 	willEcho := []byte{telnet.IAC, telnet.WILL, telnet.ECHO}
 	wontEcho := []byte{telnet.IAC, telnet.WONT, telnet.ECHO}
