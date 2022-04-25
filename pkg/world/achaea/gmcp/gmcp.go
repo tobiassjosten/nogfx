@@ -80,10 +80,7 @@ func Parse(command []byte) (ServerMessage, error) {
 
 	msg, err := message.Hydrate(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf(
-			"failed hydrating %T (%s): %w",
-			message, parts[1], err,
-		)
+		return nil, fmt.Errorf("failed hydrating %T: %w", message, err)
 	}
 
 	return msg, nil

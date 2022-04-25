@@ -85,7 +85,7 @@ func TestCharServerMessages(t *testing.T) {
 	}{
 		{
 			command: []byte("Char.Afflictions.List"),
-			err:     "failed hydrating gmcp.CharAfflictionsList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharAfflictionsList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Afflictions.List [ { "name": "weariness", "cure": "eat kelp", "desc": "Decreases cutting and blunt damage that you inflict by 30%." }, { "name": "asthma", "cure": "eat kelp", "desc": "Makes you unable to smoke pipes." } ]`),
@@ -105,7 +105,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Afflictions.Add"),
-			err:     "failed hydrating gmcp.CharAfflictionsAdd (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharAfflictionsAdd: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Afflictions.Add { "name": "weariness", "cure": "eat kelp", "desc": "Decreases cutting and blunt damage that you inflict by 30%." }`),
@@ -118,7 +118,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Afflictions.Remove"),
-			err:     "failed hydrating gmcp.CharAfflictionsRemove (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharAfflictionsRemove: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Afflictions.Remove [ "weariness" ]`),
@@ -132,7 +132,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Defences.List"),
-			err:     "failed hydrating gmcp.CharDefencesList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharDefencesList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Defences.List [ { "name": "deaf", "desc": "deaf" }, { "name": "blind", "desc": "blind" } ]`),
@@ -150,7 +150,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Defences.Add"),
-			err:     "failed hydrating gmcp.CharDefencesAdd (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharDefencesAdd: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Defences.Add { "name": "deaf", "desc": "deaf" }`),
@@ -162,7 +162,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Defences.Remove"),
-			err:     "failed hydrating gmcp.CharDefencesRemove (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharDefencesRemove: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Defences.Remove [ "deaf" ]`),
@@ -176,11 +176,11 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Items.List"),
-			err:     "failed hydrating gmcp.CharItemsList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharItemsList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Items.List { "location": "inv", "items": [ { "id": "123", "name": "something", "icon": "commodity", "attrib": "awWlLgcrfemdtx" } ] }`),
-			err:     `failed hydrating gmcp.CharItemsList ({ "location": "inv", "items": [ { "id": "123", "name": "something", "icon": "commodity", "attrib": "awWlLgcrfemdtx" } ] }): unknown attribute 'a'`,
+			err:     `failed hydrating gmcp.CharItemsList: unknown attribute 'a'`,
 		},
 		{
 			command: []byte(`Char.Items.List { "location": "inv", "items": [ { "id": "123", "name": "something", "icon": "commodity", "attrib": "wWlLgcrfemdtx" } ] }`),
@@ -211,7 +211,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Items.Add"),
-			err:     "failed hydrating gmcp.CharItemsAdd (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharItemsAdd: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Items.Add { "location": "room", "item": { "id": "239602", "name": "an elegant white letter", "icon": "container", "attrib": "c" } }`),
@@ -228,7 +228,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Items.Remove"),
-			err:     "failed hydrating gmcp.CharItemsRemove (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharItemsRemove: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Items.Remove { "location": "inv", "item": { "id": "303060", "name": "a gold nugget", "icon": "commodity", "attrib": "t" } }`),
@@ -245,7 +245,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Items.Update"),
-			err:     "failed hydrating gmcp.CharItemsUpdate (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharItemsUpdate: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Items.Update { "location": "inv", "item": { "id": "60572", "name": "an ornate steel rapier" } }`),
@@ -260,11 +260,11 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Name"),
-			err:     "failed hydrating gmcp.CharName (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharName: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Name { "name": {"invalid"] }`),
-			err:     `failed hydrating gmcp.CharName ({ "name": {"invalid"] }): invalid character ']' after object key`,
+			err:     `failed hydrating gmcp.CharName: invalid character ']' after object key`,
 		},
 		{
 			command: []byte(`Char.Name { "name": "Durak", "fullname": "Mason Durak" }`),
@@ -276,15 +276,16 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Skills.Groups"),
-			err:     "failed hydrating gmcp.CharSkillsGroups (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharSkillsGroups: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Skills.Groups [ { "name": "Perception", "rank": "Adept" }  ]`),
-			err:     `failed hydrating gmcp.CharSkillsGroups ([ { "name": "Perception", "rank": "Adept" }  ]): failed parsing rank 'Adept'`,
-		},
-		{
-			command: []byte(`Char.Skills.Groups [ { "name": "Perception", "rank": "Adept (x%)" }  ]`),
-			err:     `failed hydrating gmcp.CharSkillsGroups ([ { "name": "Perception", "rank": "Adept (x%)" }  ]): failed parsing rank 'Adept (x%)'`,
+			message: gmcp.CharSkillsGroups{
+				{
+					Name:  "Perception",
+					Level: "Adept",
+				},
+			},
 		},
 		{
 			command: []byte(`Char.Skills.Groups [ { "name": "Perception", "rank": "Adept (1%)" }  ]`),
@@ -292,14 +293,14 @@ func TestCharServerMessages(t *testing.T) {
 				{
 					Name:     "Perception",
 					Level:    "Adept",
-					Progress: 1,
+					Progress: gox.NewInt(1),
 				},
 			},
 		},
 
 		{
 			command: []byte("Char.Skills.List"),
-			err:     "failed hydrating gmcp.CharSkillsList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharSkillsList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Skills.List { "group": "perception", "list": [ "Deathsight" ], "descs": [ "Using this ability…" ] }`),
@@ -312,7 +313,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Skills.Info"),
-			err:     "failed hydrating gmcp.CharSkillsInfo (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharSkillsInfo: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Skills.Info { "group": "Perception", "skill": "deathsight", "info": "Using this ability…" }`),
@@ -325,7 +326,7 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.StatusVars"),
-			err:     "failed hydrating gmcp.CharStatusVars (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharStatusVars: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.StatusVars { "level": "Level" }`),
@@ -334,31 +335,31 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Status"),
-			err:     "failed hydrating gmcp.CharStatus (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharStatus: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Status { "nonexistant": {"invalid"] }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "nonexistant": {"invalid"] }): invalid character ']' after object key`,
+			err:     `failed hydrating gmcp.CharStatus: invalid character ']' after object key`,
 		},
 		{
 			command: []byte(`Char.Status { "level": "invalid" }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "level": "invalid" }): failed parsing level 'invalid'`,
+			err:     `failed hydrating gmcp.CharStatus: failed parsing level 'invalid'`,
 		},
 		{
 			command: []byte(`Char.Status { "city": "invalid" }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "city": "invalid" }): failed parsing city 'invalid'`,
+			err:     `failed hydrating gmcp.CharStatus: failed parsing city 'invalid'`,
 		},
 		{
 			command: []byte(`Char.Status { "house": "invalid" }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "house": "invalid" }): failed parsing house 'invalid'`,
+			err:     `failed hydrating gmcp.CharStatus: failed parsing house 'invalid'`,
 		},
 		{
 			command: []byte(`Char.Status { "order": "invalid" }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "order": "invalid" }): failed parsing order 'invalid'`,
+			err:     `failed hydrating gmcp.CharStatus: failed parsing order 'invalid'`,
 		},
 		{
 			command: []byte(`Char.Status { "target": "invalid" }`),
-			err:     `failed hydrating gmcp.CharStatus ({ "target": "invalid" }): failed parsing target 'invalid'`,
+			err:     `failed hydrating gmcp.CharStatus: failed parsing target 'invalid'`,
 		},
 		{
 			command: []byte(`Char.Status { "city": "(None)", "house": "(None)", "order": "(None)", "target": "None" }`),
@@ -407,43 +408,43 @@ func TestCharServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Char.Vitals"),
-			err:     "failed hydrating gmcp.CharVitals (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CharVitals: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Invalid" ] }): misformed charstat 'Invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: misformed charstat 'Invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Unknown: 123" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Unknown: 123" ] }): invalid charstat 'Unknown: 123'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Unknown: 123'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Bleed: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Bleed: invalid" ] }): invalid charstat 'Bleed: invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Bleed: invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Rage: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Rage: invalid" ] }): invalid charstat 'Rage: invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Rage: invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Ferocity: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Ferocity: invalid" ] }): invalid charstat 'Ferocity: invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Ferocity: invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Kai: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Kai: invalid" ] }): invalid charstat 'Kai: invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Kai: invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Kai: 1" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Kai: 1" ] }): invalid charstat 'Kai: 1'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Kai: 1'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Karma: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Karma: invalid" ] }): invalid charstat 'Karma: invalid'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Karma: invalid'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Karma: 1" ] }`),
-			err:     `failed hydrating gmcp.CharVitals ({ "charstats": [ "Karma: 1" ] }): invalid charstat 'Karma: 1'`,
+			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Karma: 1'`,
 		},
 		{
 			command: []byte(`Char.Vitals { "charstats": [ "Stance: None" ] }`),

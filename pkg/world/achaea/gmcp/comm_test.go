@@ -42,7 +42,7 @@ func TestCommServerMessages(t *testing.T) {
 	}{
 		{
 			command: []byte("Comm.Channel.End"),
-			err:     "failed hydrating gmcp.CommChannelEnd (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CommChannelEnd: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.End "tell Jeremy"`),
@@ -51,15 +51,15 @@ func TestCommServerMessages(t *testing.T) {
 
 		{
 			command: []byte(`Comm.Channel.List`),
-			err:     "failed hydrating gmcp.CommChannelList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CommChannelList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.List [}`),
-			err:     `failed hydrating gmcp.CommChannelList ([}): invalid character '}' looking for beginning of value`,
+			err:     `failed hydrating gmcp.CommChannelList: invalid character '}' looking for beginning of value`,
 		},
 		{
 			command: []byte(`Comm.Channel.List ["asdf"]`),
-			err:     `failed hydrating gmcp.CommChannelList (["asdf"]): json: cannot unmarshal string into Go value of type gmcp.CommChannel`,
+			err:     `failed hydrating gmcp.CommChannelList: json: cannot unmarshal string into Go value of type gmcp.CommChannel`,
 		},
 		{
 			command: []byte(`Comm.Channel.List [{"name":"ct", "caption":"Some city", "command":"ct"}]`),
@@ -72,15 +72,15 @@ func TestCommServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Comm.Channel.Players"),
-			err:     "failed hydrating gmcp.CommChannelPlayers (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CommChannelPlayers: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.Players [}`),
-			err:     `failed hydrating gmcp.CommChannelPlayers ([}): invalid character '}' looking for beginning of value`,
+			err:     `failed hydrating gmcp.CommChannelPlayers: invalid character '}' looking for beginning of value`,
 		},
 		{
 			command: []byte(`Comm.Channel.Players ["asdf"]`),
-			err:     `failed hydrating gmcp.CommChannelPlayers (["asdf"]): json: cannot unmarshal string into Go value of type gmcp.CommChannelPlayer`,
+			err:     `failed hydrating gmcp.CommChannelPlayers: json: cannot unmarshal string into Go value of type gmcp.CommChannelPlayer`,
 		},
 		{
 			command: []byte(`Comm.Channel.Players [{"name": "Player1", "channels": ["Some city", "Some guild"]}, {"name": "Player2"}]`),
@@ -97,23 +97,23 @@ func TestCommServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Comm.Channel.Text"),
-			err:     "failed hydrating gmcp.CommChannelText (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CommChannelText: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.Text [}`),
-			err:     `failed hydrating gmcp.CommChannelText ([}): invalid character '}' looking for beginning of value`,
+			err:     `failed hydrating gmcp.CommChannelText: invalid character '}' looking for beginning of value`,
 		},
 		{
 			command: []byte(`Comm.Channel.Text []`),
-			err:     `failed hydrating gmcp.CommChannelText ([]): json: cannot unmarshal array into Go value of type gmcp.CommChannelText`,
+			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal array into Go value of type gmcp.CommChannelText`,
 		},
 		{
 			command: []byte(`Comm.Channel.Text ""`),
-			err:     `failed hydrating gmcp.CommChannelText (""): json: cannot unmarshal string into Go value of type gmcp.CommChannelText`,
+			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal string into Go value of type gmcp.CommChannelText`,
 		},
 		{
 			command: []byte(`Comm.Channel.Text 1234`),
-			err:     `failed hydrating gmcp.CommChannelText (1234): json: cannot unmarshal number into Go value of type gmcp.CommChannelText`,
+			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal number into Go value of type gmcp.CommChannelText`,
 		},
 		{
 			command: []byte(`Comm.Channel.Text { "channel": "newbie", "talker": "Olad", "text": "\u001b[0;1;32m(Newbie): You say, \"Hello.\"\u001b[0;37m" }`),
@@ -126,7 +126,7 @@ func TestCommServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Comm.Channel.Start"),
-			err:     "failed hydrating gmcp.CommChannelStart (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.CommChannelStart: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Comm.Channel.Start "ct"`),

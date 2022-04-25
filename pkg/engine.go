@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 )
 
 // UI is the primary user interface for the application.
@@ -103,9 +104,9 @@ func Run(pctx context.Context, client Client, ui UI, world World) error {
 			}
 
 			if err := world.Command(command); err != nil {
-				return fmt.Errorf(
-					"failed processing command '%s': %w",
-					command, err,
+				log.Printf(
+					"Failed processing command '%s': %s",
+					command, err.Error(),
 				)
 			}
 		}

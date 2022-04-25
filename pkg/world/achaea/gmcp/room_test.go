@@ -18,31 +18,31 @@ func TestRoomServerMessages(t *testing.T) {
 	}{
 		{
 			command: []byte("Room.Info"),
-			err:     "failed hydrating gmcp.RoomInfo (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.RoomInfo: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Room.Info {"details": [ "asdf" ] }`),
-			err:     `failed hydrating gmcp.RoomInfo ({"details": [ "asdf" ] }): unknown room detail 'asdf'`,
+			err:     `failed hydrating gmcp.RoomInfo: unknown room detail 'asdf'`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "123"}`),
-			err:     `failed hydrating gmcp.RoomInfo ({"coords": "123"}): failed parsing coords '[123]'`,
+			err:     `failed hydrating gmcp.RoomInfo: failed parsing coords '[123]'`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "a,5,4,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo ({"coords": "a,5,4,3"}): failed parsing area number from coords '[a 5 4 3]': strconv.Atoi: parsing "a": invalid syntax`,
+			err:     `failed hydrating gmcp.RoomInfo: failed parsing area number from coords '[a 5 4 3]': strconv.Atoi: parsing "a": invalid syntax`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "45,b,4,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo ({"coords": "45,b,4,3"}): failed parsing x from coords '[45 b 4 3]': strconv.Atoi: parsing "b": invalid syntax`,
+			err:     `failed hydrating gmcp.RoomInfo: failed parsing x from coords '[45 b 4 3]': strconv.Atoi: parsing "b": invalid syntax`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "45,5,c,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo ({"coords": "45,5,c,3"}): failed parsing y from coords '[45 5 c 3]': strconv.Atoi: parsing "c": invalid syntax`,
+			err:     `failed hydrating gmcp.RoomInfo: failed parsing y from coords '[45 5 c 3]': strconv.Atoi: parsing "c": invalid syntax`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "45,5,4,d"}`),
-			err:     `failed hydrating gmcp.RoomInfo ({"coords": "45,5,4,d"}): failed parsing building from coords '[45 5 4 d]': strconv.Atoi: parsing "d": invalid syntax`,
+			err:     `failed hydrating gmcp.RoomInfo: failed parsing building from coords '[45 5 4 d]': strconv.Atoi: parsing "d": invalid syntax`,
 		},
 		{
 			command: []byte(`Room.Info {"coords": "45,5,4"}`),
@@ -77,7 +77,7 @@ func TestRoomServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Room.Players"),
-			err:     "failed hydrating gmcp.RoomPlayers (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.RoomPlayers: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Room.Players [{ "name": "Tecton", "fullname": "Tecton the Terraformer" }]`),
@@ -89,7 +89,7 @@ func TestRoomServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Room.AddPlayer"),
-			err:     "failed hydrating gmcp.RoomAddPlayer (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.RoomAddPlayer: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Room.AddPlayer { "name": "Tecton", "fullname": "Tecton the Terraformer" }`),
@@ -101,7 +101,7 @@ func TestRoomServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Room.RemovePlayer"),
-			err:     "failed hydrating gmcp.RoomRemovePlayer (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.RoomRemovePlayer: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Room.RemovePlayer "Tecton"`),
@@ -112,7 +112,7 @@ func TestRoomServerMessages(t *testing.T) {
 
 		{
 			command: []byte("Room.WrongDir"),
-			err:     "failed hydrating gmcp.RoomWrongDir (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.RoomWrongDir: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`Room.WrongDir "ne"`),
