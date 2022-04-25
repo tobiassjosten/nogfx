@@ -10,7 +10,7 @@ import (
 
 // AddVital adds a new Vital to be displayed in the VitalsPane.
 func (tui *TUI) AddVital(name string, v interface{}) {
-	if vital, ok := v.(Vital); !ok {
+	if vital, ok := v.(Vital); ok {
 		tui.panes.vitals.AddVital(name, vital)
 	} else {
 		log.Printf("couldn't add 'health' vital: only tui.Vital is supported")
