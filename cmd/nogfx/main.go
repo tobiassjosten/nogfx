@@ -51,9 +51,16 @@ func run(mock bool) error {
 		log.Fatal(err)
 	}
 
-	ui := tui.NewTUI(screen, tui.NewInputPane(), tui.NewOutputPane())
-	if err != nil {
-		log.Fatal(err)
+	ui := tui.NewTUI(screen, tui.NewPanes())
+	if mock {
+		ui.AddVital("health", tui.HealthVital)
+		ui.UpdateVital("health", 123, 234)
+		ui.AddVital("mana", tui.ManaVital)
+		ui.UpdateVital("mana", 100, 200)
+		ui.AddVital("endurance", tui.EnduranceVital)
+		ui.UpdateVital("endurance", 1000, 1200)
+		ui.AddVital("willpower", tui.WillpowerVital)
+		ui.UpdateVital("willpower", 1000, 2000)
 	}
 
 	address := "achaea.com:23"

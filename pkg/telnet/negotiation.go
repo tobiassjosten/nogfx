@@ -77,10 +77,10 @@ func (client *Client) processCommand(command []byte) (bool, [][]byte) {
 	case WILL:
 		if _, ok := acceptWill[command[2]]; ok {
 			responses = append(responses, []byte{IAC, DO, command[2]})
-		} else {
-			responses = append(responses, []byte{IAC, DONT, command[2]})
+			return true, responses
 		}
 
+		responses = append(responses, []byte{IAC, DONT, command[2]})
 		return true, responses
 
 	case WONT:

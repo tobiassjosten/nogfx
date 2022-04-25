@@ -381,13 +381,13 @@ func TestInputDraw(t *testing.T) {
 		height  int
 	}{
 		{ // Normal mode gives no output.
-			pos:     []int{1, 2, 2, 2},
+			pos:     []int{1, 2, 2},
 			content: map[int]map[int]rune{},
 			cursor:  []int{-1, -1},
 			height:  0,
 		},
 		{ // Returning to normal mode gives no output.
-			pos: []int{1, 2, 2, 2},
+			pos: []int{1, 2, 2},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyEsc, 0),
@@ -397,7 +397,7 @@ func TestInputDraw(t *testing.T) {
 			height:  0,
 		},
 		{ // Pane is padded with spaces.
-			pos: []int{1, 2, 2, 2},
+			pos: []int{1, 2, 2},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
@@ -415,7 +415,7 @@ func TestInputDraw(t *testing.T) {
 			height: 1,
 		},
 		{ // Hitting enter doesn't change output.
-			pos: []int{1, 2, 2, 2},
+			pos: []int{1, 2, 2},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
@@ -434,7 +434,7 @@ func TestInputDraw(t *testing.T) {
 			height: 1,
 		},
 		{ // Pane position controls output coordinates.
-			pos: []int{2, 1, 2, 2},
+			pos: []int{2, 1, 2},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
@@ -452,7 +452,7 @@ func TestInputDraw(t *testing.T) {
 			height: 1,
 		},
 		{ // Words are wrapped to new lines.
-			pos: []int{0, 0, 3, 3},
+			pos: []int{0, 0, 3},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
@@ -478,7 +478,7 @@ func TestInputDraw(t *testing.T) {
 			height: 2,
 		},
 		{ // Line-length words also wrap to new lines.
-			pos: []int{0, 0, 3, 3},
+			pos: []int{0, 0, 3},
 			events: []*tcell.EventKey{
 				newEventKey(tcell.KeyRune, ' '),
 				newEventKey(tcell.KeyRune, 'a'),
@@ -511,7 +511,6 @@ func TestInputDraw(t *testing.T) {
 			assert := assert.New(t)
 
 			pane := tui.NewInputPane()
-			pane.Position(tc.pos[0], tc.pos[1], tc.pos[2], tc.pos[3])
 
 			content := map[int]map[int]rune{}
 			cursor := []int{}
@@ -535,6 +534,7 @@ func TestInputDraw(t *testing.T) {
 				_, _ = pane.HandleEvent(event)
 			}
 
+			pane.Position(tc.pos[0], tc.pos[1], tc.pos[2], pane.Height())
 			pane.Draw(screen)
 
 			assert.Equal(tc.content, content)
@@ -552,7 +552,6 @@ func TestInputDrawMasked(t *testing.T) {
 	assert := assert.New(t)
 
 	pane := tui.NewInputPane()
-	pane.Position(0, 0, 2, 2)
 
 	cursor := []int{}
 	content := map[int]map[int]rune{}
@@ -577,6 +576,7 @@ func TestInputDrawMasked(t *testing.T) {
 
 	pane.Mask()
 
+	pane.Position(0, 0, 2, 2)
 	pane.Draw(screen)
 
 	// Enabling mask wipes the input.

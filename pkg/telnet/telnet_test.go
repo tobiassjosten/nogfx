@@ -87,11 +87,14 @@ func TestReader(t *testing.T) {
 
 			client := telnet.NewClient(stream)
 
+			done := make(chan struct{})
+
 			var commands [][]byte
 			go func() {
 				for command := range client.Commands() {
 					commands = append(commands, command)
 				}
+				done <- struct{}{}
 			}()
 
 			output, err := ioutil.ReadAll(client)
@@ -101,9 +104,11 @@ func TestReader(t *testing.T) {
 				return
 			}
 
+			<-done
+
 			require.Nil(err)
 			assert.Equal(tc.output, output)
-			assert.Equal(commands, tc.commands)
+			assert.Equal(tc.commands, commands)
 			assert.Equal(tc.response, writer.String())
 		})
 	}

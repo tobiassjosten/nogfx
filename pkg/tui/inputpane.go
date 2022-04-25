@@ -1,11 +1,20 @@
 package tui
 
 import (
-	"math"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 )
+
+// MaskInput hides the content of the InputPane.
+func (tui *TUI) MaskInput() {
+	tui.panes.input.Mask()
+}
+
+// UnmaskInput shows the content of the InputPane.
+func (tui *TUI) UnmaskInput() {
+	tui.panes.input.Unmask()
+}
 
 // InputPane is the pane that takes input and users most often interact with.
 type InputPane struct {
@@ -161,7 +170,7 @@ func (pane *InputPane) handleBackspaceInputted(_ rune) (bool, []rune) {
 }
 
 func (pane *InputPane) handleBackspaceInput(_ rune) (bool, []rune) {
-	cursor := int(math.Max(0, float64(pane.cursor-1)))
+	cursor := int(max(0, pane.cursor-1))
 	pane.input = append(
 		pane.input[:cursor],
 		pane.input[pane.cursor:]...,
@@ -227,12 +236,12 @@ func (pane *InputPane) handleCtrlCInput(_ rune) (bool, []rune) {
 }
 
 func (pane *InputPane) handleLeftInput(_ rune) (bool, []rune) {
-	pane.cursor = int(math.Max(0, float64(pane.cursor-1)))
+	pane.cursor = int(max(0, pane.cursor-1))
 	return true, nil
 }
 
 func (pane *InputPane) handleRightInput(_ rune) (bool, []rune) {
-	pane.cursor = int(math.Min(float64(len(pane.input)), float64(pane.cursor+1)))
+	pane.cursor = int(min(len(pane.input), pane.cursor+1))
 	return true, nil
 }
 
@@ -300,7 +309,7 @@ func (pane *InputPane) HandleEvent(event *tcell.EventKey) (bool, []rune) {
 
 // Draw prints the contents of the InputPane to the given tcell.Screen.
 func (pane *InputPane) Draw(screen tcell.Screen) {
-	if !pane.inputting {
+	if pane.height == 0 {
 		screen.HideCursor()
 		return
 	}

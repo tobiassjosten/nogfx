@@ -18,6 +18,9 @@ var _ UI = &UIMock{}
 //
 // 		// make and configure a mocked UI
 // 		mockedUI := &UIMock{
+// 			AddVitalFunc: func(s string, ifaceVal interface{})  {
+// 				panic("mock out the AddVital method")
+// 			},
 // 			InputsFunc: func() <-chan []byte {
 // 				panic("mock out the Inputs method")
 // 			},
@@ -36,6 +39,9 @@ var _ UI = &UIMock{}
 // 			UnmaskInputFunc: func()  {
 // 				panic("mock out the UnmaskInput method")
 // 			},
+// 			UpdateVitalFunc: func(s string, n1 int, n2 int)  {
+// 				panic("mock out the UpdateVital method")
+// 			},
 // 		}
 //
 // 		// use mockedUI in code that requires UI
@@ -43,6 +49,9 @@ var _ UI = &UIMock{}
 //
 // 	}
 type UIMock struct {
+	// AddVitalFunc mocks the AddVital method.
+	AddVitalFunc func(s string, ifaceVal interface{})
+
 	// InputsFunc mocks the Inputs method.
 	InputsFunc func() <-chan []byte
 
@@ -61,8 +70,18 @@ type UIMock struct {
 	// UnmaskInputFunc mocks the UnmaskInput method.
 	UnmaskInputFunc func()
 
+	// UpdateVitalFunc mocks the UpdateVital method.
+	UpdateVitalFunc func(s string, n1 int, n2 int)
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// AddVital holds details about calls to the AddVital method.
+		AddVital []struct {
+			// S is the s argument value.
+			S string
+			// IfaceVal is the ifaceVal argument value.
+			IfaceVal interface{}
+		}
 		// Inputs holds details about calls to the Inputs method.
 		Inputs []struct {
 		}
@@ -85,13 +104,59 @@ type UIMock struct {
 		// UnmaskInput holds details about calls to the UnmaskInput method.
 		UnmaskInput []struct {
 		}
+		// UpdateVital holds details about calls to the UpdateVital method.
+		UpdateVital []struct {
+			// S is the s argument value.
+			S string
+			// N1 is the n1 argument value.
+			N1 int
+			// N2 is the n2 argument value.
+			N2 int
+		}
 	}
+	lockAddVital    sync.RWMutex
 	lockInputs      sync.RWMutex
 	lockMaskInput   sync.RWMutex
 	lockOutputs     sync.RWMutex
 	lockPrint       sync.RWMutex
 	lockRun         sync.RWMutex
 	lockUnmaskInput sync.RWMutex
+	lockUpdateVital sync.RWMutex
+}
+
+// AddVital calls AddVitalFunc.
+func (mock *UIMock) AddVital(s string, ifaceVal interface{}) {
+	if mock.AddVitalFunc == nil {
+		panic("UIMock.AddVitalFunc: method is nil but UI.AddVital was just called")
+	}
+	callInfo := struct {
+		S        string
+		IfaceVal interface{}
+	}{
+		S:        s,
+		IfaceVal: ifaceVal,
+	}
+	mock.lockAddVital.Lock()
+	mock.calls.AddVital = append(mock.calls.AddVital, callInfo)
+	mock.lockAddVital.Unlock()
+	mock.AddVitalFunc(s, ifaceVal)
+}
+
+// AddVitalCalls gets all the calls that were made to AddVital.
+// Check the length with:
+//     len(mockedUI.AddVitalCalls())
+func (mock *UIMock) AddVitalCalls() []struct {
+	S        string
+	IfaceVal interface{}
+} {
+	var calls []struct {
+		S        string
+		IfaceVal interface{}
+	}
+	mock.lockAddVital.RLock()
+	calls = mock.calls.AddVital
+	mock.lockAddVital.RUnlock()
+	return calls
 }
 
 // Inputs calls InputsFunc.
@@ -257,5 +322,44 @@ func (mock *UIMock) UnmaskInputCalls() []struct {
 	mock.lockUnmaskInput.RLock()
 	calls = mock.calls.UnmaskInput
 	mock.lockUnmaskInput.RUnlock()
+	return calls
+}
+
+// UpdateVital calls UpdateVitalFunc.
+func (mock *UIMock) UpdateVital(s string, n1 int, n2 int) {
+	if mock.UpdateVitalFunc == nil {
+		panic("UIMock.UpdateVitalFunc: method is nil but UI.UpdateVital was just called")
+	}
+	callInfo := struct {
+		S  string
+		N1 int
+		N2 int
+	}{
+		S:  s,
+		N1: n1,
+		N2: n2,
+	}
+	mock.lockUpdateVital.Lock()
+	mock.calls.UpdateVital = append(mock.calls.UpdateVital, callInfo)
+	mock.lockUpdateVital.Unlock()
+	mock.UpdateVitalFunc(s, n1, n2)
+}
+
+// UpdateVitalCalls gets all the calls that were made to UpdateVital.
+// Check the length with:
+//     len(mockedUI.UpdateVitalCalls())
+func (mock *UIMock) UpdateVitalCalls() []struct {
+	S  string
+	N1 int
+	N2 int
+} {
+	var calls []struct {
+		S  string
+		N1 int
+		N2 int
+	}
+	mock.lockUpdateVital.RLock()
+	calls = mock.calls.UpdateVital
+	mock.lockUpdateVital.RUnlock()
 	return calls
 }
