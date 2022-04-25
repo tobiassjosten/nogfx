@@ -14,7 +14,7 @@ import (
 func TestVitalsDraw(t *testing.T) {
 	tcs := []struct {
 		pos     []int
-		vitals  map[string]tui.Vital
+		vitals  []map[string]tui.Vital
 		updates map[string][]int
 		content map[int]map[int]rune
 	}{
@@ -24,8 +24,8 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 1},
-			vitals: map[string]tui.Vital{
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -38,8 +38,8 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 2},
-			vitals: map[string]tui.Vital{
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -55,8 +55,8 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 2},
-			vitals: map[string]tui.Vital{
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{1, 4},
@@ -72,8 +72,8 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 1},
-			vitals: map[string]tui.Vital{
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -87,9 +87,9 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 3},
-			vitals: map[string]tui.Vital{
-				"health": tui.HealthVital,
-				"mana":   tui.ManaVital,
+			vitals: []map[string]tui.Vital{
+				{"health": tui.HealthVital},
+				{"mana": tui.ManaVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -109,9 +109,9 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 3},
-			vitals: map[string]tui.Vital{
-				"mana":   tui.ManaVital,
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"mana": tui.ManaVital},
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -131,9 +131,9 @@ func TestVitalsDraw(t *testing.T) {
 		},
 		{
 			pos: []int{0, 0, 4},
-			vitals: map[string]tui.Vital{
-				"mana":   tui.ManaVital,
-				"health": tui.HealthVital,
+			vitals: []map[string]tui.Vital{
+				{"mana": tui.ManaVital},
+				{"health": tui.HealthVital},
 			},
 			updates: map[string][]int{
 				"health": []int{4, 4},
@@ -162,10 +162,12 @@ func TestVitalsDraw(t *testing.T) {
 
 			pane := tui.NewVitalsPane()
 
-			for name, vital := range tc.vitals {
-				pane.AddVital(name, vital)
-				// Prove idempotency.
-				pane.AddVital(name, vital)
+			for _, pairs := range tc.vitals {
+				for name, vital := range pairs {
+					pane.AddVital(name, vital)
+					// Prove idempotency.
+					pane.AddVital(name, vital)
+				}
 			}
 
 			for name, update := range tc.updates {
