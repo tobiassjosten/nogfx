@@ -47,7 +47,7 @@ func TestIREServerMessages(t *testing.T) {
 	}{
 		{
 			command: []byte("IRE.Rift.Change"),
-			err:     "failed hydrating gmcp.IRERiftChange (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.IRERiftChange: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`IRE.Rift.Change { "name": "rawstone", "amount": "1", "desc": "rawstone" }`),
@@ -60,7 +60,7 @@ func TestIREServerMessages(t *testing.T) {
 
 		{
 			command: []byte("IRE.Rift.List"),
-			err:     "failed hydrating gmcp.IRERiftList (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.IRERiftList: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`IRE.Rift.List [ { "name": "rawstone", "amount": "1", "desc": "rawstone" } ]`),
@@ -73,7 +73,7 @@ func TestIREServerMessages(t *testing.T) {
 
 		{
 			command: []byte("IRE.Target.Set"),
-			err:     "failed hydrating gmcp.IRETargetSet (): unexpected end of JSON input",
+			err:     "failed hydrating gmcp.IRETargetSet: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`IRE.Target.Set "asdf"`),
@@ -82,11 +82,11 @@ func TestIREServerMessages(t *testing.T) {
 
 		{
 			command: []byte("IRE.Target.Info"),
-			err:     "failed hydrating *gmcp.IRETargetInfo (): unexpected end of JSON input",
+			err:     "failed hydrating *gmcp.IRETargetInfo: unexpected end of JSON input",
 		},
 		{
 			command: []byte(`IRE.Target.Info { "hpperc": "asdf" }`),
-			err:     `failed hydrating *gmcp.IRETargetInfo ({ "hpperc": "asdf" }): strconv.Atoi: parsing "asdf": invalid syntax`,
+			err:     `failed hydrating *gmcp.IRETargetInfo: strconv.Atoi: parsing "asdf": invalid syntax`,
 		},
 		{
 			command: []byte(`IRE.Target.Info { "id": "266744", "hpperc": "79%", "short_desc": "a practice dummy" }`),

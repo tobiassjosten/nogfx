@@ -370,7 +370,7 @@ func (msg CharName) Hydrate(data []byte) (ServerMessage, error) {
 type charSkillsGroup struct {
 	Name     string
 	Level    string
-	Progress int
+	Progress *int
 }
 
 // CharSkillsGroups is a server-sent GMCP message listing groups of skills
@@ -390,17 +390,14 @@ func (msg CharSkillsGroups) Hydrate(data []byte) (ServerMessage, error) {
 	}
 
 	for _, child := range children {
+		// Documentation says that `rank` is formatted as "Adept (1%)"
+		// but at least Achaea instead seems to show only "Adept", so
+		// we allow for both variants by just passing `rank` on as is.
 		level, rank := splitRank(child.Rank)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing rank '%s'", child.Rank,
-			)
-		}
-
 		msg = append(msg, charSkillsGroup{
 			Name:     child.Name,
 			Level:    level,
-			Progress: *rank,
+			Progress: rank,
 		})
 	}
 
