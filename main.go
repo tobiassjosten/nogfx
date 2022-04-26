@@ -2,17 +2,25 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
+	"github.com/tobiassjosten/nogfx/pkg/world"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	defaultPort = 23
 )
 
 func main() {
@@ -27,14 +35,13 @@ func main() {
 	log.SetOutput(f)
 
 	app := &cli.App{
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "mock",
-				Usage: "mock connection",
-			},
-		},
 		Action: func(c *cli.Context) error {
-			return run(c.Bool("mock"))
+			address, err := address(c.Args().Get(0))
+			if err != nil {
+				return err
+			}
+
+			return run(address)
 		},
 	}
 
@@ -43,39 +50,60 @@ func main() {
 	}
 }
 
-func run(mock bool) error {
+func address(host string) (string, error) {
+	if strings.Contains(host, ":") {
+		parts := strings.Split(host, ":")
+		// @todo Add support for IPv6 addresses.
+		if len(parts) != 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
+			return "", fmt.Errorf("invalid address '%s'", host)
+		}
+
+		if _, err := strconv.ParseFloat(parts[1], 64); err != nil {
+			return "", fmt.Errorf("invalid port '%s'", parts[1])
+		}
+
+		return host, nil
+	}
+
+	if host == "" {
+		host = "example.com"
+	}
+
+	return fmt.Sprintf("%s:%d", host, defaultPort), nil
+}
+
+func run(address string) error {
 	ctx := context.Background()
 
-	screen, err := tcell.NewScreen()
+	client, err := client(address)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	ui := tui.NewTUI(screen, tui.NewPanes())
-	if mock {
-		ui.AddVital("health", tui.HealthVital)
-		ui.UpdateVital("health", 123, 234)
-		ui.AddVital("mana", tui.ManaVital)
-		ui.UpdateVital("mana", 100, 200)
-		ui.AddVital("endurance", tui.EnduranceVital)
-		ui.UpdateVital("endurance", 1000, 1200)
-		ui.AddVital("willpower", tui.WillpowerVital)
-		ui.UpdateVital("willpower", 1000, 2000)
+	ui, err := ui()
+	if err != nil {
+		return err
 	}
 
-	address := "achaea.com:23"
-
-	connection := mockReadWriter()
-	if !mock {
-		connection, err = net.Dial("tcp", address)
-		if err != nil {
-			return err
-		}
-	}
-
-	client := telnet.NewClient(connection)
-
-	world := NewWorld(ui, client, address)
+	world := world.New(client, ui, address)
 
 	return pkg.Run(ctx, client, ui, world)
+}
+
+func client(address string) (*telnet.Client, error) {
+	connection, err := net.Dial("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	return telnet.NewClient(connection), nil
+}
+
+func ui() (*tui.TUI, error) {
+	screen, err := tcell.NewScreen()
+	if err != nil {
+		return nil, err
+	}
+
+	return tui.NewTUI(screen, tui.NewPanes()), nil
 }
