@@ -60,9 +60,6 @@ func (engine *Engine) Run(pctx context.Context) error {
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
 
-	go func() {
-	}()
-
 	for {
 		select {
 		case _ = <-ctx.Done():
