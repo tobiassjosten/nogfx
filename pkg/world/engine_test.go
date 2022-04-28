@@ -1,11 +1,8 @@
 package world_test
 
 import (
-	"bufio"
-	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
@@ -90,67 +87,6 @@ func TestCommandsReply(t *testing.T) {
 			if len(tc.sent) > 0 {
 				assert.Equal(t, tc.sent, sent, string(sent))
 			}
-		})
-	}
-}
-
-func TestRun(t *testing.T) {
-	tcs := []struct {
-		input [][]byte
-	}{
-		{
-			input: [][]byte{[]byte("qwer")},
-		},
-	}
-
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			inputs := make(chan []byte)
-			outputs := make(chan []byte)
-			commands := make(chan []byte)
-
-			go func() {
-				for _, input := range tc.input {
-					inputs <- input
-				}
-			}()
-
-			inputted := [][]byte{}
-
-			client := &mock.ClientMock{
-				CommandsFunc: func() <-chan []byte {
-					return commands
-				},
-				ScannerFunc: func() *bufio.Scanner {
-					return bufio.NewScanner(
-						strings.NewReader("asdf"),
-					)
-				},
-				WriteFunc: func(data []byte) (int, error) {
-					inputted = append(inputted, data)
-					return len(data), nil
-				},
-			}
-
-			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) {},
-				InputsFunc: func() <-chan []byte {
-					return inputs
-				},
-				OutputsFunc: func() chan<- []byte {
-					return outputs
-				},
-				RunFunc: func(ctx context.Context) error {
-					return nil
-				},
-			}
-
-			engine := world.NewEngine(client, ui, "example.com")
-			err := engine.Run(context.Background())
-
-			require.Nil(t, err)
-
-			assert.Equal(t, tc.input, inputted)
 		})
 	}
 }
