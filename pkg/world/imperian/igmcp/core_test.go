@@ -6,7 +6,7 @@ import (
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/imperian/igmcp"
 
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
@@ -42,8 +42,8 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Set []",
 		},
 		{
-			message: agmcp.CoreSupportsSet{
-				agmcp.CoreSupports{
+			message: igmcp.CoreSupportsSet{
+				CoreSupports: igmcp.CoreSupports{
 					CoreSupports: gmcp.CoreSupports{
 						Char:        gox.NewInt(1),
 						CharSkills:  gox.NewInt(2),
@@ -61,8 +61,8 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Add []",
 		},
 		{
-			message: agmcp.CoreSupportsAdd{
-				agmcp.CoreSupports{
+			message: igmcp.CoreSupportsAdd{
+				igmcp.CoreSupports{
 					CoreSupports: gmcp.CoreSupports{
 						Char:        gox.NewInt(1),
 						CharSkills:  gox.NewInt(2),
@@ -80,8 +80,8 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Remove []",
 		},
 		{
-			message: agmcp.CoreSupportsRemove{
-				agmcp.CoreSupports{
+			message: igmcp.CoreSupportsRemove{
+				igmcp.CoreSupports{
 					CoreSupports: gmcp.CoreSupports{
 						Char:        gox.NewInt(1),
 						CharSkills:  gox.NewInt(2),
