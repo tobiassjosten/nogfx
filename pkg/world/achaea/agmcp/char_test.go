@@ -27,10 +27,6 @@ func TestCharServerMessages(t *testing.T) {
 			err:     `failed hydrating agmcp.CharStatus: invalid character ']' after object key`,
 		},
 		{
-			command: []byte(`Char.Status { "level": "invalid" }`),
-			err:     `failed hydrating agmcp.CharStatus: failed parsing level 'invalid'`,
-		},
-		{
 			command: []byte(`Char.Status { "city": "invalid" }`),
 			err:     `failed hydrating agmcp.CharStatus: failed parsing city 'invalid'`,
 		},
@@ -51,23 +47,18 @@ func TestCharServerMessages(t *testing.T) {
 			message: agmcp.CharStatus{},
 		},
 		{
-			command: []byte(`Char.Status { "gender": "female" }`),
-			message: agmcp.CharStatus{Gender: gox.NewInt(2)},
-		},
-		{
-			command: []byte(`Char.Status { "gender": "invalid" }`),
-			message: agmcp.CharStatus{Gender: gox.NewInt(9)},
-		},
-		{
 			command: []byte(`Char.Status { "name": "Durak", "fullname": "Mason Durak", "age": "184", "race": "Dwarf", "specialisation": "Brawler", "level": "68 (19%)", "xp": "19%", "xprank": "999", "class": "Monk", "city": "Hashan (1)", "house": "The Somatikos(1)", "order": "Blabla (1)", "boundcredits": "20", "unboundcredits": "1", "lessons": "4073", "explorerrank": "an Itinerant", "mayancrowns": "1", "boundmayancrowns": "2", "gold": "35", "bank": "1590", "unread_news": "3751", "unread_msgs": "1", "target": "123456", "gender": "male" }`),
 			message: agmcp.CharStatus{
-				Name:             gox.NewString("Durak"),
-				Fullname:         gox.NewString("Mason Durak"),
-				Age:              gox.NewInt(184),
-				Race:             gox.NewString("Dwarf"),
+				CharStatus: gmcp.CharStatus{
+					Name:     gox.NewString("Durak"),
+					Fullname: gox.NewString("Mason Durak"),
+					Age:      gox.NewInt(184),
+					Race:     gox.NewString("Dwarf"),
+					Level:    gox.NewFloat64(68),
+					XP:       gox.NewInt(19),
+					Gender:   gox.NewInt(1),
+				},
 				Specialisation:   gox.NewString("Brawler"),
-				Level:            gox.NewInt(68),
-				XP:               gox.NewInt(19),
 				XPRank:           gox.NewInt(999),
 				Class:            gox.NewString("Monk"),
 				City:             gox.NewString("Hashan"),
@@ -87,7 +78,6 @@ func TestCharServerMessages(t *testing.T) {
 				UnreadNews:       gox.NewInt(3751),
 				UnreadMessages:   gox.NewInt(1),
 				Target:           gox.NewInt(123456),
-				Gender:           gox.NewInt(1),
 			},
 		},
 

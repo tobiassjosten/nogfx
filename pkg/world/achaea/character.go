@@ -35,7 +35,7 @@ func (c *Character) FromCharName(msg gmcp.CharName) {
 // FromCharStatus updates the character from a Char.Status GMCP message.
 func (c *Character) FromCharStatus(msg agmcp.CharStatus) {
 	if msg.Level != nil {
-		c.Level = *msg.Level
+		c.Level = int(*msg.Level)
 	}
 }
 

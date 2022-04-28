@@ -52,10 +52,3 @@ func splitRank(str string) (string, *int) {
 
 	return name, rank
 }
-
-func splitLevelRank(str string) (int, *int) {
-	name, rank := splitRank(str)
-	level, _ := strconv.Atoi(name)
-
-	return level, rank
-}

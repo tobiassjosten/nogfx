@@ -3,8 +3,6 @@ package igmcp
 import (
 	"bytes"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
@@ -36,26 +34,4 @@ func Parse(command []byte) (gmcp.ServerMessage, error) {
 	}
 
 	return msg, nil
-}
-
-func splitRank(str string) (string, *int) {
-	parts := strings.SplitN(str, "(", 2)
-	name := strings.Trim(parts[0], " ")
-
-	var rank *int
-	if len(parts) > 1 {
-		r, err := strconv.Atoi(strings.Trim(parts[1], "%)"))
-		if err == nil {
-			rank = &r
-		}
-	}
-
-	return name, rank
-}
-
-func splitLevelRank(str string) (int, *int) {
-	name, rank := splitRank(str)
-	level, _ := strconv.Atoi(name)
-
-	return level, rank
 }

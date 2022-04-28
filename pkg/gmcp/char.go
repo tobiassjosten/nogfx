@@ -457,33 +457,13 @@ func (msg CharStatusVars) Hydrate(data []byte) (ServerMessage, error) {
 // initial message sent contains all values but subsequent messages only carry
 // changes, with omitted properties assumed unchanged.
 type CharStatus struct {
-	Name             *string `json:"name"`
-	Fullname         *string `json:"fullname"`
-	Age              *int    `json:"age,string"`
-	Race             *string `json:"race"`
-	Specialisation   *string `json:"specialisation"`
-	Level            *float64
-	XP               *int    `json:"-"`
-	XPRank           *int    `json:"xprank,string"`
-	Class            *string `json:"class"`
-	City             *string
-	CityRank         *int
-	House            *string
-	HouseRank        *int
-	Order            *string
-	OrderRank        *int
-	BoundCredits     *int    `json:"boundcredits,string"`
-	UnboundCredits   *int    `json:"unboundcredits,string"`
-	Lessons          *int    `json:"lessons,string"`
-	ExplorerRank     *string `json:"explorerrank"`
-	MayanCrowns      *int    `json:"mayancrowns,string"`
-	BoundMayanCrowns *int    `json:"boundmayancrowns,string"`
-	Gold             *int    `json:"gold,string"`
-	Bank             *int    `json:"bank,string"`
-	UnreadNews       *int    `json:"unread_news,string"`
-	UnreadMessages   *int    `json:"unread_msgs,string"`
-	Target           *int
-	Gender           *int // ISO/IEC 5218
+	Name     *string  `json:"name"`
+	Fullname *string  `json:"fullname"`
+	Age      *int     `json:"age,string"`
+	Race     *string  `json:"race"`
+	Level    *float64 `json:"-"`
+	XP       *int     `json:"-"`
+	Gender   *int     `json:"-"` // ISO/IEC 5218
 }
 
 // Hydrate populates the message with data.
@@ -492,10 +472,6 @@ func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 	var child struct {
 		CharStatusAlias
 		CLevel  *string `json:"level"`
-		CCity   *string `json:"city"`
-		CHouse  *string `json:"house"`
-		COrder  *string `json:"order"`
-		CTarget *string `json:"target"`
 		CGender *string `json:"gender"`
 	}
 
@@ -517,54 +493,6 @@ func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 
 		msg.Level = gox.NewFloat64(level)
 		msg.XP = rank
-	}
-
-	if child.CCity != nil && *child.CCity != "(None)" {
-		city, rank := splitRank(*child.CCity)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing city '%s'", *child.CCity,
-			)
-		}
-
-		msg.City = gox.NewString(city)
-		msg.CityRank = rank
-	}
-
-	if child.CHouse != nil && *child.CHouse != "(None)" {
-		house, rank := splitRank(*child.CHouse)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing house '%s'", *child.CHouse,
-			)
-		}
-
-		msg.House = gox.NewString(house)
-		msg.HouseRank = rank
-	}
-
-	if child.COrder != nil && *child.COrder != "(None)" {
-		order, rank := splitRank(*child.COrder)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing order '%s'", *child.COrder,
-			)
-		}
-
-		msg.Order = gox.NewString(order)
-		msg.OrderRank = rank
-	}
-
-	if child.CTarget != nil && *child.CTarget != "None" {
-		// Yes, sometimes it's a string, sometimes it's an int. Yay!
-		target, err := strconv.Atoi(*child.CTarget)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing target '%s'", *child.CTarget,
-			)
-		}
-
-		msg.Target = gox.NewInt(target)
 	}
 
 	if child.CGender != nil {

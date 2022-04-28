@@ -20,13 +20,8 @@ var (
 // initial message sent contains all values but subsequent messages only carry
 // changes, with omitted properties assumed unchanged.
 type CharStatus struct {
-	Name             *string `json:"name"`
-	Fullname         *string `json:"fullname"`
-	Age              *int    `json:"age,string"`
-	Race             *string `json:"race"`
+	gmcp.CharStatus
 	Specialisation   *string `json:"specialisation"`
-	Level            *int
-	XP               *int    `json:"-"`
 	XPRank           *int    `json:"xprank,string"`
 	Class            *string `json:"class"`
 	City             *string
@@ -46,7 +41,6 @@ type CharStatus struct {
 	UnreadNews       *int    `json:"unread_news,string"`
 	UnreadMessages   *int    `json:"unread_msgs,string"`
 	Target           *int
-	Gender           *int // ISO/IEC 5218
 }
 
 // Hydrate populates the message with data.
@@ -54,12 +48,10 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 	type CharStatusAlias CharStatus
 	var child struct {
 		CharStatusAlias
-		CLevel  *string `json:"level"`
 		CCity   *string `json:"city"`
 		CHouse  *string `json:"house"`
 		COrder  *string `json:"order"`
 		CTarget *string `json:"target"`
-		CGender *string `json:"gender"`
 	}
 
 	err := json.Unmarshal(data, &child)
@@ -69,17 +61,18 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 
 	msg = (CharStatus)(child.CharStatusAlias)
 
-	if child.CLevel != nil {
-		level, rank := splitLevelRank(*child.CLevel)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing level '%s'", *child.CLevel,
-			)
-		}
-
-		msg.Level = gox.NewInt(level)
-		msg.XP = rank
+	parentMessage, err := msg.CharStatus.Hydrate(data)
+	if err != nil {
+		return nil, err
 	}
+
+	parentMsg, ok := parentMessage.(gmcp.CharStatus)
+	if !ok {
+		return nil, fmt.Errorf(
+			"expected gmcp.CharStatus, got '%+v'", parentMessage,
+		)
+	}
+	msg.CharStatus = parentMsg
 
 	if child.CCity != nil && *child.CCity != "(None)" {
 		city, rank := splitRank(*child.CCity)
@@ -127,17 +120,6 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 		}
 
 		msg.Target = gox.NewInt(target)
-	}
-
-	if child.CGender != nil {
-		switch *child.CGender {
-		case "male":
-			msg.Gender = gox.NewInt(1)
-		case "female":
-			msg.Gender = gox.NewInt(2)
-		default:
-			msg.Gender = gox.NewInt(9)
-		}
 	}
 
 	return msg, nil
