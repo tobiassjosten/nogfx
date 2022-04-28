@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func TestCharClientMessages(t *testing.T) {
@@ -381,7 +381,7 @@ func TestCharServerMessages(t *testing.T) {
 				Age:              gox.NewInt(184),
 				Race:             gox.NewString("Dwarf"),
 				Specialisation:   gox.NewString("Brawler"),
-				Level:            gox.NewInt(68),
+				Level:            gox.NewFloat64(68),
 				XP:               gox.NewInt(19),
 				XPRank:           gox.NewInt(999),
 				Class:            gox.NewString("Monk"),
@@ -411,49 +411,7 @@ func TestCharServerMessages(t *testing.T) {
 			err:     "failed hydrating gmcp.CharVitals: unexpected end of JSON input",
 		},
 		{
-			command: []byte(`Char.Vitals { "charstats": [ "Invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: misformed charstat 'Invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Unknown: 123" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Unknown: 123'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Bleed: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Bleed: invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Rage: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Rage: invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Ferocity: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Ferocity: invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Kai: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Kai: invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Kai: 1" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Kai: 1'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Karma: invalid" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Karma: invalid'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Karma: 1" ] }`),
-			err:     `failed hydrating gmcp.CharVitals: invalid charstat 'Karma: 1'`,
-		},
-		{
-			command: []byte(`Char.Vitals { "charstats": [ "Stance: None" ] }`),
-			message: gmcp.CharVitals{
-				Stats: gmcp.CharVitalsStats{Stance: nil},
-			},
-		},
-		{
-			command: []byte(`Char.Vitals { "hp": "3904", "maxhp": "3904", "mp": "3845", "maxmp": "3845", "ep": "15020", "maxep": "15020", "wp": "12980", "maxwp": "12980", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3904 M:3845/3845 E:15020/15020 W:12980/12980 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
+			command: []byte(`Char.Vitals { "hp": "3904", "maxhp": "3904", "mp": "3845", "maxmp": "3845", "ep": "15020", "maxep": "15020", "wp": "12980", "maxwp": "12980", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3904 M:3845/3845 E:15020/15020 W:12980/12980 NL:19/100 ", "charstats": [] }`),
 			message: gmcp.CharVitals{
 				HP:     3904,
 				MaxHP:  3904,
@@ -468,16 +426,7 @@ func TestCharServerMessages(t *testing.T) {
 				Eq:     true,
 				Vote:   true,
 				Prompt: "H:3904/3904 M:3845/3845 E:15020/15020 W:12980/12980 NL:19/100 ",
-				Stats: gmcp.CharVitalsStats{
-					Bleed: 1,
-					Rage:  2,
-
-					Ferocity: gox.NewInt(3),
-					Kai:      gox.NewInt(4),
-					Karma:    gox.NewInt(5),
-					Spec:     gox.NewString("Sword and Shield"),
-					Stance:   gox.NewString("Crane"),
-				},
+				Stats:  gmcp.CharVitalsStats{},
 			},
 		},
 	}

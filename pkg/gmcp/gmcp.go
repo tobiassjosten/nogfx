@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 // ClientMessage is a GMCP message sent from the client.
@@ -74,6 +76,9 @@ func Parse(command []byte) (ServerMessage, error) {
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
 
+	// Some messages don't have a message body but we want each message to
+	// be responsible for its own hydration and validation. So we mock
+	// missing bodies and proceed with hydration as normal.
 	if len(parts) == 1 {
 		parts = append(parts, []byte{})
 	}
@@ -84,6 +89,29 @@ func Parse(command []byte) (ServerMessage, error) {
 	}
 
 	return msg, nil
+}
+
+var (
+	gmcpPrefix = []byte{telnet.IAC, telnet.SB, telnet.GMCP}
+	gmcpSuffix = []byte{telnet.IAC, telnet.SE}
+)
+
+// Wrap embeds a GMCP message in a telnet negotiation sequence.
+func Wrap(gmcp []byte) []byte {
+	return append(append(gmcpPrefix, gmcp...), gmcpSuffix...)
+}
+
+// Unwrap removes telnet control codes from a GMCP message. Returns nil if the
+// command actually isn't a GMCP message.
+func Unwrap(command []byte) []byte {
+	if !bytes.HasPrefix(command, gmcpPrefix) {
+		return nil
+	}
+	if !bytes.HasSuffix(command, gmcpSuffix) {
+		return nil
+	}
+
+	return command[len(gmcpPrefix) : len(command)-len(gmcpSuffix)]
 }
 
 func splitRank(str string) (string, *int) {
@@ -99,11 +127,4 @@ func splitRank(str string) (string, *int) {
 	}
 
 	return name, rank
-}
-
-func splitLevelRank(str string) (int, *int) {
-	name, rank := splitRank(str)
-	level, _ := strconv.Atoi(name)
-
-	return level, rank
 }

@@ -462,7 +462,7 @@ type CharStatus struct {
 	Age              *int    `json:"age,string"`
 	Race             *string `json:"race"`
 	Specialisation   *string `json:"specialisation"`
-	Level            *int
+	Level            *float64
 	XP               *int    `json:"-"`
 	XPRank           *int    `json:"xprank,string"`
 	Class            *string `json:"class"`
@@ -507,14 +507,15 @@ func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 	msg = (CharStatus)(child.CharStatusAlias)
 
 	if child.CLevel != nil {
-		level, rank := splitLevelRank(*child.CLevel)
+		lvl, rank := splitRank(*child.CLevel)
+		level, _ := strconv.ParseFloat(lvl, 64)
 		if rank == nil {
 			return nil, fmt.Errorf(
 				"failed parsing level '%s'", *child.CLevel,
 			)
 		}
 
-		msg.Level = gox.NewInt(level)
+		msg.Level = gox.NewFloat64(level)
 		msg.XP = rank
 	}
 
@@ -622,94 +623,12 @@ func (msg CharVitals) Hydrate(data []byte) (ServerMessage, error) {
 	return msg, nil
 }
 
-// CharVitalsStats is structured data extending CharVitals.
+// CharVitalsStats is structured data extending CharVitals. Comparing different
+// games, there is no overlap, and so we leave it here for reference only.
 type CharVitalsStats struct {
-	Bleed int
-	Rage  int
-
-	Ferocity *int    // Infernal.
-	Kai      *int    // Monk.
-	Spec     *string // Infernal, Paladin, Runewarden.
-	Stance   *string // Bard, Blademaster, Monk.
-	Karma    *int
-
-	// @todo Implement the one following (first checking keys in game).
-	// Channels // Magi.
-	// CurrentMorph // Druid, Sentinel.
-	// Devotion // Paladin, Priest.
-	// ElementalChannels // Sylvan.
-	// EntityBalance // Occultist.
-	// Essence // Apostate.
-	// Karma // Occultist.
-	// NumberOfSpiritsBound // Shaman.
-	// SecretedVenom // Serpent.
-	// SunlightEnergy // Druid, Sylvan.
-	// VoiceBalance // Bard.
-
 }
 
 // UnmarshalJSON hydrates CharVitalsStats from a list of unstructured strings.
 func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
-	var list []string
-
-	// This should only be invoked from CharVitals.UnmarshalJSON(), so any
-	// formatting errors will be caught there.
-	_ = json.Unmarshal(data, &list)
-
-	for _, item := range list {
-		parts := strings.SplitN(item, ": ", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("misformed charstat '%s'", item)
-		}
-
-		switch parts[0] {
-		case "Bleed":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Bleed = value
-
-		case "Rage":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Rage = value
-
-		case "Ferocity":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Ferocity = gox.NewInt(value)
-
-		case "Kai":
-			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Kai = gox.NewInt(value)
-
-		case "Karma":
-			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Karma = gox.NewInt(value)
-
-		case "Spec":
-			stats.Spec = gox.NewString(parts[1])
-
-		case "Stance":
-			if parts[1] != "None" {
-				stats.Stance = gox.NewString(parts[1])
-			}
-
-		default:
-			return fmt.Errorf("invalid charstat '%s'", item)
-		}
-	}
-
 	return nil
 }

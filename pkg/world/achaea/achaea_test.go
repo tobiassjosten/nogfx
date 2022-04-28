@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	tn "github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
@@ -27,18 +27,18 @@ func wrapGMCP(msgs []string) []byte {
 func TestWorldBasics(t *testing.T) {
 	assert := assert.New(t)
 
-	client := &pkg.ClientMock{}
-	ui := &pkg.UIMock{
+	client := &mock.ClientMock{}
+	ui := &mock.UIMock{
 		AddVitalFunc: func(_ string, _ interface{}) {},
 	}
 
-	world := achaea.NewWorld(ui, client)
+	world := achaea.NewWorld(client, ui)
 
 	input := []byte("input")
-	assert.Equal(input, world.Input(input))
+	assert.Equal(input, world.ProcessInput(input))
 
 	output := []byte("output")
-	assert.Equal(output, world.Output(output))
+	assert.Equal(output, world.ProcessOutput(output))
 }
 
 func TestCommandsReply(t *testing.T) {
@@ -51,18 +51,12 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: []byte{tn.IAC, tn.WILL, tn.GMCP},
 			sent: wrapGMCP([]string{
-				`Core.Hello {"client":"nogfx","version":"0.0.0"}`,
 				`Core.Supports.Set ["Char 1","Char.Skills 1","Char.Items 1","Comm.Channel 1","Room 1","IRE.Rift 1"]`,
 			}),
 		},
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
 			errs:    []bool{true},
-			err:     "failed GMCP: ooops",
-		},
-		{
-			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
-			errs:    []bool{false, true},
 			err:     "failed GMCP: ooops",
 		},
 		{
@@ -74,9 +68,9 @@ func TestCommandsReply(t *testing.T) {
 				`Char.Name {"name":"Durak","fullname":"Mason Durak"}`,
 			}),
 			sent: wrapGMCP([]string{
-				`IRE.Rift.Request`,
-				`Comm.Channel.Players`,
 				`Char.Items.Inv`,
+				`Comm.Channel.Players`,
+				`IRE.Rift.Request`,
 			}),
 		},
 		{
@@ -101,7 +95,7 @@ func TestCommandsReply(t *testing.T) {
 			var calls int
 			var sent []byte
 
-			client := &pkg.ClientMock{
+			client := &mock.ClientMock{
 				WriteFunc: func(data []byte) (int, error) {
 					defer func() { calls++ }()
 					if len(tc.errs) > calls && tc.errs[calls] {
@@ -114,13 +108,13 @@ func TestCommandsReply(t *testing.T) {
 				},
 			}
 
-			ui := &pkg.UIMock{
+			ui := &mock.UIMock{
 				AddVitalFunc: func(_ string, _ interface{}) {},
 			}
 
-			world := achaea.NewWorld(ui, client)
+			world := achaea.NewWorld(client, ui)
 
-			err := world.Command(tc.command)
+			err := world.ProcessCommand(tc.command)
 
 			if tc.err != "" && assert.NotNil(t, err) {
 				assert.Equal(t, tc.err, err.Error())
@@ -156,7 +150,7 @@ func TestCommandsMutate(t *testing.T) {
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			vitals := map[string][][]int{}
-			ui := &pkg.UIMock{
+			ui := &mock.UIMock{
 				AddVitalFunc: func(_ string, _ interface{}) {},
 				UpdateVitalFunc: func(name string, value, max int) {
 					if _, ok := vitals[name]; !ok {
@@ -166,43 +160,12 @@ func TestCommandsMutate(t *testing.T) {
 				},
 			}
 
-			world := achaea.NewWorld(ui, &pkg.ClientMock{})
+			world := achaea.NewWorld(&mock.ClientMock{}, ui)
 
-			err := world.Command(tc.command)
+			err := world.ProcessCommand(tc.command)
 			require.Nil(t, err)
 
 			assert.Equal(t, vitals, tc.vitals)
 		})
 	}
-}
-
-func TestMasking(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-
-	client := &pkg.ClientMock{}
-
-	var masked bool
-
-	ui := &pkg.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) {},
-		MaskInputFunc: func() {
-			masked = true
-		},
-		UnmaskInputFunc: func() {
-			masked = false
-		},
-	}
-
-	world := achaea.NewWorld(ui, client)
-
-	err := world.Command([]byte{tn.IAC, tn.WILL, tn.ECHO})
-	require.Nil(err)
-
-	assert.Equal(true, masked)
-
-	err = world.Command([]byte{tn.IAC, tn.WONT, tn.ECHO})
-	require.Nil(err)
-
-	assert.Equal(false, masked)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world"
@@ -23,6 +23,9 @@ const (
 	defaultPort = 23
 )
 
+//go:embed help.tmpl
+var appHelpTemplate string
+
 func main() {
 	log.SetOutput(ioutil.Discard)
 
@@ -34,8 +37,26 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 
+	cli.AppHelpTemplate = appHelpTemplate
+
 	app := &cli.App{
+		Name:      "nogfx",
+		Usage:     "because the book is always better",
+		ArgsUsage: "<hostname>",
+		HideHelp:  true,
+
+		Authors: []*cli.Author{
+			&cli.Author{
+				Name:  "Tobias Sjösten",
+				Email: "tobias@nogfx.org",
+			},
+		},
+
 		Action: func(c *cli.Context) error {
+			if c.Args().Len() == 0 {
+				return cli.ShowAppHelp(c)
+			}
+
 			address, err := address(c.Args().Get(0))
 			if err != nil {
 				return err
@@ -85,12 +106,15 @@ func run(address string) error {
 		return err
 	}
 
-	world := world.New(client, ui, address)
-
-	return pkg.Run(ctx, client, ui, world)
+	engine := world.NewEngine(client, ui, address)
+	return engine.Run(ctx)
 }
 
 func client(address string) (*telnet.Client, error) {
+	if address == "example.com:23" {
+		return telnet.NewClient(NewLoopback()), nil
+	}
+
 	connection, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err

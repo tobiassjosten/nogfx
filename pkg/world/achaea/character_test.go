@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func Test(t *testing.T) {
@@ -30,7 +32,7 @@ func Test(t *testing.T) {
 
 		{
 			in: &achaea.Character{},
-			message: gmcp.CharVitals{
+			message: agmcp.CharVitals{
 				HP:    123,
 				MaxHP: 124,
 				MP:    234,
@@ -43,7 +45,7 @@ func Test(t *testing.T) {
 				Bal:   true,
 				Eq:    true,
 				Vote:  true,
-				Stats: gmcp.CharVitalsStats{
+				Stats: agmcp.CharVitalsStats{
 					Bleed:    12,
 					Rage:     23,
 					Ferocity: gox.NewInt(34),
@@ -75,7 +77,7 @@ func Test(t *testing.T) {
 				tc.in.FromCharName(msg)
 			}
 
-			if msg, ok := tc.message.(gmcp.CharVitals); ok {
+			if msg, ok := tc.message.(agmcp.CharVitals); ok {
 				tc.in.FromCharVitals(msg)
 			}
 

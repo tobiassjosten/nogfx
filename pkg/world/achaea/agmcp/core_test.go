@@ -1,14 +1,15 @@
-package gmcp_test
+package agmcp_test
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func TestCoreClientMessages(t *testing.T) {
@@ -40,14 +41,16 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Set []",
 		},
 		{
-			message: gmcp.CoreSupportsSet{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
+			message: agmcp.CoreSupportsSet{
+				agmcp.CoreSupports{
+					CoreSupports: gmcp.CoreSupports{
+						Char:        gox.NewInt(1),
+						CharSkills:  gox.NewInt(2),
+						CharItems:   gox.NewInt(3),
+						CommChannel: gox.NewInt(4),
+						Room:        gox.NewInt(5),
+					},
+					IRERift: gox.NewInt(6),
 				},
 			},
 			output: `Core.Supports.Set ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,
@@ -57,14 +60,16 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Add []",
 		},
 		{
-			message: gmcp.CoreSupportsAdd{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
+			message: agmcp.CoreSupportsAdd{
+				agmcp.CoreSupports{
+					CoreSupports: gmcp.CoreSupports{
+						Char:        gox.NewInt(1),
+						CharSkills:  gox.NewInt(2),
+						CharItems:   gox.NewInt(3),
+						CommChannel: gox.NewInt(4),
+						Room:        gox.NewInt(5),
+					},
+					IRERift: gox.NewInt(6),
 				},
 			},
 			output: `Core.Supports.Add ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,
@@ -74,14 +79,16 @@ func TestCoreClientMessages(t *testing.T) {
 			output:  "Core.Supports.Remove []",
 		},
 		{
-			message: gmcp.CoreSupportsRemove{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
+			message: agmcp.CoreSupportsRemove{
+				agmcp.CoreSupports{
+					CoreSupports: gmcp.CoreSupports{
+						Char:        gox.NewInt(1),
+						CharSkills:  gox.NewInt(2),
+						CharItems:   gox.NewInt(3),
+						CommChannel: gox.NewInt(4),
+						Room:        gox.NewInt(5),
+					},
+					IRERift: gox.NewInt(6),
 				},
 			},
 			output: `Core.Supports.Remove ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,

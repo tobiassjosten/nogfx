@@ -1,6 +1,9 @@
 package achaea
 
-import "github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
+import (
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+)
 
 // Character is the currently logged in character.
 type Character struct {
@@ -29,8 +32,15 @@ func (c *Character) FromCharName(msg gmcp.CharName) {
 	c.Title = msg.Fullname
 }
 
+// FromCharStatus updates the character from a Char.Status GMCP message.
+func (c *Character) FromCharStatus(msg agmcp.CharStatus) {
+	if msg.Level != nil {
+		c.Level = *msg.Level
+	}
+}
+
 // FromCharVitals updates the character from a Char.Vitals GMCP message.
-func (c *Character) FromCharVitals(msg gmcp.CharVitals) {
+func (c *Character) FromCharVitals(msg agmcp.CharVitals) {
 	c.XP = msg.NL
 
 	c.Balance = msg.Bal

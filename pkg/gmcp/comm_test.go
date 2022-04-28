@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func TestCommClientMessages(t *testing.T) {

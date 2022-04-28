@@ -62,7 +62,7 @@ jobs:
         run: go test --coverprofile=coverage.out ./...
 
       - name: Trim coverage report
-        run: cat coverage.out | grep -v "/mock_" > coverage_trimmed.out
+        run: cat coverage.out | grep -v "_mock.go" > coverage_trimmed.out
 
       - name: Upload to Codacy
         uses: codacy/codacy-coverage-reporter-action@v1
