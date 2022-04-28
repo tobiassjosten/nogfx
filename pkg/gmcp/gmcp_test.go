@@ -26,7 +26,7 @@ func TestParse(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			_, err := gmcp.Parse(tc.command)
+			_, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
 
 			if tc.err != nil {
 				assert.Equal(tc.err, err)

@@ -73,9 +73,15 @@ func (world *World) ProcessCommand(command []byte) error {
 	return nil
 }
 
+// ServerMessages maps GMCP messages to associated structs.
+var ServerMessages = map[string]gmcp.ServerMessage{
+	"Char.Status": agmcp.CharStatus{},
+	"Char.Vitals": agmcp.CharVitals{},
+}
+
 // ProcessGMCP processes GMCP messages.
 func (world *World) ProcessGMCP(data []byte) error {
-	message, err := agmcp.Parse(data)
+	message, err := gmcp.Parse(data, ServerMessages)
 	if err != nil {
 		return fmt.Errorf("failed parsing GMCP: %w", err)
 	}

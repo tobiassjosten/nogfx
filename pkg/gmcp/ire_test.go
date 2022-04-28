@@ -103,7 +103,7 @@ func TestIREServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := gmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
 
 			if tc.err != "" {
 				require.NotNil(err, fmt.Sprintf(

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
 
 	"github.com/icza/gox/gox"
@@ -124,7 +125,7 @@ func TestCoreServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := gmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, achaea.ServerMessages)
 
 			require.Nil(err)
 			assert.Equal(tc.message, message)

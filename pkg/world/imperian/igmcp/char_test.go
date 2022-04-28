@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/imperian"
 	"github.com/tobiassjosten/nogfx/pkg/world/imperian/igmcp"
 )
 
@@ -123,7 +124,7 @@ func TestCharServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := igmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, imperian.ServerMessages)
 
 			if tc.err != "" {
 				require.NotNil(err, fmt.Sprintf(

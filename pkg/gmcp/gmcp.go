@@ -19,8 +19,9 @@ type ServerMessage interface {
 	Hydrate([]byte) (ServerMessage, error)
 }
 
+// ServerMessages maps GMCP messages to associated structs.
 // @todo Consider turning all messages into structs, for consistency.
-var serverMessages = map[string]ServerMessage{
+var ServerMessages = map[string]ServerMessage{
 	"Comm.Channel.End":     CommChannelEnd(""),
 	"Comm.Channel.List":    CommChannelList{},
 	"Comm.Channel.Players": CommChannelPlayers{},
@@ -68,11 +69,14 @@ var serverMessages = map[string]ServerMessage{
 }
 
 // Parse converts a byte slice into a GMCP message.
-func Parse(command []byte) (ServerMessage, error) {
+func Parse(command []byte, messages map[string]ServerMessage) (ServerMessage, error) {
 	parts := bytes.SplitN(command, []byte{' '}, 2)
 
-	message, ok := serverMessages[string(parts[0])]
+	message, ok := messages[string(parts[0])]
 	if !ok {
+		if _, ok := ServerMessages[string(parts[0])]; ok {
+			return Parse(command, ServerMessages)
+		}
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
 

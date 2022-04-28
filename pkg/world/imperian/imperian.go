@@ -9,6 +9,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
+	"github.com/tobiassjosten/nogfx/pkg/world/imperian/igmcp"
 )
 
 // World is an Imperian-specific implementation of the pkg.World interface.
@@ -64,9 +65,15 @@ func (world *World) ProcessCommand(command []byte) error {
 	return nil
 }
 
+// ServerMessages maps GMCP messages to associated structs.
+var ServerMessages = map[string]gmcp.ServerMessage{
+	"Char.Status": igmcp.CharStatus{},
+	"Char.Vitals": igmcp.CharVitals{},
+}
+
 // ProcessGMCP processes GMCP messages.
 func (world *World) ProcessGMCP(data []byte) error {
-	message, err := gmcp.Parse(data)
+	message, err := gmcp.Parse(data, ServerMessages)
 	if err != nil {
 		return fmt.Errorf("failed parsing GMCP: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
 )
 
@@ -162,7 +163,7 @@ func TestCharServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := agmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, achaea.ServerMessages)
 
 			if tc.err != "" {
 				require.NotNil(err, fmt.Sprintf(
