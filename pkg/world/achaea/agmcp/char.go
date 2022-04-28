@@ -172,11 +172,11 @@ type CharVitalsStats struct {
 	Bleed int
 	Rage  int
 
-	Ferocity *int    // Infernal.
-	Kai      *int    // Monk.
+	Ferocity *int // Infernal.
+	Kai      *int // Monk.
+	Karma    *int
 	Spec     *string // Infernal, Paladin, Runewarden.
 	Stance   *string // Bard, Blademaster, Monk.
-	Karma    *int
 
 	// @todo Implement the one following (first checking keys in game).
 	// Channels // Magi.

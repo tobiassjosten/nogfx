@@ -26,6 +26,15 @@ type Character struct {
 	MaxEndurance int
 	Willpower    int
 	MaxWillpower int
+
+	Bleed int
+	Rage  int
+
+	Karma    int
+	Kai      int
+	Stance   string
+	Ferocity int
+	Spec     string
 }
 
 // FromCharName updates the character from a Char.Name GMCP message.
@@ -65,4 +74,23 @@ func (c *Character) FromCharVitals(msg agmcp.CharVitals) {
 	c.MaxEndurance = msg.MaxEP
 	c.Willpower = msg.WP
 	c.MaxWillpower = msg.MaxWP
+
+	c.Bleed = msg.Stats.Bleed
+	c.Rage = msg.Stats.Rage
+
+	if msg.Stats.Ferocity != nil {
+		c.Ferocity = *msg.Stats.Ferocity
+	}
+	if msg.Stats.Kai != nil {
+		c.Kai = *msg.Stats.Kai
+	}
+	if msg.Stats.Karma != nil {
+		c.Karma = *msg.Stats.Karma
+	}
+	if msg.Stats.Spec != nil {
+		c.Spec = *msg.Stats.Spec
+	}
+	if msg.Stats.Stance != nil {
+		c.Stance = *msg.Stats.Stance
+	}
 }

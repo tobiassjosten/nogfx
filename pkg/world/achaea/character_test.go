@@ -68,15 +68,17 @@ func TestFromGMCP(t *testing.T) {
 					Rage:     23,
 					Ferocity: gox.NewInt(34),
 					Kai:      gox.NewInt(45),
-					Spec:     gox.NewString("Asdf"),
-					Stance:   gox.NewString("Qwer"),
 					Karma:    gox.NewInt(56),
+					Spec:     gox.NewString("Sword and Shield"),
+					Stance:   gox.NewString("Scorpion"),
 				},
 			},
 			out: &achaea.Character{
-				XP:           56,
-				Balance:      true,
-				Equilibrium:  true,
+				XP: 56,
+
+				Balance:     true,
+				Equilibrium: true,
+
 				Health:       123,
 				MaxHealth:    124,
 				Mana:         234,
@@ -85,6 +87,15 @@ func TestFromGMCP(t *testing.T) {
 				MaxEndurance: 346,
 				Willpower:    456,
 				MaxWillpower: 457,
+
+				Bleed: 12,
+				Rage:  23,
+
+				Ferocity: 34,
+				Kai:      45,
+				Karma:    56,
+				Spec:     "Sword and Shield",
+				Stance:   "Scorpion",
 			},
 		},
 	}
