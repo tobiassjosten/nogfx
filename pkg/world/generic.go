@@ -27,8 +27,3 @@ func (world *GenericWorld) ProcessOutput(output []byte) []byte {
 func (world *GenericWorld) ProcessCommand(command []byte) error {
 	return nil
 }
-
-// ProcessGMCP processes GMCP messages.
-func (world *GenericWorld) ProcessGMCP(command []byte) error {
-	return nil
-}
