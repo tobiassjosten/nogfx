@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world/imperian/igmcp"
+
+	"github.com/icza/gox/gox"
 )
 
 // World is an Imperian-specific implementation of the pkg.World interface.

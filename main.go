@@ -46,7 +46,7 @@ func main() {
 		HideHelp:  true,
 
 		Authors: []*cli.Author{
-			&cli.Author{
+			{
 				Name:  "Tobias Sjösten",
 				Email: "tobias@nogfx.org",
 			},
