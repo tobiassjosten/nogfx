@@ -8,7 +8,7 @@ import (
 type GenericWorld struct {
 }
 
-// NewWorld creates a new Imperian-specific pkg.World.
+// NewGenericWorld creates a new Imperian-specific pkg.World.
 func NewGenericWorld(_ pkg.Client, _ pkg.UI) pkg.World {
 	return &GenericWorld{}
 }

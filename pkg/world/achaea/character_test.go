@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test(t *testing.T) {
+func TestFromGMCP(t *testing.T) {
 	tcs := []struct {
 		in      *achaea.Character
 		message gmcp.ServerMessage
@@ -27,6 +27,24 @@ func Test(t *testing.T) {
 			out: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
+			},
+		},
+
+		{
+			in: &achaea.Character{},
+			message: agmcp.CharStatus{
+				CharStatus: gmcp.CharStatus{
+					Name:     gox.NewString("Durak"),
+					Fullname: gox.NewString("Mason Durak"),
+					Level:    gox.NewFloat64(68),
+				},
+				Class: gox.NewString("Monk"),
+			},
+			out: &achaea.Character{
+				Name:  "Durak",
+				Title: "Mason Durak",
+				Level: 68,
+				Class: "Monk",
 			},
 		},
 
@@ -75,6 +93,11 @@ func Test(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			if msg, ok := tc.message.(gmcp.CharName); ok {
 				tc.in.FromCharName(msg)
+			}
+
+			if msg, ok := tc.message.(agmcp.CharStatus); ok {
+				fmt.Printf("CharStatus: '%+v'\n", msg)
+				tc.in.FromCharStatus(msg)
 			}
 
 			if msg, ok := tc.message.(agmcp.CharVitals); ok {

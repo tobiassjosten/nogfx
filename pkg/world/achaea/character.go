@@ -10,6 +10,8 @@ type Character struct {
 	Name  string
 	Title string
 
+	Class string
+
 	Level int
 	XP    int
 
@@ -34,6 +36,15 @@ func (c *Character) FromCharName(msg gmcp.CharName) {
 
 // FromCharStatus updates the character from a Char.Status GMCP message.
 func (c *Character) FromCharStatus(msg agmcp.CharStatus) {
+	if msg.Name != nil {
+		c.Name = *msg.Name
+	}
+	if msg.Fullname != nil {
+		c.Title = *msg.Fullname
+	}
+	if msg.Class != nil {
+		c.Class = *msg.Class
+	}
 	if msg.Level != nil {
 		c.Level = int(*msg.Level)
 	}
