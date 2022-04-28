@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func TestCoreClientMessages(t *testing.T) {
@@ -47,10 +47,9 @@ func TestCoreClientMessages(t *testing.T) {
 					CharItems:   gox.NewInt(3),
 					CommChannel: gox.NewInt(4),
 					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
 				},
 			},
-			output: `Core.Supports.Set ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,
+			output: `Core.Supports.Set ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
 		},
 		{
 			message: gmcp.CoreSupportsAdd{},
@@ -64,10 +63,9 @@ func TestCoreClientMessages(t *testing.T) {
 					CharItems:   gox.NewInt(3),
 					CommChannel: gox.NewInt(4),
 					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
 				},
 			},
-			output: `Core.Supports.Add ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,
+			output: `Core.Supports.Add ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
 		},
 		{
 			message: gmcp.CoreSupportsRemove{},
@@ -81,10 +79,9 @@ func TestCoreClientMessages(t *testing.T) {
 					CharItems:   gox.NewInt(3),
 					CommChannel: gox.NewInt(4),
 					Room:        gox.NewInt(5),
-					IRERift:     gox.NewInt(6),
 				},
 			},
-			output: `Core.Supports.Remove ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5","IRE.Rift 6"]`,
+			output: `Core.Supports.Remove ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
 		},
 	}
 
@@ -117,7 +114,7 @@ func TestCoreServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := gmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
 
 			require.Nil(err)
 			assert.Equal(tc.message, message)

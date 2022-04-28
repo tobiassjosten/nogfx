@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
 func TestCommClientMessages(t *testing.T) {
@@ -139,7 +139,7 @@ func TestCommServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			message, err := gmcp.Parse(tc.command)
+			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
 
 			if tc.err != "" {
 				require.NotNil(err, fmt.Sprintf(

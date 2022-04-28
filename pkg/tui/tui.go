@@ -9,17 +9,17 @@ import (
 
 // Panes is a collection of various panes used throughout the user interface.
 type Panes struct {
-	input  *InputPane
-	output *OutputPane
-	vitals *VitalsPane
+	Input  *InputPane
+	Output *OutputPane
+	Vitals *VitalsPane
 }
 
 // NewPanes creates a new Panes with the standard collection of panes.
 func NewPanes() Panes {
 	return Panes{
-		input:  NewInputPane(),
-		output: NewOutputPane(),
-		vitals: NewVitalsPane(),
+		Input:  NewInputPane(),
+		Output: NewOutputPane(),
+		Vitals: NewVitalsPane(),
 	}
 }
 
@@ -86,7 +86,7 @@ func (tui *TUI) Run(pctx context.Context) error {
 			}
 
 			if ev, ok := event.(*tcell.EventKey); ok {
-				if ok, input := tui.panes.input.HandleEvent(ev); ok {
+				if ok, input := tui.panes.Input.HandleEvent(ev); ok {
 					if input != nil {
 						tui.inputs <- []byte(string(input))
 					}
@@ -98,8 +98,8 @@ func (tui *TUI) Run(pctx context.Context) error {
 
 	for {
 		select {
-		case output := <-tui.panes.output.outputs:
-			tui.panes.output.Add(output)
+		case output := <-tui.panes.Output.outputs:
+			tui.panes.Output.Add(output)
 			tui.Draw()
 
 		case <-ctx.Done():
@@ -114,15 +114,15 @@ func (tui *TUI) Resize(width, height int) {
 	outputWidth := int(min(120, width))
 
 	inputWidth := outputWidth
-	inputHeight := int(min(height, tui.panes.input.Height()))
+	inputHeight := int(min(height, tui.panes.Input.Height()))
 	inputX, inputY := 0, height-inputHeight
-	tui.panes.input.Position(inputX, inputY, inputWidth, inputHeight)
+	tui.panes.Input.Position(inputX, inputY, inputWidth, inputHeight)
 
 	// Draw VitalsPane if OutputPane has at least one row.
-	vitalsHeight := min(tui.panes.vitals.Height(), max(0, height-inputHeight-1))
-	tui.panes.vitals.Position(inputX, inputY-1, outputWidth, vitalsHeight)
+	vitalsHeight := min(tui.panes.Vitals.Height(), max(0, height-inputHeight-1))
+	tui.panes.Vitals.Position(inputX, inputY-1, outputWidth, vitalsHeight)
 
-	tui.panes.output.Position(0, 0, outputWidth, height-inputHeight-vitalsHeight)
+	tui.panes.Output.Position(0, 0, outputWidth, height-inputHeight-vitalsHeight)
 }
 
 // Draw updates the terminal and prints the contents of the panes.
@@ -135,9 +135,9 @@ func (tui *TUI) Draw() {
 
 	tui.Resize(tui.screen.Size())
 
-	tui.panes.input.Draw(tui.screen)
-	tui.panes.vitals.Draw(tui.screen)
-	tui.panes.output.Draw(tui.screen)
+	tui.panes.Input.Draw(tui.screen)
+	tui.panes.Vitals.Draw(tui.screen)
+	tui.panes.Output.Draw(tui.screen)
 
 	tui.screen.Show()
 }

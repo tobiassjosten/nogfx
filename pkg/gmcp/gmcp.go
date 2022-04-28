@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 // ClientMessage is a GMCP message sent from the client.
@@ -17,8 +19,9 @@ type ServerMessage interface {
 	Hydrate([]byte) (ServerMessage, error)
 }
 
+// ServerMessages maps GMCP messages to associated structs.
 // @todo Consider turning all messages into structs, for consistency.
-var serverMessages = map[string]ServerMessage{
+var ServerMessages = map[string]ServerMessage{
 	"Comm.Channel.End":     CommChannelEnd(""),
 	"Comm.Channel.List":    CommChannelList{},
 	"Comm.Channel.Players": CommChannelPlayers{},
@@ -66,14 +69,20 @@ var serverMessages = map[string]ServerMessage{
 }
 
 // Parse converts a byte slice into a GMCP message.
-func Parse(command []byte) (ServerMessage, error) {
+func Parse(command []byte, messages map[string]ServerMessage) (ServerMessage, error) {
 	parts := bytes.SplitN(command, []byte{' '}, 2)
 
-	message, ok := serverMessages[string(parts[0])]
+	message, ok := messages[string(parts[0])]
 	if !ok {
+		if _, ok := ServerMessages[string(parts[0])]; ok {
+			return Parse(command, ServerMessages)
+		}
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
 
+	// Some messages don't have a message body but we want each message to
+	// be responsible for its own hydration and validation. So we mock
+	// missing bodies and proceed with hydration as normal.
 	if len(parts) == 1 {
 		parts = append(parts, []byte{})
 	}
@@ -84,6 +93,29 @@ func Parse(command []byte) (ServerMessage, error) {
 	}
 
 	return msg, nil
+}
+
+var (
+	gmcpPrefix = []byte{telnet.IAC, telnet.SB, telnet.GMCP}
+	gmcpSuffix = []byte{telnet.IAC, telnet.SE}
+)
+
+// Wrap embeds a GMCP message in a telnet negotiation sequence.
+func Wrap(gmcp []byte) []byte {
+	return append(append(gmcpPrefix, gmcp...), gmcpSuffix...)
+}
+
+// Unwrap removes telnet control codes from a GMCP message. Returns nil if the
+// command actually isn't a GMCP message.
+func Unwrap(command []byte) []byte {
+	if !bytes.HasPrefix(command, gmcpPrefix) {
+		return nil
+	}
+	if !bytes.HasSuffix(command, gmcpSuffix) {
+		return nil
+	}
+
+	return command[len(gmcpPrefix) : len(command)-len(gmcpSuffix)]
 }
 
 func splitRank(str string) (string, *int) {
@@ -99,11 +131,4 @@ func splitRank(str string) (string, *int) {
 	}
 
 	return name, rank
-}
-
-func splitLevelRank(str string) (int, *int) {
-	name, rank := splitRank(str)
-	level, _ := strconv.Atoi(name)
-
-	return level, rank
 }

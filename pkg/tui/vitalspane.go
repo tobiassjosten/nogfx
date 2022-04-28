@@ -11,7 +11,7 @@ import (
 // AddVital adds a new Vital to be displayed in the VitalsPane.
 func (tui *TUI) AddVital(name string, v interface{}) {
 	if vital, ok := v.(Vital); ok {
-		tui.panes.vitals.AddVital(name, vital)
+		tui.panes.Vitals.AddVital(name, vital)
 	} else {
 		log.Printf("couldn't add 'health' vital: only tui.Vital is supported")
 	}
@@ -20,7 +20,7 @@ func (tui *TUI) AddVital(name string, v interface{}) {
 
 // UpdateVital updates a given Vital with new current and max values.
 func (tui *TUI) UpdateVital(name string, value, max int) {
-	tui.panes.vitals.UpdateVital(name, value, max)
+	tui.panes.Vitals.UpdateVital(name, value, max)
 	tui.Draw()
 }
 

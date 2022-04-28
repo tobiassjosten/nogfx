@@ -4,13 +4,13 @@ import "github.com/gdamore/tcell/v2"
 
 // Outputs exposes the incoming channel for server output.
 func (tui *TUI) Outputs() chan<- []byte {
-	return tui.panes.output.outputs
+	return tui.panes.Output.Outputs()
 }
 
 // Print shows a text to the user.
 func (tui *TUI) Print(output []byte) {
 	// @todo Apply default style instead of inheriting whatever's current.
-	tui.panes.output.Add(output)
+	tui.panes.Output.Add(output)
 	tui.Draw()
 }
 
@@ -38,6 +38,11 @@ func NewOutputPane() *OutputPane {
 		outputs:     make(chan []byte),
 		outputStyle: outputStyle,
 	}
+}
+
+// Outputs exposes the incoming channel for server output.
+func (pane *OutputPane) Outputs() chan []byte {
+	return pane.outputs
 }
 
 // Position sets the x.y coordinates for and resizes the pane.

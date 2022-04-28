@@ -6,7 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 )
 
@@ -515,7 +515,7 @@ func TestInputDraw(t *testing.T) {
 			content := map[int]map[int]rune{}
 			cursor := []int{}
 
-			screen := &pkg.ScreenMock{
+			screen := &mock.ScreenMock{
 				HideCursorFunc: func() {
 					cursor = []int{-1, -1}
 				},
@@ -556,7 +556,7 @@ func TestInputDrawMasked(t *testing.T) {
 	cursor := []int{}
 	content := map[int]map[int]rune{}
 
-	screen := &pkg.ScreenMock{
+	screen := &mock.ScreenMock{
 		HideCursorFunc: func() {
 			cursor = []int{-1, -1}
 		},

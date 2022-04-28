@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 
 	"github.com/gdamore/tcell/v2"
@@ -176,7 +176,7 @@ func TestVitalsDraw(t *testing.T) {
 
 			content := map[int]map[int]rune{}
 
-			screen := &pkg.ScreenMock{
+			screen := &mock.ScreenMock{
 				SetContentFunc: func(x int, y int, r rune, _ []rune, _ tcell.Style) {
 					if _, ok := content[x]; !ok {
 						content[x] = map[int]rune{}

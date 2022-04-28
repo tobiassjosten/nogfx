@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/gmcp"
 )
 
-func Test(t *testing.T) {
+func TestFromGMCP(t *testing.T) {
 	tcs := []struct {
 		in      *achaea.Character
 		message gmcp.ServerMessage
@@ -30,7 +32,25 @@ func Test(t *testing.T) {
 
 		{
 			in: &achaea.Character{},
-			message: gmcp.CharVitals{
+			message: agmcp.CharStatus{
+				CharStatus: gmcp.CharStatus{
+					Name:     gox.NewString("Durak"),
+					Fullname: gox.NewString("Mason Durak"),
+					Level:    gox.NewFloat64(68),
+				},
+				Class: gox.NewString("Monk"),
+			},
+			out: &achaea.Character{
+				Name:  "Durak",
+				Title: "Mason Durak",
+				Level: 68,
+				Class: "Monk",
+			},
+		},
+
+		{
+			in: &achaea.Character{},
+			message: agmcp.CharVitals{
 				HP:    123,
 				MaxHP: 124,
 				MP:    234,
@@ -43,20 +63,22 @@ func Test(t *testing.T) {
 				Bal:   true,
 				Eq:    true,
 				Vote:  true,
-				Stats: gmcp.CharVitalsStats{
+				Stats: agmcp.CharVitalsStats{
 					Bleed:    12,
 					Rage:     23,
 					Ferocity: gox.NewInt(34),
 					Kai:      gox.NewInt(45),
-					Spec:     gox.NewString("Asdf"),
-					Stance:   gox.NewString("Qwer"),
 					Karma:    gox.NewInt(56),
+					Spec:     gox.NewString("Sword and Shield"),
+					Stance:   gox.NewString("Scorpion"),
 				},
 			},
 			out: &achaea.Character{
-				XP:           56,
-				Balance:      true,
-				Equilibrium:  true,
+				XP: 56,
+
+				Balance:     true,
+				Equilibrium: true,
+
 				Health:       123,
 				MaxHealth:    124,
 				Mana:         234,
@@ -65,6 +87,15 @@ func Test(t *testing.T) {
 				MaxEndurance: 346,
 				Willpower:    456,
 				MaxWillpower: 457,
+
+				Bleed: 12,
+				Rage:  23,
+
+				Ferocity: 34,
+				Kai:      45,
+				Karma:    56,
+				Spec:     "Sword and Shield",
+				Stance:   "Scorpion",
 			},
 		},
 	}
@@ -75,7 +106,12 @@ func Test(t *testing.T) {
 				tc.in.FromCharName(msg)
 			}
 
-			if msg, ok := tc.message.(gmcp.CharVitals); ok {
+			if msg, ok := tc.message.(agmcp.CharStatus); ok {
+				fmt.Printf("CharStatus: '%+v'\n", msg)
+				tc.in.FromCharStatus(msg)
+			}
+
+			if msg, ok := tc.message.(agmcp.CharVitals); ok {
 				tc.in.FromCharVitals(msg)
 			}
 

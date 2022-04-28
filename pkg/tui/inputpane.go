@@ -8,12 +8,12 @@ import (
 
 // MaskInput hides the content of the InputPane.
 func (tui *TUI) MaskInput() {
-	tui.panes.input.Mask()
+	tui.panes.Input.Mask()
 }
 
 // UnmaskInput shows the content of the InputPane.
 func (tui *TUI) UnmaskInput() {
-	tui.panes.input.Unmask()
+	tui.panes.Input.Unmask()
 }
 
 // InputPane is the pane that takes input and users most often interact with.

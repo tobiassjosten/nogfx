@@ -2,18 +2,29 @@ package main
 
 import (
 	"context"
+	_ "embed"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
-	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
+	"github.com/tobiassjosten/nogfx/pkg/world"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/urfave/cli/v2"
 )
+
+const (
+	defaultPort = 23
+)
+
+//go:embed help.tmpl
+var appHelpTemplate string
 
 func main() {
 	log.SetOutput(ioutil.Discard)
@@ -26,15 +37,32 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 
+	cli.AppHelpTemplate = appHelpTemplate
+
 	app := &cli.App{
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "mock",
-				Usage: "mock connection",
+		Name:      "nogfx",
+		Usage:     "because the book is always better",
+		ArgsUsage: "<hostname>",
+		HideHelp:  true,
+
+		Authors: []*cli.Author{
+			{
+				Name:  "Tobias Sjösten",
+				Email: "tobias@nogfx.org",
 			},
 		},
+
 		Action: func(c *cli.Context) error {
-			return run(c.Bool("mock"))
+			if c.Args().Len() == 0 {
+				return cli.ShowAppHelp(c)
+			}
+
+			address, err := address(c.Args().Get(0))
+			if err != nil {
+				return err
+			}
+
+			return run(address)
 		},
 	}
 
@@ -43,39 +71,63 @@ func main() {
 	}
 }
 
-func run(mock bool) error {
+func address(host string) (string, error) {
+	if strings.Contains(host, ":") {
+		parts := strings.Split(host, ":")
+		// @todo Add support for IPv6 addresses.
+		if len(parts) != 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
+			return "", fmt.Errorf("invalid address '%s'", host)
+		}
+
+		if _, err := strconv.ParseFloat(parts[1], 64); err != nil {
+			return "", fmt.Errorf("invalid port '%s'", parts[1])
+		}
+
+		return host, nil
+	}
+
+	if host == "" {
+		host = "example.com"
+	}
+
+	return fmt.Sprintf("%s:%d", host, defaultPort), nil
+}
+
+func run(address string) error {
 	ctx := context.Background()
 
+	client, err := client(address)
+	if err != nil {
+		return err
+	}
+
+	ui, err := ui()
+	if err != nil {
+		return err
+	}
+
+	engine := world.NewEngine(client, ui, address)
+	return engine.Run(ctx)
+}
+
+func client(address string) (*telnet.Client, error) {
+	if address == "example.com:23" {
+		return telnet.NewClient(NewLoopback()), nil
+	}
+
+	connection, err := net.Dial("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	return telnet.NewClient(connection), nil
+}
+
+func ui() (*tui.TUI, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	ui := tui.NewTUI(screen, tui.NewPanes())
-	if mock {
-		ui.AddVital("health", tui.HealthVital)
-		ui.UpdateVital("health", 123, 234)
-		ui.AddVital("mana", tui.ManaVital)
-		ui.UpdateVital("mana", 100, 200)
-		ui.AddVital("endurance", tui.EnduranceVital)
-		ui.UpdateVital("endurance", 1000, 1200)
-		ui.AddVital("willpower", tui.WillpowerVital)
-		ui.UpdateVital("willpower", 1000, 2000)
-	}
-
-	address := "achaea.com:23"
-
-	connection := mockReadWriter()
-	if !mock {
-		connection, err = net.Dial("tcp", address)
-		if err != nil {
-			return err
-		}
-	}
-
-	client := telnet.NewClient(connection)
-
-	world := NewWorld(ui, client, address)
-
-	return pkg.Run(ctx, client, ui, world)
+	return tui.NewTUI(screen, tui.NewPanes()), nil
 }

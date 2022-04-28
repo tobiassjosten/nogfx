@@ -457,33 +457,13 @@ func (msg CharStatusVars) Hydrate(data []byte) (ServerMessage, error) {
 // initial message sent contains all values but subsequent messages only carry
 // changes, with omitted properties assumed unchanged.
 type CharStatus struct {
-	Name             *string `json:"name"`
-	Fullname         *string `json:"fullname"`
-	Age              *int    `json:"age,string"`
-	Race             *string `json:"race"`
-	Specialisation   *string `json:"specialisation"`
-	Level            *int
-	XP               *int    `json:"-"`
-	XPRank           *int    `json:"xprank,string"`
-	Class            *string `json:"class"`
-	City             *string
-	CityRank         *int
-	House            *string
-	HouseRank        *int
-	Order            *string
-	OrderRank        *int
-	BoundCredits     *int    `json:"boundcredits,string"`
-	UnboundCredits   *int    `json:"unboundcredits,string"`
-	Lessons          *int    `json:"lessons,string"`
-	ExplorerRank     *string `json:"explorerrank"`
-	MayanCrowns      *int    `json:"mayancrowns,string"`
-	BoundMayanCrowns *int    `json:"boundmayancrowns,string"`
-	Gold             *int    `json:"gold,string"`
-	Bank             *int    `json:"bank,string"`
-	UnreadNews       *int    `json:"unread_news,string"`
-	UnreadMessages   *int    `json:"unread_msgs,string"`
-	Target           *int
-	Gender           *int // ISO/IEC 5218
+	Name     *string  `json:"name"`
+	Fullname *string  `json:"fullname"`
+	Age      *int     `json:"age,string"`
+	Race     *string  `json:"race"`
+	Level    *float64 `json:"-"`
+	XP       *int     `json:"-"`
+	Gender   *int     `json:"-"` // ISO/IEC 5218
 }
 
 // Hydrate populates the message with data.
@@ -492,10 +472,6 @@ func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 	var child struct {
 		CharStatusAlias
 		CLevel  *string `json:"level"`
-		CCity   *string `json:"city"`
-		CHouse  *string `json:"house"`
-		COrder  *string `json:"order"`
-		CTarget *string `json:"target"`
 		CGender *string `json:"gender"`
 	}
 
@@ -507,63 +483,16 @@ func (msg CharStatus) Hydrate(data []byte) (ServerMessage, error) {
 	msg = (CharStatus)(child.CharStatusAlias)
 
 	if child.CLevel != nil {
-		level, rank := splitLevelRank(*child.CLevel)
+		lvl, rank := splitRank(*child.CLevel)
+		level, _ := strconv.ParseFloat(lvl, 64)
 		if rank == nil {
 			return nil, fmt.Errorf(
 				"failed parsing level '%s'", *child.CLevel,
 			)
 		}
 
-		msg.Level = gox.NewInt(level)
+		msg.Level = gox.NewFloat64(level)
 		msg.XP = rank
-	}
-
-	if child.CCity != nil && *child.CCity != "(None)" {
-		city, rank := splitRank(*child.CCity)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing city '%s'", *child.CCity,
-			)
-		}
-
-		msg.City = gox.NewString(city)
-		msg.CityRank = rank
-	}
-
-	if child.CHouse != nil && *child.CHouse != "(None)" {
-		house, rank := splitRank(*child.CHouse)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing house '%s'", *child.CHouse,
-			)
-		}
-
-		msg.House = gox.NewString(house)
-		msg.HouseRank = rank
-	}
-
-	if child.COrder != nil && *child.COrder != "(None)" {
-		order, rank := splitRank(*child.COrder)
-		if rank == nil {
-			return nil, fmt.Errorf(
-				"failed parsing order '%s'", *child.COrder,
-			)
-		}
-
-		msg.Order = gox.NewString(order)
-		msg.OrderRank = rank
-	}
-
-	if child.CTarget != nil && *child.CTarget != "None" {
-		// Yes, sometimes it's a string, sometimes it's an int. Yay!
-		target, err := strconv.Atoi(*child.CTarget)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing target '%s'", *child.CTarget,
-			)
-		}
-
-		msg.Target = gox.NewInt(target)
 	}
 
 	if child.CGender != nil {
@@ -622,94 +551,12 @@ func (msg CharVitals) Hydrate(data []byte) (ServerMessage, error) {
 	return msg, nil
 }
 
-// CharVitalsStats is structured data extending CharVitals.
+// CharVitalsStats is structured data extending CharVitals. Comparing different
+// games, there is no overlap, and so we leave it here for reference only.
 type CharVitalsStats struct {
-	Bleed int
-	Rage  int
-
-	Ferocity *int    // Infernal.
-	Kai      *int    // Monk.
-	Spec     *string // Infernal, Paladin, Runewarden.
-	Stance   *string // Bard, Blademaster, Monk.
-	Karma    *int
-
-	// @todo Implement the one following (first checking keys in game).
-	// Channels // Magi.
-	// CurrentMorph // Druid, Sentinel.
-	// Devotion // Paladin, Priest.
-	// ElementalChannels // Sylvan.
-	// EntityBalance // Occultist.
-	// Essence // Apostate.
-	// Karma // Occultist.
-	// NumberOfSpiritsBound // Shaman.
-	// SecretedVenom // Serpent.
-	// SunlightEnergy // Druid, Sylvan.
-	// VoiceBalance // Bard.
-
 }
 
 // UnmarshalJSON hydrates CharVitalsStats from a list of unstructured strings.
 func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
-	var list []string
-
-	// This should only be invoked from CharVitals.UnmarshalJSON(), so any
-	// formatting errors will be caught there.
-	_ = json.Unmarshal(data, &list)
-
-	for _, item := range list {
-		parts := strings.SplitN(item, ": ", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("misformed charstat '%s'", item)
-		}
-
-		switch parts[0] {
-		case "Bleed":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Bleed = value
-
-		case "Rage":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Rage = value
-
-		case "Ferocity":
-			value, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Ferocity = gox.NewInt(value)
-
-		case "Kai":
-			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Kai = gox.NewInt(value)
-
-		case "Karma":
-			value, err := strconv.Atoi(parts[1][:len(parts[1])-1])
-			if err != nil {
-				return fmt.Errorf("invalid charstat '%s'", item)
-			}
-			stats.Karma = gox.NewInt(value)
-
-		case "Spec":
-			stats.Spec = gox.NewString(parts[1])
-
-		case "Stance":
-			if parts[1] != "None" {
-				stats.Stance = gox.NewString(parts[1])
-			}
-
-		default:
-			return fmt.Errorf("invalid charstat '%s'", item)
-		}
-	}
-
 	return nil
 }

@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg/tui"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/tobiassjosten/nogfx/pkg"
-	"github.com/tobiassjosten/nogfx/pkg/tui"
 )
 
 func TestOutputDraw(t *testing.T) {
 	tcs := []struct {
 		outputs [][]byte
 		pos     []int
-		x       int
-		y       int
-		width   int
 		calls   int
 		content map[int]map[int]rune
 	}{
@@ -37,6 +35,12 @@ func TestOutputDraw(t *testing.T) {
 			pos:     []int{1, 2, 1, 1},
 			calls:   1,
 			content: map[int]map[int]rune{1: map[int]rune{2: 'x'}},
+		},
+		{
+			outputs: [][]byte{{'x'}},
+			pos:     []int{0, 0, 1, 0},
+			calls:   0,
+			content: map[int]map[int]rune{},
 		},
 		{
 			outputs: [][]byte{{'a', 's', 'd', 'f'}},
@@ -67,7 +71,7 @@ func TestOutputDraw(t *testing.T) {
 			}
 
 			content := map[int]map[int]rune{}
-			screen := &pkg.ScreenMock{
+			screen := &mock.ScreenMock{
 				SetContentFunc: func(x int, y int, r rune, _ []rune, _ tcell.Style) {
 					if _, ok := content[x]; !ok {
 						content[x] = map[int]rune{}
@@ -80,6 +84,41 @@ func TestOutputDraw(t *testing.T) {
 
 			assert.Equal(tc.calls, len(screen.SetContentCalls()))
 			assert.Equal(tc.content, content)
+		})
+	}
+}
+
+func TestOutputProxies(t *testing.T) {
+	tcs := []struct {
+		output []byte
+	}{
+		{
+			output: []byte("asdf"),
+		},
+	}
+
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			screen := &mock.ScreenMock{
+				SetStyleFunc:       func(_ tcell.Style) {},
+				SetCursorStyleFunc: func(_ tcell.CursorStyle) {},
+			}
+
+			pane := tui.NewOutputPane()
+
+			ui := tui.NewTUI(screen, tui.Panes{Output: pane})
+
+			output := []byte{}
+
+			done := make(chan struct{})
+			go func() {
+				output = <-pane.Outputs()
+				done <- struct{}{}
+			}()
+
+			ui.Outputs() <- tc.output
+
+			assert.Equal(t, tc.output, output)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package achaea
+package imperian
 
 import (
 	"bytes"
@@ -8,30 +8,26 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+	"github.com/tobiassjosten/nogfx/pkg/world/imperian/igmcp"
 
 	"github.com/icza/gox/gox"
 )
 
-// World is an Achaea-specific implementation of the pkg.World interface.
+// World is an Imperian-specific implementation of the pkg.World interface.
 type World struct {
 	client pkg.Client
 
 	ui       pkg.UI
 	uiVitals map[string]struct{}
-
-	character *Character
 }
 
-// NewWorld creates a new Achaea-specific pkg.World.
+// NewWorld creates a new Imperian-specific pkg.World.
 func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 	return &World{
 		client: client,
 
 		ui:       ui,
 		uiVitals: map[string]struct{}{},
-
-		character: &Character{},
 	}
 }
 
@@ -53,8 +49,8 @@ func (world *World) ProcessCommand(command []byte) error {
 
 	switch {
 	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
-		err := world.SendGMCP(agmcp.CoreSupportsSet{
-			CoreSupports: agmcp.CoreSupports{
+		err := world.SendGMCP(igmcp.CoreSupportsSet{
+			CoreSupports: igmcp.CoreSupports{
 				CoreSupports: gmcp.CoreSupports{
 					Char:        gox.NewInt(1),
 					CharSkills:  gox.NewInt(1),
@@ -75,8 +71,8 @@ func (world *World) ProcessCommand(command []byte) error {
 
 // ServerMessages maps GMCP messages to associated structs.
 var ServerMessages = map[string]gmcp.ServerMessage{
-	"Char.Status": agmcp.CharStatus{},
-	"Char.Vitals": agmcp.CharVitals{},
+	"Char.Status": igmcp.CharStatus{},
+	"Char.Vitals": igmcp.CharVitals{},
 }
 
 // ProcessGMCP processes GMCP messages.
@@ -87,27 +83,11 @@ func (world *World) ProcessGMCP(data []byte) error {
 	}
 
 	switch msg := message.(type) {
-	case gmcp.CharName:
-		world.character.FromCharName(msg)
-
-		if err := world.SendGMCP(gmcp.CharItemsInv{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
+	case igmcp.CharVitals:
+		err := world.UpdateVitals(msg)
+		if err != nil {
+			return fmt.Errorf("failed updating vitals: %w", err)
 		}
-
-		if err := world.SendGMCP(gmcp.CommChannelPlayers{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
-		}
-
-		if err := world.SendGMCP(gmcp.IRERiftRequest{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
-		}
-
-	case agmcp.CharStatus:
-		world.character.FromCharStatus(msg)
-
-	case agmcp.CharVitals:
-		world.character.FromCharVitals(msg)
-		world.UpdateVitals()
 	}
 
 	return nil
@@ -124,29 +104,32 @@ func (world *World) SendGMCP(message gmcp.ClientMessage) error {
 }
 
 // UpdateVitals creates sends new current and max values to UI's VitalPanes.
-func (world *World) UpdateVitals() {
-	order := []string{"health", "mana", "endurance", "willpower"}
+func (world *World) UpdateVitals(msg igmcp.CharVitals) error {
+	order := []string{"health", "mana"}
 
 	vitals := map[string]tui.Vital{
-		"health":    tui.HealthVital,
-		"mana":      tui.ManaVital,
-		"endurance": tui.EnduranceVital,
-		"willpower": tui.WillpowerVital,
+		"health": tui.HealthVital,
+		"mana":   tui.ManaVital,
 	}
 
 	values := map[string][]int{
-		"health":    {world.character.Health, world.character.MaxHealth},
-		"mana":      {world.character.Mana, world.character.MaxMana},
-		"endurance": {world.character.Endurance, world.character.MaxEndurance},
-		"willpower": {world.character.Willpower, world.character.MaxWillpower},
+		"health": {msg.HP / 11, msg.MaxHP / 11},
+		"mana":   {msg.MP / 11, msg.MaxMP / 11},
 	}
 
 	for _, name := range order {
+		value, ok := values[name]
+		if !ok || len(value) != 2 {
+			return fmt.Errorf("invalid vital data for '%s'", name)
+		}
+
 		if _, ok := world.uiVitals[name]; !ok {
 			world.ui.AddVital(name, vitals[name])
 			world.uiVitals[name] = struct{}{}
 		}
 
-		world.ui.UpdateVital(name, values[name][0], values[name][1])
+		world.ui.UpdateVital(name, value[0], value[1])
 	}
+
+	return nil
 }

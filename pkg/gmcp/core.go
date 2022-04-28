@@ -73,10 +73,10 @@ type CoreSupports struct {
 	CharItems   *int
 	CommChannel *int
 	Room        *int
-	IRERift     *int
 }
 
-func coreSupportsList(msg CoreSupports) []byte {
+// Strings transforms CoreSupports to a list of strings.
+func (msg CoreSupports) Strings() []string {
 	list := []string{}
 	if msg.Char != nil {
 		list = append(list, fmt.Sprintf("Char %d", *msg.Char))
@@ -93,13 +93,14 @@ func coreSupportsList(msg CoreSupports) []byte {
 	if msg.Room != nil {
 		list = append(list, fmt.Sprintf("Room %d", *msg.Room))
 	}
-	if msg.IRERift != nil {
-		list = append(list, fmt.Sprintf("IRE.Rift %d", *msg.IRERift))
-	}
 
-	data, _ := json.Marshal(list)
+	return list
+}
 
-	return data
+// String is the message's string representation.
+func (msg CoreSupports) String() string {
+	data, _ := json.Marshal(msg.Strings())
+	return string(data)
 }
 
 // CoreSupportsSet is a client-sent GMCP message containing supported modules.
@@ -109,7 +110,7 @@ type CoreSupportsSet struct {
 
 // String is the message's string representation.
 func (msg CoreSupportsSet) String() string {
-	return fmt.Sprintf("Core.Supports.Set %s", coreSupportsList(msg.CoreSupports))
+	return fmt.Sprintf("Core.Supports.Set %s", msg.CoreSupports)
 }
 
 // CoreSupportsAdd is a client-sent GMCP message adding supported modules.
@@ -119,7 +120,7 @@ type CoreSupportsAdd struct {
 
 // String is the message's string representation.
 func (msg CoreSupportsAdd) String() string {
-	return fmt.Sprintf("Core.Supports.Add %s", coreSupportsList(msg.CoreSupports))
+	return fmt.Sprintf("Core.Supports.Add %s", msg.CoreSupports)
 }
 
 // CoreSupportsRemove is a client-sent GMCP message removing supported modules.
@@ -129,5 +130,5 @@ type CoreSupportsRemove struct {
 
 // String is the message's string representation.
 func (msg CoreSupportsRemove) String() string {
-	return fmt.Sprintf("Core.Supports.Remove %s", coreSupportsList(msg.CoreSupports))
+	return fmt.Sprintf("Core.Supports.Remove %s", msg.CoreSupports)
 }
