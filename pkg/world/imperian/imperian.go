@@ -49,13 +49,16 @@ func (world *World) ProcessCommand(command []byte) error {
 
 	switch {
 	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
-		err := world.SendGMCP(gmcp.CoreSupportsSet{
-			CoreSupports: gmcp.CoreSupports{
-				Char:        gox.NewInt(1),
-				CharSkills:  gox.NewInt(1),
-				CharItems:   gox.NewInt(1),
-				CommChannel: gox.NewInt(1),
-				Room:        gox.NewInt(1),
+		err := world.SendGMCP(igmcp.CoreSupportsSet{
+			CoreSupports: igmcp.CoreSupports{
+				CoreSupports: gmcp.CoreSupports{
+					Char:        gox.NewInt(1),
+					CharSkills:  gox.NewInt(1),
+					CharItems:   gox.NewInt(1),
+					CommChannel: gox.NewInt(1),
+					Room:        gox.NewInt(1),
+				},
+				IRERift: gox.NewInt(1),
 			},
 		})
 		if err != nil {
@@ -80,7 +83,7 @@ func (world *World) ProcessGMCP(data []byte) error {
 	}
 
 	switch msg := message.(type) {
-	case gmcp.CharVitals:
+	case igmcp.CharVitals:
 		err := world.UpdateVitals(msg)
 		if err != nil {
 			return fmt.Errorf("failed updating vitals: %w", err)
@@ -101,7 +104,7 @@ func (world *World) SendGMCP(message gmcp.ClientMessage) error {
 }
 
 // UpdateVitals creates sends new current and max values to UI's VitalPanes.
-func (world *World) UpdateVitals(msg gmcp.CharVitals) error {
+func (world *World) UpdateVitals(msg igmcp.CharVitals) error {
 	order := []string{"health", "mana"}
 
 	vitals := map[string]tui.Vital{
