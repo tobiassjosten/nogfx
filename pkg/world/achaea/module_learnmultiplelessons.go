@@ -112,7 +112,7 @@ func (mod *LearnMultipleLessons) learn() {
 
 	// @todo Replace with Client.Send() so as to let Client handle errors.
 	_, err := mod.client.Write([]byte(fmt.Sprintf(
-		"learn %d %s\n", count, mod.target,
+		"learn %d %s", count, mod.target,
 	)))
 	if err != nil {
 		mod.ui.Print([]byte(fmt.Sprintf("[Failed learning! %s]", err)))

@@ -9,7 +9,7 @@ import (
 func Match(pattern []byte, text []byte) [][]byte {
 	captures := [][]byte{}
 
-	var capture []byte = nil
+	var capture []byte
 
 	tick := func() {
 		if capture != nil {
@@ -192,7 +192,7 @@ main:
 }
 
 func indexNonSpecial(text []byte) int {
-	var previous byte = 0
+	var previous byte
 	for i, b := range text {
 		switch b {
 		case '{', '}', '?', '^', '*':
