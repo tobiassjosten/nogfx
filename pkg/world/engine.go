@@ -75,6 +75,16 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.ui.Outputs() <- []byte("server disconnected")
 
 		case output := <-clientOutput:
+			if output[len(output)-1] == telnet.GA {
+				// @todo Trigger special event to work through output buffer.
+				output = output[:len(output)-1]
+			}
+
+			output = bytes.TrimRight(output, "\r\n")
+			if len(output) == 0 {
+				continue
+			}
+
 			output = engine.world.ProcessOutput(output)
 			if output == nil {
 				continue
@@ -117,11 +127,15 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 // RunClient reads data from the client and reports back output and potential
 // errors to the given channels, before marking its completion.
-func (engine *Engine) RunClient(output chan []byte, errs chan error, done chan struct{}) {
+func (engine *Engine) RunClient(outputs chan []byte, errs chan error, done chan struct{}) {
 	scanner := engine.client.Scanner()
 
 	for scanner.Scan() {
-		output <- scanner.Bytes()
+		// Scanner.Bytes() returns a byte slice, a reference type. We
+		// dereference here to allow for later modification.
+		var output = make([]byte, len(scanner.Bytes()))
+		copy(output, scanner.Bytes())
+		outputs <- output
 	}
 
 	if err := scanner.Err(); err != nil {

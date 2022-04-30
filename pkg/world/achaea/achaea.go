@@ -20,16 +20,25 @@ type World struct {
 	ui       pkg.UI
 	uiVitals map[string]struct{}
 
+	modules []pkg.Module
+
 	character *Character
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
 func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
+	var modules []pkg.Module
+	for _, constructor := range moduleConstructors {
+		modules = append(modules, constructor(client, ui))
+	}
+
 	return &World{
 		client: client,
 
 		ui:       ui,
 		uiVitals: map[string]struct{}{},
+
+		modules: modules,
 
 		character: &Character{},
 	}
@@ -37,11 +46,23 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 
 // ProcessInput processes player input.
 func (world *World) ProcessInput(input []byte) []byte {
+	for _, module := range world.modules {
+		if input = module.ProcessInput(input); input == nil {
+			break
+		}
+	}
+
 	return input
 }
 
 // ProcessOutput processes game output.
 func (world *World) ProcessOutput(output []byte) []byte {
+	for _, module := range world.modules {
+		if output = module.ProcessOutput(output); output == nil {
+			break
+		}
+	}
+
 	return output
 }
 

@@ -23,8 +23,6 @@ func wrapGMCP(msgs []string) []byte {
 }
 
 func TestWorldBasics(t *testing.T) {
-	assert := assert.New(t)
-
 	client := &mock.ClientMock{}
 	ui := &mock.UIMock{
 		AddVitalFunc: func(_ string, _ interface{}) {},
@@ -33,10 +31,64 @@ func TestWorldBasics(t *testing.T) {
 	world := NewWorld(client, ui)
 
 	input := []byte("input")
-	assert.Equal(input, world.ProcessInput(input))
+	assert.Equal(t, input, world.ProcessInput(input))
 
 	output := []byte("output")
-	assert.Equal(output, world.ProcessOutput(output))
+	assert.Equal(t, output, world.ProcessOutput(output))
+}
+
+func TestModuleInput(t *testing.T) {
+	tcs := []struct {
+		data      [][][]byte
+		inputted  [][]byte
+		outputted [][]byte
+		written   [][]byte
+	}{
+		{
+			data: [][][]byte{
+				[][]byte{[]byte{1}, []byte("learn 16 x from y")},
+				[][]byte{[]byte{0}, []byte("y bows to you - the lesson in x is over.")},
+			},
+			inputted:  [][]byte{nil},
+			outputted: [][]byte{[]byte("y bows to you - the lesson in x is over. [15/16]")},
+			written: [][]byte{
+				[]byte("learn 15 x from y"),
+				[]byte("learn 1 x from y"),
+			},
+		},
+	}
+
+	for i, tc := range tcs {
+		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
+			var written [][]byte
+			client := &mock.ClientMock{
+				WriteFunc: func(data []byte) (int, error) {
+					written = append(written, data)
+					return 0, nil
+				},
+			}
+			ui := &mock.UIMock{
+				AddVitalFunc: func(_ string, _ interface{}) {},
+			}
+
+			world := NewWorld(client, ui)
+
+			var inputted [][]byte
+			var outputted [][]byte
+
+			for _, data := range tc.data {
+				if data[0][0] == 1 {
+					inputted = append(inputted, world.ProcessInput(data[1]))
+				} else {
+					outputted = append(outputted, world.ProcessOutput(data[1]))
+				}
+			}
+
+			assert.Equal(t, tc.inputted, inputted)
+			assert.Equal(t, tc.outputted, outputted)
+			assert.Equal(t, tc.written, written)
+		})
+	}
 }
 
 func TestCommandsReply(t *testing.T) {

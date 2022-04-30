@@ -107,7 +107,6 @@ func TestFromGMCP(t *testing.T) {
 			}
 
 			if msg, ok := tc.message.(agmcp.CharStatus); ok {
-				fmt.Printf("CharStatus: '%+v'\n", msg)
 				tc.in.FromCharStatus(msg)
 			}
 

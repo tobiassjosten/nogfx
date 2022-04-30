@@ -20,6 +20,15 @@ type Client interface {
 	Subneg(byte, []byte) error
 }
 
+// Module is an atomic extension of game logic.
+type Module interface {
+	ProcessInput([]byte) []byte
+	ProcessOutput([]byte) []byte
+}
+
+// ModuleConstructor is a function that constructs a Module.
+type ModuleConstructor func(Client, UI) Module
+
 // UI is the primary user interface for the application.
 type UI interface {
 	Inputs() <-chan []byte

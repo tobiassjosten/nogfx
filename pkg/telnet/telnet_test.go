@@ -117,24 +117,29 @@ func TestReader(t *testing.T) {
 func TestScanner(t *testing.T) {
 	tcs := []struct {
 		data   []byte
-		output []byte
+		output [][]byte
 		err    error
 	}{
 		{
 			data:   []byte("xyz\n"),
-			output: []byte("xyz\n"),
+			output: [][]byte{[]byte("xyz\n")},
+		},
+		{
+			data:   []byte("xyz\nabc"),
+			output: [][]byte{[]byte("xyz\n"), []byte("abc")},
+		},
+		{
+			data:   append([]byte("xyz\nabc"), telnet.GA),
+			output: [][]byte{[]byte("xyz\n"), append([]byte("abc"), telnet.GA)},
 		},
 		{
 			data:   append([]byte("xyz\n"), telnet.GA),
-			output: []byte("xyz\n"),
+			output: [][]byte{[]byte("xyz\n"), []byte{telnet.GA}},
 		},
 	}
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-			require := require.New(t)
-
 			reader := bytes.NewReader(tc.data)
 			writer := &strings.Builder{}
 			stream := &mockStream{reader, writer, nil}
@@ -150,23 +155,20 @@ func TestScanner(t *testing.T) {
 
 			scanner := client.Scanner()
 
-			buf := make([]byte, 2)
-			scanner.Buffer(buf, 4096)
-
-			output := []byte{}
+			output := [][]byte{}
 			for scanner.Scan() {
-				output = append(output, scanner.Bytes()...)
+				output = append(output, scanner.Bytes())
 			}
 
 			err := scanner.Err()
 
 			if tc.err != nil {
-				assert.Equal(tc.err, err)
+				assert.Equal(t, tc.err, err)
 				return
 			}
 
-			require.Nil(err)
-			assert.Equal(tc.output, output)
+			require.Nil(t, err)
+			assert.Equal(t, tc.output, output)
 		})
 	}
 }
