@@ -96,12 +96,19 @@ main:
 				if capture != nil {
 					return nil
 				}
+
+				pattern = pattern[len(pattern):]
+				text = text[len(text):]
+
 				break main
 			}
 
 			if capture != nil && len(pattern) == 2 && pattern[1] == '}' {
 				capture = append(capture, text...)
 				captures = append(captures, capture)
+
+				pattern = pattern[len(pattern):]
+				text = text[len(text):]
 
 				break main
 			}
@@ -149,6 +156,10 @@ main:
 
 			tick()
 		}
+	}
+
+	if len(pattern) > 0 || len(text) > 0 {
+		return nil
 	}
 
 	return captures
