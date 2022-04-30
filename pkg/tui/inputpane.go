@@ -236,11 +236,13 @@ func (pane *InputPane) handleCtrlCInput(_ rune) (bool, []rune) {
 }
 
 func (pane *InputPane) handleLeftInput(_ rune) (bool, []rune) {
+	pane.inputted = false
 	pane.cursor = int(max(0, pane.cursor-1))
 	return true, nil
 }
 
 func (pane *InputPane) handleRightInput(_ rune) (bool, []rune) {
+	pane.inputted = false
 	pane.cursor = int(min(len(pane.input), pane.cursor+1))
 	return true, nil
 }
