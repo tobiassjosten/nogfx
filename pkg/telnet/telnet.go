@@ -37,8 +37,8 @@ func (client *Client) Scanner() *bufio.Scanner {
 			return 0, nil, nil
 		}
 
-		if i := bytes.IndexByte(data, GA); i >= 0 {
-			return i + 1, data[0:i], nil
+		if i := bytes.IndexAny(data, string([]byte{GA, '\n'})); i >= 0 {
+			return i + 1, data[0 : i+1], nil
 		}
 
 		if atEOF {
