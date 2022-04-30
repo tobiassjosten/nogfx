@@ -14,6 +14,15 @@ func TestMatch(t *testing.T) {
 		text    []byte
 		matches [][]byte
 	}{
+		"mismatch long pattern": {
+			pattern: []byte("Lorem ipsum dolor sit amet."),
+			text:    []byte("Lorem ipsum."),
+		},
+		"mismatch long text": {
+			pattern: []byte("Lorem ipsum."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+		},
+
 		"exact match simple": {
 			pattern: []byte("Lorem ipsum dolor sit amet."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
@@ -158,6 +167,15 @@ func TestMatch(t *testing.T) {
 			pattern: []byte("* bows to you - the lesson in ^ is over."),
 			text:    []byte("Maric, a filthy ratman bows to you - the lesson in Fitness is over."),
 			matches: [][]byte{},
+		},
+		"learn x y from z input capture": {
+			pattern: []byte("learn {^} {^ from *}"),
+			text:    []byte("learn 15 fitness from maric"),
+			matches: [][]byte{[]byte("15"), []byte("fitness from maric")},
+		},
+		"learn x y from z input incomplete": {
+			pattern: []byte("learn {^} {^ from *}"),
+			text:    []byte("learn"),
 		},
 	}
 
