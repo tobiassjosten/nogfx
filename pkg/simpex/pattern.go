@@ -20,6 +20,9 @@ func Match(pattern []byte, text []byte) [][]byte {
 		text = text[1:]
 	}
 
+	// @todo Determine performance gains in mutating indices instead of the
+	// patter/text slices themselves. Refactor if difference is big.
+
 main:
 	for len(pattern) > 0 && len(text) > 0 {
 		switch pattern[0] {
