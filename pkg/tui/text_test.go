@@ -23,11 +23,10 @@ func TestNewText(t *testing.T) {
 		Background(tcell.ColorTeal)
 
 	tcs := []struct {
-		in       []byte
-		width    int
-		text     tui.Text
-		styleIn  tcell.Style
-		styleOut tcell.Style
+		in      []byte
+		width   int
+		text    tui.Text
+		styleIn tcell.Style
 	}{
 		{
 			in:    []byte("xy"),
@@ -52,8 +51,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', redStyle, 1},
 			},
-			styleIn:  redStyle,
-			styleOut: redStyle,
+			styleIn: redStyle,
 		},
 		{
 			in:    []byte("y\r\nx"),
@@ -71,8 +69,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', redStyle, 1},
 				tui.Cell{'x', greenStyle, 1},
 			},
-			styleIn:  redStyle,
-			styleOut: greenStyle,
+			styleIn: redStyle,
 		},
 		{
 			in:    []byte("y\033[34;46mx"),
@@ -81,8 +78,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', greenStyle, 1},
 				tui.Cell{'x', blueStyle, 1},
 			},
-			styleIn:  greenStyle,
-			styleOut: blueStyle,
+			styleIn: greenStyle,
 		},
 		{
 			in:    []byte("y\033{x"),
@@ -100,9 +96,8 @@ func TestNewText(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			assert := assert.New(t)
 
-			text, style := tui.NewText(tc.in, tc.styleIn)
+			text := tui.NewText(tc.in, tc.styleIn)
 			assert.Equal(tc.text, text)
-			assert.Equal(tc.styleOut, style)
 			assert.Equal(tc.width, text.Width())
 		})
 	}

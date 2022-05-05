@@ -84,6 +84,10 @@ func (tui *TUI) Run(pctx context.Context) error {
 					return
 				}
 
+				if ok := tui.panes.Output.HandleEvent(ev); ok {
+					tui.Draw()
+				}
+
 				if ok, input := tui.panes.Input.HandleEvent(ev); ok {
 					if input != nil {
 						tui.inputs <- []byte(string(input))
@@ -109,18 +113,6 @@ func (tui *TUI) Run(pctx context.Context) error {
 
 // Resize calculates the layout of the various panes.
 func (tui *TUI) Resize(width, height int) {
-	outputWidth := int(min(120, width))
-
-	inputWidth := outputWidth
-	inputHeight := int(min(height, tui.panes.Input.Height()))
-	inputX, inputY := 0, height-inputHeight
-	tui.panes.Input.Position(inputX, inputY, inputWidth, inputHeight)
-
-	// Draw VitalsPane if OutputPane has at least one row.
-	vitalsHeight := min(tui.panes.Vitals.Height(), max(0, height-inputHeight-1))
-	tui.panes.Vitals.Position(inputX, inputY-1, outputWidth, vitalsHeight)
-
-	tui.panes.Output.Position(0, 0, outputWidth, height-inputHeight-vitalsHeight)
 }
 
 // Draw updates the terminal and prints the contents of the panes.
@@ -131,11 +123,50 @@ func (tui *TUI) Draw() {
 
 	tui.screen.Clear()
 
-	tui.Resize(tui.screen.Size())
+	width, height := tui.screen.Size()
+
+	mainWidth := int(min(120, width))
+
+	inputWidth := mainWidth
+	inputHeight := int(min(height, tui.panes.Input.Height()))
+	inputX, inputY := 0, height-inputHeight
+	tui.panes.Input.Position(inputX, inputY, inputWidth, inputHeight)
+
+	// Draw VitalsPane if OutputPane has at least one row.
+	vitalsHeight := min(tui.panes.Vitals.Height(), max(0, height-inputHeight-1))
+	tui.panes.Vitals.Position(inputX, inputY-1, mainWidth, vitalsHeight)
 
 	tui.panes.Input.Draw(tui.screen)
 	tui.panes.Vitals.Draw(tui.screen)
-	tui.panes.Output.Draw(tui.screen)
+
+	outputWidth := mainWidth
+	outputHeight := height - inputHeight - vitalsHeight
+
+	output, history := tui.panes.Output.Texts(outputWidth, outputHeight)
+	outputX := len(history) + (outputHeight - len(history) - len(output))
+	tui.paint(0, outputX, outputWidth, output, 0)
+	tui.paint(0, 0, outputWidth, history, tcell.Color236)
+
+	// @todo Färga padding också.
 
 	tui.screen.Show()
+}
+
+func (tui *TUI) paint(x, y, width int, texts []Text, bgOverride tcell.Color) {
+	var style tcell.Style
+
+	for yy, text := range texts {
+		for xx, cell := range text {
+			style = cell.Style
+			if bgOverride > 0 {
+				style = cell.Style.Background(bgOverride)
+			}
+
+			tui.screen.SetContent(x+xx, y+yy, cell.Content, nil, style)
+		}
+
+		for xx := len(text); xx < width; xx++ {
+			tui.screen.SetContent(x+xx, y+yy, ' ', nil, style)
+		}
+	}
 }

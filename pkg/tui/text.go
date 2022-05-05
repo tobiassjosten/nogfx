@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"bytes"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
@@ -31,22 +30,14 @@ type Text []Cell
 
 // NewText parses a byte slice and creates a Text, with ANSI color codes
 // abstracted into Cell styles.
-func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
+func NewText(output []byte, style tcell.Style) Text {
 	var text Text
 
 	escaped := false
 	parsing := false
 	ansi := []rune{}
 
-	// We replace GA with a newline so we can throw away these otherwise
-	// useful newlines.
-	output = bytes.TrimLeft(output, "\r\n")
-
 	for _, r := range []rune(string(output)) {
-		if r == '\r' {
-			continue
-		}
-
 		if r == '\033' {
 			escaped = true
 			continue
@@ -83,7 +74,7 @@ func NewText(output []byte, style tcell.Style) (Text, tcell.Style) {
 		text = append(text, NewCell(r, style))
 	}
 
-	return text, style
+	return text
 }
 
 // Width calculates the sum of all the containing Cells' width.
@@ -95,4 +86,41 @@ func (text *Text) Width() int {
 	}
 
 	return width
+}
+
+// Wrap breaks a Text down into lines to fit a specified width.
+func (text Text) Wrap(width int) []Text {
+	lines := []Text{}
+
+wordwrap:
+	for i := 0; i < len(text); {
+		// Avoid multiple consecutive spaces bleeding over
+		// after being wrapped, causing indendation.
+		for i > 0 && text[i].Content == ' ' {
+			i++
+		}
+
+		// If the remains fits the width, we're done.
+		if len(text[i:]) <= width {
+			lines = append(lines, text[i:])
+			break wordwrap
+		}
+
+		// Jump to where the width would cut the text and look
+		// for the first preceding space, to wrap it there.
+		rowwidth := min(width, len(text[i:]))
+		for ii := rowwidth; ii >= 0; ii-- {
+			if text[i+ii].Content == ' ' {
+				lines = append(lines, text[i:i+ii])
+				i += ii + 1
+				continue wordwrap
+			}
+		}
+
+		// No space found, so we cut it as is and move on.
+		lines = append(lines, text[i:i+rowwidth])
+		i += rowwidth
+	}
+
+	return lines
 }
