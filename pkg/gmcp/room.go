@@ -3,6 +3,7 @@ package gmcp
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -17,8 +18,12 @@ var (
 
 // RoomDetails is a set of flags denoting how to interact with a room.
 type RoomDetails struct {
-	Shop bool
-	Bank bool
+	Bank        bool
+	Indoors     bool
+	Outdoors    bool
+	Sewer       bool
+	Shop        bool
+	Subdivision bool
 }
 
 // UnmarshalJSON hydrates RoomDetails from a list of unstructured strings.
@@ -34,11 +39,23 @@ func (details *RoomDetails) UnmarshalJSON(data []byte) error {
 		case "bank":
 			details.Bank = true
 
+		case "indoors":
+			details.Outdoors = true
+
+		case "outdoors":
+			details.Outdoors = true
+
+		case "sewer":
+			details.Sewer = true
+
 		case "shop":
 			details.Shop = true
 
+		case "subdivision":
+			details.Subdivision = true
+
 		default:
-			return fmt.Errorf("unknown room detail '%s'", item)
+			log.Printf("unknown Room.Info detail '%s'", item)
 		}
 	}
 
@@ -50,6 +67,7 @@ func (details *RoomDetails) UnmarshalJSON(data []byte) error {
 type RoomInfo struct {
 	Number      int    `json:"num"`
 	Name        string `json:"name"`
+	Description string `json:"desc"`
 	AreaName    string `json:"area"`
 	AreaNumber  int
 	Environment string `json:"environment"`

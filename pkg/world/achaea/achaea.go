@@ -6,6 +6,7 @@ import (
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
@@ -23,6 +24,7 @@ type World struct {
 	modules []pkg.Module
 
 	character *Character
+	room      *navigation.Room
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
@@ -129,6 +131,18 @@ func (world *World) ProcessGMCP(data []byte) error {
 	case agmcp.CharVitals:
 		world.character.FromCharVitals(msg)
 		world.UpdateVitals()
+
+	case gmcp.RoomInfo:
+		if world.room != nil {
+			world.room.HasPlayer = false
+		}
+		world.room = navigation.RoomFromGMCP(msg)
+		world.room.HasPlayer = true
+
+		world.ui.SetRoom(world.room)
+
+		// @todo Implement this to download the official map.
+		// case gmcp.ClientMap:
 	}
 
 	return nil

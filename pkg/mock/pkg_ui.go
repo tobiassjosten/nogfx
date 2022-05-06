@@ -6,6 +6,7 @@ package mock
 import (
 	"context"
 	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"sync"
 )
 
@@ -37,6 +38,9 @@ var _ pkg.UI = &UIMock{}
 // 			RunFunc: func(contextMoqParam context.Context) error {
 // 				panic("mock out the Run method")
 // 			},
+// 			SetRoomFunc: func(room *navigation.Room)  {
+// 				panic("mock out the SetRoom method")
+// 			},
 // 			UnmaskInputFunc: func()  {
 // 				panic("mock out the UnmaskInput method")
 // 			},
@@ -67,6 +71,9 @@ type UIMock struct {
 
 	// RunFunc mocks the Run method.
 	RunFunc func(contextMoqParam context.Context) error
+
+	// SetRoomFunc mocks the SetRoom method.
+	SetRoomFunc func(room *navigation.Room)
 
 	// UnmaskInputFunc mocks the UnmaskInput method.
 	UnmaskInputFunc func()
@@ -102,6 +109,11 @@ type UIMock struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
 		}
+		// SetRoom holds details about calls to the SetRoom method.
+		SetRoom []struct {
+			// Room is the room argument value.
+			Room *navigation.Room
+		}
 		// UnmaskInput holds details about calls to the UnmaskInput method.
 		UnmaskInput []struct {
 		}
@@ -121,6 +133,7 @@ type UIMock struct {
 	lockOutputs     sync.RWMutex
 	lockPrint       sync.RWMutex
 	lockRun         sync.RWMutex
+	lockSetRoom     sync.RWMutex
 	lockUnmaskInput sync.RWMutex
 	lockUpdateVital sync.RWMutex
 }
@@ -297,6 +310,37 @@ func (mock *UIMock) RunCalls() []struct {
 	mock.lockRun.RLock()
 	calls = mock.calls.Run
 	mock.lockRun.RUnlock()
+	return calls
+}
+
+// SetRoom calls SetRoomFunc.
+func (mock *UIMock) SetRoom(room *navigation.Room) {
+	if mock.SetRoomFunc == nil {
+		panic("UIMock.SetRoomFunc: method is nil but UI.SetRoom was just called")
+	}
+	callInfo := struct {
+		Room *navigation.Room
+	}{
+		Room: room,
+	}
+	mock.lockSetRoom.Lock()
+	mock.calls.SetRoom = append(mock.calls.SetRoom, callInfo)
+	mock.lockSetRoom.Unlock()
+	mock.SetRoomFunc(room)
+}
+
+// SetRoomCalls gets all the calls that were made to SetRoom.
+// Check the length with:
+//     len(mockedUI.SetRoomCalls())
+func (mock *UIMock) SetRoomCalls() []struct {
+	Room *navigation.Room
+} {
+	var calls []struct {
+		Room *navigation.Room
+	}
+	mock.lockSetRoom.RLock()
+	calls = mock.calls.SetRoom
+	mock.lockSetRoom.RUnlock()
 	return calls
 }
 

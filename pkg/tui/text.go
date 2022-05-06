@@ -26,7 +26,39 @@ func NewCell(r rune, style tcell.Style) Cell {
 }
 
 // Text is a slice of Cells (e.g. a line of characters).
+// @todo Rename this `Cells`, which is more apt for non-textual output, like
+// the minimap and other visuals.
 type Text []Cell
+
+func NewRow(width int, cells ...Cell) Text {
+	row := Text{}
+
+	cell := Cell{Content: ' '}
+	if len(cells) > 0 {
+		cell = cells[0]
+	}
+
+	for len(row) < width {
+		row = append(row, cell)
+	}
+
+	return row
+}
+
+func NewRows(width, height int, cells ...Cell) []Text {
+	rows := []Text{}
+
+	cell := Cell{Content: ' '}
+	if len(cells) > 0 {
+		cell = cells[0]
+	}
+
+	for len(rows) < height {
+		rows = append(rows, NewRow(width, cell))
+	}
+
+	return rows
+}
 
 // NewText parses a byte slice and creates a Text, with ANSI color codes
 // abstracted into Cell styles.

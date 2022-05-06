@@ -1,7 +1,9 @@
 package world
 
 import (
+	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
 
 // ExampleWorld is a mock implementation of the pkg.World interface.
@@ -24,6 +26,79 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 		ui.Outputs() <- []byte("Nine cursus massa sit amet tortor blandit, sit amet volutpat nisi venenatis. Ut laoreet congue tempus. Nulla eu enim in ligula pulvinar tincidunt quis ac tortor. Morbi varius scelerisque mauris in laoreet. Proin sit amet nisl felis. Etiam a venenatis ante. Etiam tempus arcu diam, ac laoreet risus auctor vitae. Praesent facilisis ligula ante. Maecenas eget ipsum varius, pulvinar elit vel, sagittis purus. Etiam auctor enim sit amet blandit egestas. Quisque a volutpat leo, et semper eros. Nullam sodales eleifend nisl quis auctor. Etiam auctor dui non nisl malesuada, vel ornare erat rhoncus. Integer sapien tortor, sagittis vitae lacus nec, ultricies tincidunt sapien.")
 		ui.Outputs() <- []byte("Ten proin vel nibh placerat arcu consequat efficitur ac  quis orci. Phasellus et metus ligula. Nulla vestibulum varius mi, ut lobortis eros ullamcorper ac. Integer fringilla, tortor in eleifend condimentum, nulla ipsum imperdiet lorem, sed sollicitudin nisl mauris at massa. Morbi lobortis quis lectus et dictum. Praesent ut urna porta, maximus neque vitae, pharetra libero. Integer eu metus non mi vehicula ultrices pellentesque sit amet felis. Aliquam sed risus lectus. Cras accumsan sagittis leo vel sagittis. Sed lacinia feugiat est, a tincidunt odio egestas at.")
 	}()
+
+	// fake rooms for development
+	x := &navigation.Room{
+		ID:        1,
+		Name:      "1",
+		Known:     true,
+		HasPlayer: true,
+		X:         gox.NewInt(5),
+		Y:         gox.NewInt(3),
+		Exits:     map[string]*navigation.Room{},
+	}
+	in := &navigation.Room{
+		ID:    2,
+		Name:  "2",
+		Known: true,
+		Exits: map[string]*navigation.Room{
+			"ne":  {ID: 7, Name: "7"},
+			"e":   {ID: 8, Name: "8"},
+			"se":  {ID: 9, Name: "9"},
+			"out": x,
+		},
+	}
+	n := &navigation.Room{
+		ID:    3,
+		Name:  "3",
+		Known: true,
+		X:     gox.NewInt(5),
+		Y:     gox.NewInt(5),
+		Exits: map[string]*navigation.Room{
+			"n": {ID: 10, Name: "A"},
+			"s": x,
+		},
+	}
+	s := &navigation.Room{ // hur markera target?
+		ID:   4,
+		Name: "4",
+		Exits: map[string]*navigation.Room{
+			"n": x,
+		},
+	}
+	sw := &navigation.Room{
+		ID:    5,
+		Name:  "5",
+		Known: true,
+		Exits: map[string]*navigation.Room{
+			"ne":  x,
+			"u":   {ID: 11, Name: "B"},
+			"d":   {ID: 12, Name: "C"},
+			"out": {ID: 13, Name: "D"},
+		},
+	}
+	w := &navigation.Room{
+		ID:    6,
+		Name:  "6",
+		Known: true,
+		Exits: map[string]*navigation.Room{
+			"e":  x,
+			"s":  sw,
+			"nw": {ID: 14, Name: "E"},
+			"u":  {ID: 15, Name: "F"},
+		},
+	}
+	sw.Exits["n"] = w
+
+	x.Exits["n"] = w
+	x.Exits["in"] = in
+	x.Exits["n"] = n
+	x.Exits["s"] = s
+	x.Exits["sw"] = sw
+	x.Exits["w"] = w
+
+	ui.SetRoom(x)
+
 	return &ExampleWorld{
 		ui: ui,
 	}
