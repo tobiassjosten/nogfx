@@ -141,14 +141,20 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			log.Println("unknown exit:", direction)
 		}
 
-		maxdiffxy := max(1, max(abs(diffx), abs(diffy)))
-		for i := 1; i <= maxdiffxy; i++ {
-			if diffx%i != 0 || diffy%i != 0 {
-				continue
-			}
+		// One point offset, when rendered, equals four or two cells.
+		if diffx > 0 || diffx < 0 {
+			diffx = diffx*4 - rel(3, diffx)
+		}
+		if diffy > 0 || diffy < 0 {
+			diffy = diffy*2 - rel(1, diffy)
+		}
 
-			xx := x + diffx/maxdiffxy*i*2
-			yy := y + diffy/maxdiffxy*i
+		steps := max(1, max(abs(diffx), abs(diffy)))
+		for i := 1; i <= steps; i++ {
+			// X is offset by one because rooms are three cells
+			// wide and paths need to start "one out".
+			xx := x + rel(1, diffx) + diffx/steps*i
+			yy := y + diffy/steps*i
 			rows[yy][xx].Content = dirchar
 		}
 	}
