@@ -1,7 +1,10 @@
 package gmcp_test
 
 import (
+	"bytes"
 	"fmt"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -15,6 +18,7 @@ func TestRoomServerMessages(t *testing.T) {
 		command []byte
 		message gmcp.ServerMessage
 		err     string
+		log     string
 	}{
 		{
 			command: []byte("Room.Info"),
@@ -22,7 +26,8 @@ func TestRoomServerMessages(t *testing.T) {
 		},
 		{
 			command: []byte(`Room.Info {"details": [ "asdf" ] }`),
-			err:     `failed hydrating gmcp.RoomInfo: unknown room detail 'asdf'`,
+			log:     "unknown Room.Info detail 'asdf'\n",
+			message: gmcp.RoomInfo{},
 		},
 		{
 			command: []byte(`Room.Info {"coords": "123"}`),
@@ -125,6 +130,15 @@ func TestRoomServerMessages(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
+			var buf bytes.Buffer
+			log.SetOutput(&buf)
+			logFlags := log.Flags()
+			log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
+			defer func() {
+				log.SetOutput(os.Stderr)
+				log.SetFlags(logFlags)
+			}()
+
 			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
 
 			if tc.err != "" {
@@ -133,6 +147,10 @@ func TestRoomServerMessages(t *testing.T) {
 				))
 				assert.Equal(tc.err, err.Error())
 				return
+			}
+
+			if tc.log != "" {
+				assert.Equal(tc.log, buf.String())
 			}
 
 			require.Nil(err)

@@ -84,7 +84,7 @@ func (msg RoomInfo) Hydrate(data []byte) (ServerMessage, error) {
 	type RoomInfoAlias RoomInfo
 	var child struct {
 		RoomInfoAlias
-		Coords string `json:"coords"`
+		Coords *string `json:"coords"`
 	}
 
 	err := json.Unmarshal(data, &child)
@@ -94,50 +94,52 @@ func (msg RoomInfo) Hydrate(data []byte) (ServerMessage, error) {
 
 	msg = (RoomInfo)(child.RoomInfoAlias)
 
-	coords := strings.Split(child.Coords, ",")
-	switch {
-	case len(coords) == 4:
-		building, err := strconv.Atoi(coords[3])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing building from coords '%s': %w",
-				coords, err,
-			)
+	if child.Coords != nil {
+		coords := strings.Split(*child.Coords, ",")
+		switch {
+		case len(coords) == 4:
+			building, err := strconv.Atoi(coords[3])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing building from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.Building = building
+
+			fallthrough
+
+		case len(coords) == 3:
+			areaNumber, err := strconv.Atoi(coords[0])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing area number from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.AreaNumber = areaNumber
+
+			x, err := strconv.Atoi(coords[1])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing x from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.X = x
+
+			y, err := strconv.Atoi(coords[2])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing y from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.Y = y
+
+		default:
+			return nil, fmt.Errorf("failed parsing coords '%s'", coords)
 		}
-		msg.Building = building
-
-		fallthrough
-
-	case len(coords) == 3:
-		areaNumber, err := strconv.Atoi(coords[0])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing area number from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.AreaNumber = areaNumber
-
-		x, err := strconv.Atoi(coords[1])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing x from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.X = x
-
-		y, err := strconv.Atoi(coords[2])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing y from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.Y = y
-
-	default:
-		return nil, fmt.Errorf("failed parsing coords '%s'", coords)
 	}
 
 	return msg, nil
