@@ -1,7 +1,6 @@
 package tui_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/tui"
@@ -22,13 +21,13 @@ func TestNewText(t *testing.T) {
 		Foreground(tcell.ColorBlue).
 		Background(tcell.ColorTeal)
 
-	tcs := []struct {
+	tcs := map[string]struct {
 		in      []byte
 		width   int
 		text    tui.Text
 		styleIn tcell.Style
 	}{
-		{
+		"plain xy": {
 			in:    []byte("xy"),
 			width: 2,
 			text: tui.Text{
@@ -36,7 +35,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'y', baseStyle, 1},
 			},
 		},
-		{
+		"plain yx": {
 			in:    []byte("yx"),
 			width: 2,
 			text: tui.Text{
@@ -44,7 +43,7 @@ func TestNewText(t *testing.T) {
 				tui.Cell{'x', baseStyle, 1},
 			},
 		},
-		{
+		"red style": {
 			in:    []byte("yx"),
 			width: 2,
 			text: tui.Text{
@@ -53,16 +52,7 @@ func TestNewText(t *testing.T) {
 			},
 			styleIn: redStyle,
 		},
-		{
-			in:    []byte("y\r\nx"),
-			width: 2,
-			text: tui.Text{
-				tui.Cell{'y', baseStyle, 1},
-				tui.Cell{'\n', baseStyle, 0},
-				tui.Cell{'x', baseStyle, 1},
-			},
-		},
-		{
+		"change to green text": {
 			in:    []byte("y\033[32;44mx"),
 			width: 2,
 			text: tui.Text{
@@ -71,7 +61,7 @@ func TestNewText(t *testing.T) {
 			},
 			styleIn: redStyle,
 		},
-		{
+		"change to blue text": {
 			in:    []byte("y\033[34;46mx"),
 			width: 2,
 			text: tui.Text{
@@ -80,7 +70,7 @@ func TestNewText(t *testing.T) {
 			},
 			styleIn: greenStyle,
 		},
-		{
+		"invalid ascii color": {
 			in:    []byte("y\033{x"),
 			width: 4,
 			text: tui.Text{
@@ -92,13 +82,11 @@ func TestNewText(t *testing.T) {
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
 			text := tui.NewText(tc.in, tc.styleIn)
-			assert.Equal(tc.text, text)
-			assert.Equal(tc.width, text.Width())
+			assert.Equal(t, tc.text, text)
+			assert.Equal(t, tc.width, text.Width())
 		})
 	}
 }

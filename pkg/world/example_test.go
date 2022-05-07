@@ -14,8 +14,13 @@ func TestExampleWorld(t *testing.T) {
 
 	printed := [][]byte{}
 
+	outputs := make(chan []byte, 1000)
+
 	ui := &mock.UIMock{
 		AddVitalFunc: func(_ string, _ interface{}) {},
+		OutputsFunc: func() chan<- []byte {
+			return outputs
+		},
 		PrintFunc: func(data []byte) {
 			printed = append(printed, data)
 		},

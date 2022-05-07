@@ -22,8 +22,7 @@ type OutputPane struct {
 	texts  []Text
 	offset int
 
-	pwidth  int
-	pheight int
+	pwidth int
 }
 
 // NewOutputPane creates a new OutputPane.
@@ -54,7 +53,7 @@ func (pane *OutputPane) Add(output []byte) {
 	text := NewText(output, pane.lastStyle())
 	pane.texts = append([]Text{text}, pane.texts...)
 
-	if pane.offset > 0 {
+	if pane.offset > 0 && pane.pwidth > 0 {
 		pane.offset += len(text.Wrap(pane.pwidth))
 	}
 
@@ -67,15 +66,19 @@ func (pane *OutputPane) Add(output []byte) {
 // Texts distributes Cells from the Text buffer to be printed to the screen, in
 // the form of an output area and an optional history scrollback area.
 func (pane *OutputPane) Texts(width, height int) ([]Text, []Text) {
+	rows := []Text{}
+
+	if width == 0 || height == 0 {
+		return rows, rows
+	}
+
 	// Resizing the window resets history scrollback, simply because it's a
 	// pain in the ass to calculate and maintain that state. For now.
 	// @todo Make resizing maintain history scrollback.
-	if pane.pwidth != width || pane.pheight != height {
+	if pane.pwidth > 0 && pane.pwidth != width {
 		pane.offset = 0
 	}
-	pane.pwidth, pane.pheight = width, height
-
-	area := []Text{}
+	pane.pwidth = width
 
 	// Make sure to calculate enough for a history subpane.
 	height += pane.offset
@@ -86,35 +89,45 @@ func (pane *OutputPane) Texts(width, height int) ([]Text, []Text) {
 		// Texts are ordered with the most recent one first, so we
 		// prepend older paragraphs to the area.
 		for i := len(lines) - 1; i >= 0; i-- {
-			area = append([]Text{lines[i]}, area...)
+			rows = append([]Text{lines[i]}, rows...)
 		}
 
-		if len(area) >= height {
+		if len(rows) >= height {
 			break
 		}
 	}
 
 	// Reset back to actual height, for finalization.
 	height -= pane.offset
-	length := len(area)
+	length := len(rows)
 
 	// For simpler cases we just return the full buffer.
-	if length <= height || pane.offset == 0 {
-		return area[max(0, length-height):], []Text{}
+	if height == 1 || length <= height || pane.offset == 0 {
+		return rows[max(0, length-height):], []Text{}
 	}
 
 	// Cap offset to the last row in the text buffer.
 	pane.offset = min(length-height, pane.offset)
 
 	history := length - height - pane.offset
-	historyPane := area[history : history+(height-height/2)]
+	historyPane := rows[history : history+(height-height/2)]
 
+	output := rows[length-height/2:]
+
+	// @todo Replace with NewRow() after merging that PR.
 	var divider Text
 	for i := 0; i < width; i++ {
 		divider = append(divider, Cell{Content: tcell.RuneHLine})
 	}
 
-	output := area[length-height/2+1:]
+	if height > 2 {
+		hlength := len(historyPane)
+		if hlength > len(output) {
+			historyPane[hlength-1] = divider
+		} else {
+			output[0] = divider
+		}
+	}
 
-	return append([]Text{divider}, output...), historyPane
+	return output, historyPane
 }
