@@ -6,15 +6,16 @@ import (
 )
 
 var (
-	// areas = map[int]*Area{}
 	rooms = map[int]*Room{}
 )
 
+// Area is a region covering a number of rooms.
 type Area struct {
 	ID   int
 	Name string
 }
 
+// Room represents a location within a game.
 type Room struct {
 	ID   int
 	Name string
@@ -31,6 +32,7 @@ type Room struct {
 	Exits map[string]*Room
 }
 
+// RoomFromGMCP creates a Room from a GMCP Room.Info message.
 func RoomFromGMCP(msg gmcp.RoomInfo) *Room {
 	room, ok := rooms[msg.Number]
 	if ok && room.Known {
@@ -62,18 +64,27 @@ func RoomFromGMCP(msg gmcp.RoomInfo) *Room {
 	return room
 }
 
+// HasExit determines whether the room has a specific exit or not.
 func (room *Room) HasExit(direction string) bool {
 	_, exists := room.Exits[direction]
 	return exists
 }
 
-func (room *Room) Displacement(room2 *Room, direction string) (int, int) {
-	if room.X != nil && room.Y != nil && room2.X != nil && room2.Y != nil {
+// Displacement calculates the coordinate offset of the room at the given exit
+// or 0, 0 if an offset couldn't be calculated.
+func (room *Room) Displacement(direction string) (int, int) {
+	if !room.HasExit(direction) {
+		return 0, 0
+	}
+
+	adjacent := room.Exits[direction]
+
+	if room.X != nil && room.Y != nil && adjacent.X != nil && adjacent.Y != nil {
 		// Achaea's coordinate system, through GMCP, puts the origin
 		// 0,0 in the middle of the map, instead of the top left (nw)
 		// corner like when we draw the map. So north increases Y and
 		// south decreases it, reverse of our needs.
-		return *room2.X - *room.X, *room.Y - *room2.Y
+		return *adjacent.X - *room.X, *room.Y - *adjacent.Y
 	}
 
 	switch direction {

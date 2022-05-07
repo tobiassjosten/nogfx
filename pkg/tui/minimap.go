@@ -108,7 +108,7 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 
 		dirchar := ' '
 
-		diffx, diffy := room.Displacement(adjacent, direction)
+		diffx, diffy := room.Displacement(direction)
 		if diffx == 0 && diffy == 0 {
 			continue
 		}
@@ -162,7 +162,7 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			continue
 		}
 
-		diffx, diffy := room.Displacement(adjacent, direction)
+		diffx, diffy := room.Displacement(direction)
 		if diffx == 0 && diffy == 0 {
 			continue
 		}
