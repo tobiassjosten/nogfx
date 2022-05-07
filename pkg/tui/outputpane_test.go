@@ -11,84 +11,134 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOutputDraw(t *testing.T) {
-	tcs := []struct {
+func TestOutputTexts(t *testing.T) {
+	textToRunes := func(text tui.Text) (rs []rune) {
+		for _, cell := range text {
+			rs = append(rs, cell.Content)
+		}
+		return
+	}
+
+	textsToRunes := func(texts []tui.Text) (rss [][]rune) {
+		for _, text := range texts {
+			rss = append(rss, textToRunes(text))
+		}
+		return
+	}
+
+	tcs := map[string]struct {
 		outputs [][]byte
-		pos     []int
-		calls   int
-		content map[int]map[int]rune
+		events  []*tcell.EventKey
+		size    []int
+		output  [][]rune
+		history [][]rune
 	}{
-		{
+		"no output": {
 			outputs: [][]byte{},
-			pos:     []int{0, 0, 1, 1},
-			calls:   0,
-			content: map[int]map[int]rune{},
+			size:    []int{1, 1},
 		},
-		{
+
+		"single cell output": {
 			outputs: [][]byte{{'x'}},
-			pos:     []int{0, 0, 1, 1},
-			calls:   1,
-			content: map[int]map[int]rune{0: map[int]rune{0: 'x'}},
+			size:    []int{1, 1},
+			output:  [][]rune{{'x'}},
 		},
-		{
-			outputs: [][]byte{{'x'}},
-			pos:     []int{1, 2, 1, 1},
-			calls:   1,
-			content: map[int]map[int]rune{1: map[int]rune{2: 'x'}},
+
+		"correct order plain": {
+			outputs: [][]byte{{'x'}, {'y'}, {'z'}},
+			size:    []int{1, 3},
+			output:  [][]rune{{'x'}, {'y'}, {'z'}},
 		},
-		{
-			outputs: [][]byte{{'x'}},
-			pos:     []int{0, 0, 1, 0},
-			calls:   0,
-			content: map[int]map[int]rune{},
-		},
-		{
-			outputs: [][]byte{{'a', 's', 'd', 'f'}},
-			pos:     []int{5, 3, 2, 2},
-			calls:   4,
-			content: map[int]map[int]rune{
-				5: map[int]rune{
-					3: 'a',
-					4: 'd',
-				},
-				6: map[int]rune{
-					3: 's',
-					4: 'f',
-				},
+
+		"correct order scroll back one": {
+			outputs: [][]byte{{'a'}, {'b'}, {'c'}, {'d'}, {'e'}},
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
 			},
+			size:    []int{1, 3},
+			output:  [][]rune{{'e'}},
+			history: [][]rune{{'b'}, {tcell.RuneHLine}},
+		},
+
+		"correct order scroll back two": {
+			outputs: [][]byte{{'a'}, {'b'}, {'c'}, {'d'}, {'e'}},
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+			},
+			size:    []int{1, 3},
+			output:  [][]rune{{'e'}},
+			history: [][]rune{{'a'}, {tcell.RuneHLine}},
+		},
+
+		"no width": {
+			outputs: [][]byte{{'x'}},
+			size:    []int{0, 1},
+		},
+
+		"no height": {
+			outputs: [][]byte{{'x'}},
+			size:    []int{1, 0},
+		},
+
+		"linebreak": {
+			outputs: [][]byte{{'a', 's', 'd', 'f'}},
+			size:    []int{2, 2},
+			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		},
+
+		"wordwrap one": {
+			outputs: [][]byte{{'a', 's', ' ', 'd', 'f'}},
+			size:    []int{2, 2},
+			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		},
+
+		"wordwrap two": {
+			outputs: [][]byte{{'a', 's', ' ', 'd', 'f'}},
+			size:    []int{3, 2},
+			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		},
+
+		"wordwrap long word": {
+			outputs: [][]byte{{'a', 's', ' ', 'd', 'f', 'g'}},
+			size:    []int{2, 3},
+			output:  [][]rune{{'a', 's'}, {'d', 'f'}, {'g'}},
+		},
+
+		"wordwrap long word scroll back one": {
+			outputs: [][]byte{{'a', 's', ' ', 'd', 'f', 'g'}},
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+			},
+			size:    []int{2, 2},
+			output:  [][]rune{{'g'}},
+			history: [][]rune{{'a', 's'}},
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
 			pane := tui.NewOutputPane()
-			pane.Position(tc.pos[0], tc.pos[1], tc.pos[2], tc.pos[3])
 
 			for _, output := range tc.outputs {
 				pane.Add(output)
 			}
 
-			content := map[int]map[int]rune{}
-			screen := &mock.ScreenMock{
-				SetContentFunc: func(x int, y int, r rune, _ []rune, _ tcell.Style) {
-					if _, ok := content[x]; !ok {
-						content[x] = map[int]rune{}
-					}
-					content[x][y] = r
-				},
+			for _, event := range tc.events {
+				pane.HandleEvent(event)
 			}
 
-			pane.Draw(screen)
+			outputRows, historyRows := pane.Texts(tc.size[0], tc.size[1])
+			output := textsToRunes(outputRows)
+			history := textsToRunes(historyRows)
 
-			assert.Equal(tc.calls, len(screen.SetContentCalls()))
-			assert.Equal(tc.content, content)
+			assert.Equal(t, tc.output, output)
+			assert.Equal(t, tc.history, history)
 		})
 	}
 }
 
-func TestOutputProxies(t *testing.T) {
+func TestOutputsChannel(t *testing.T) {
 	tcs := []struct {
 		output []byte
 	}{

@@ -73,7 +73,7 @@ func TestCommandsReply(t *testing.T) {
 				AddVitalFunc: func(_ string, _ interface{}) {},
 			}
 
-			engine := world.NewEngine(client, ui, "example.com:23")
+			engine := world.NewEngine(client, ui, "example.com:1337")
 
 			err := engine.ProcessCommand(tc.command)
 
@@ -109,7 +109,7 @@ func TestMasking(t *testing.T) {
 		},
 	}
 
-	engine := world.NewEngine(client, ui, "example.com:23")
+	engine := world.NewEngine(client, ui, "example.com:1337")
 
 	err := engine.ProcessCommand(willEcho)
 	require.Nil(err)
