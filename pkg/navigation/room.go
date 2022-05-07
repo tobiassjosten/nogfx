@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	areas = map[int]*Area{}
+	// areas = map[int]*Area{}
 	rooms = map[int]*Room{}
 )
 

@@ -132,7 +132,7 @@ func (tui *TUI) Draw() {
 
 	borderWidth := 2
 
-	roomWidth, roomHeight, roomsMargin := 4, 2, 3
+	roomWidth, _, roomsMargin := 4, 2, 3
 	minimapMinWidth := roomWidth*3 + roomsMargin
 	minimapWidth, minimapHeight := 0, 0
 
@@ -143,11 +143,6 @@ func (tui *TUI) Draw() {
 		mainWidth = min(120, mainMinWidth+(width-mainMinWidth-borderWidth-minimapMinWidth)/2)
 
 		minimapWidth = width - mainWidth - borderWidth
-		minimapHeight = min(height, roomHeight*((minimapWidth-roomsMargin)/roomWidth)+roomsMargin)
-
-		// It currently doesn't make any sense to do the above math
-		// only to overwrite it here. But it will, once we have more
-		// content to go in the right side.
 		minimapHeight = height
 	}
 
