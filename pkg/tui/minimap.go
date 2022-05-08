@@ -144,6 +144,12 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			log.Println("unknown exit:", direction)
 		}
 
+		// Calculate the number of steps, taking into account the fact
+		// that every offset beyond the first equals one path and one
+		// room. So 1 offset = 1 step, 2 offsets = 3 steps, etc.
+		steps := max(1, max(abs(diffx), abs(diffy)))
+		steps = (steps-1)*2 + 1
+
 		// One point offset, when rendered, equals four or two cells.
 		if diffx > 0 || diffx < 0 {
 			diffx = diffx*4 - rel(3, diffx)
@@ -152,12 +158,12 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			diffy = diffy*2 - rel(1, diffy)
 		}
 
-		steps := max(1, max(abs(diffx), abs(diffy)))
 		for i := 1; i <= steps; i++ {
 			// X is offset by one because rooms are three cells
 			// wide and paths need to start "one out".
-			xx := x + rel(1, diffx) + diffx/steps*i
-			yy := y + diffy/steps*i
+			xx := x + rel(1, diffx) + proc(diffx, i, steps)
+			yy := y + proc(diffy, i, steps)
+
 			rows[yy][xx].Content = dirchar
 		}
 	}
