@@ -8,20 +8,23 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-// Outputs exposes the incoming channel for server output.
+// SetRoom updates the current room and causes a repaint.
 func (tui *TUI) SetRoom(room *navigation.Room) {
 	tui.panes.Minimap.room = room
 	tui.Draw()
 }
 
+// MinimapPane is a map rendition based on the current room.
 type MinimapPane struct {
 	room *navigation.Room
 }
 
+// NewMinimapPane creates a new MinimapPane.
 func NewMinimapPane() *MinimapPane {
 	return &MinimapPane{}
 }
 
+// Texts renders cascading layers of adjacent rooms, based on the current one.
 func (pane *MinimapPane) Texts(width, height int) []Text {
 	if pane.room == nil || width == 0 || height == 0 {
 		return []Text{}

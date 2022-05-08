@@ -30,6 +30,7 @@ func NewCell(r rune, style tcell.Style) Cell {
 // the minimap and other visuals.
 type Text []Cell
 
+// NewRow creates a new row of cells with the given width.
 func NewRow(width int, cells ...Cell) Text {
 	row := Text{}
 
@@ -45,6 +46,7 @@ func NewRow(width int, cells ...Cell) Text {
 	return row
 }
 
+// NewRows creates a given number of rows with the given width.
 func NewRows(width, height int, cells ...Cell) []Text {
 	rows := []Text{}
 
