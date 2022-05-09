@@ -32,14 +32,11 @@ func (pane *MinimapPane) Texts(width, height int) []Text {
 
 	rows := NewRows(width, height)
 
-	x, y := len(rows[0])/2, len(rows)/2
-
-	depth := 3 // @todo bestäm baserat på width/height och hur mycket som får plast
-
-	rendered := map[int]struct{}{}
-	rows = renderRoom(rows, pane.room, x, y, depth, rendered)
-
-	return rows
+	return renderRoom(
+		rows, pane.room,
+		len(rows[0])/2, len(rows)/2,
+		5, map[int]struct{}{},
+	)
 }
 
 func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered map[int]struct{}) []Text {
@@ -55,19 +52,19 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 
 	rendered[room.ID] = struct{}{}
 
-	// @todo Use characters and colors to represent the room's type.
-
 	rows[y][x-1].Content = '['
 	rows[y][x+1].Content = ']'
+
+	// @todo Consider which environments that are actually important for
+	// the map to visualise and color the brackets accordingly.
 
 	if !room.Known {
 		rows[y][x-1].Style = rows[y][x-1].Style.Foreground(tcell.Color237)
 		rows[y][x+1].Style = rows[y][x+1].Style.Foreground(tcell.Color237)
 	}
 
+paths:
 	for direction, adjacent := range room.Exits {
-		// These special directions paints the room, not paths between
-		// rooms, and so we exclude them from the outwards rule below.
 		switch direction {
 		case "u":
 			if room.HasPlayer {
@@ -75,11 +72,13 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			}
 
 			if room.HasExit("d") {
-				rows[y][x].Content = '=' // dimma färgen
+				rows[y][x].Content = '='
+				rows[y][x].Foreground(tcell.Color245)
 				continue
 			}
 
-			rows[y][x].Content = '^' // dimma färgen
+			rows[y][x].Content = '^'
+			rows[y][x].Foreground(tcell.Color245)
 			continue
 
 		case "d":
@@ -91,31 +90,29 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 				continue
 			}
 
-			rows[y][x].Content = 'v' // dimma färgen
+			rows[y][x].Content = 'v'
+			rows[y][x].Foreground(tcell.Color245)
 			continue
 
 		case "out":
-			rows[y][x-1].Content = '{' // dimma färgen
+			rows[y][x-1].Content = '{'
 			continue
 
 		case "in":
-			rows[y][x+1].Content = '}' // dimma färgen
+			rows[y][x+1].Content = '}'
 			continue
 		}
-
-		// We're only interested in paths relative from where we are,
-		// so we only paint exits outwards.
-		if _, done := rendered[adjacent.ID]; done {
-			continue
-		}
-
-		dirchar := ' '
 
 		diffx, diffy := room.Displacement(direction)
 		if diffx == 0 && diffy == 0 {
 			continue
 		}
 
+		if _, done := rendered[adjacent.ID]; done {
+			continue
+		}
+
+		dirchar := ' '
 		switch direction {
 		case "n":
 			dirchar = '|'
@@ -137,11 +134,12 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 
 		case "w":
 			dirchar = '-'
+
 		case "nw":
 			dirchar = '\\'
 
 		default:
-			log.Println("unknown exit:", direction)
+			continue paths
 		}
 
 		// Calculate the number of steps, taking into account the fact
@@ -164,6 +162,11 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 			xx := x + rel(1, diffx) + proc(diffx, i, steps)
 			yy := y + proc(diffy, i, steps)
 
+			if yy < 0 || xx < 0 || yy >= len(rows) || xx >= len(rows[yy]) {
+				log.Println("overflow", len(rows), len(rows[0]), "coords", yy, xx)
+				break
+			}
+
 			rows[yy][xx].Content = dirchar
 		}
 	}
@@ -174,6 +177,10 @@ func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered ma
 
 	for direction, adjacent := range room.Exits {
 		if _, done := rendered[adjacent.ID]; done {
+			continue
+		}
+
+		if room.Area != nil && adjacent.Area != nil && room.Area.ID != adjacent.Area.ID {
 			continue
 		}
 

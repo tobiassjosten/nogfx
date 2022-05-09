@@ -43,8 +43,15 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 		Y:     gox.NewInt(3),
 		Exits: map[string]*navigation.Room{
 			"ne":  {ID: 7, Name: "7"},
-			"e":   {ID: 8, Name: "8"},
 			"out": x,
+		},
+	}
+	in.Exits["e"] = &navigation.Room{
+		ID:   8,
+		Name: "8",
+		Exits: map[string]*navigation.Room{
+			"w": in,
+			"d": {ID: 16, Name: "G"},
 		},
 	}
 	inse := &navigation.Room{

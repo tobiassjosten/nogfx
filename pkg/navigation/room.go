@@ -1,11 +1,14 @@
 package navigation
 
 import (
+	"strings"
+
 	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
 var (
+	areas = map[int]*Area{}
 	rooms = map[int]*Room{}
 )
 
@@ -61,13 +64,41 @@ func RoomFromGMCP(msg gmcp.RoomInfo) *Room {
 		}
 	}
 
+	area, ok := areas[msg.AreaNumber]
+	if !ok {
+		area = &Area{
+			ID:   msg.AreaNumber,
+			Name: msg.AreaName,
+		}
+		areas[msg.AreaNumber] = area
+	}
+	room.Area = area
+
 	return room
 }
 
-// HasExit determines whether the room has a specific exit or not.
-func (room *Room) HasExit(direction string) bool {
-	_, exists := room.Exits[direction]
-	return exists
+// HasExit determines whether the room has a specific exit or not. It supports
+// a sequence of exits as well, like "s se e", to determine whether a chain of
+// adjacent rooms have the specific exits.
+func (room *Room) HasExit(directions string) (exists bool) {
+	for _, direction := range strings.Split(directions, " ") {
+		if room, exists = room.Exits[direction]; !exists {
+			return false
+		}
+	}
+
+	return true
+}
+
+// HasAnyExits determine whether the room has ANY of the specific exit sequences.
+func (room *Room) HasAnyExits(directionses ...string) bool {
+	for _, directions := range directionses {
+		if room.HasExit(directions) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Displacement calculates the coordinate offset of the room at the given exit
@@ -79,12 +110,14 @@ func (room *Room) Displacement(direction string) (int, int) {
 
 	adjacent := room.Exits[direction]
 
-	if room.X != nil && room.Y != nil && adjacent.X != nil && adjacent.Y != nil {
-		// Achaea's coordinate system, through GMCP, puts the origin
-		// 0,0 in the middle of the map, instead of the top left (nw)
-		// corner like when we draw the map. So north increases Y and
-		// south decreases it, reverse of our needs.
-		return *adjacent.X - *room.X, *room.Y - *adjacent.Y
+	// Coordinates doesn't translate between areas, so we only use them for
+	// room in the same area.
+	if room.Area == nil || adjacent.Area == nil || room.Area.ID == adjacent.Area.ID {
+		if room.X != nil && room.Y != nil && adjacent.X != nil && adjacent.Y != nil {
+			// Achaea's coordinate system has north increasing Y
+			// and south decreasing it, so we reverse that.
+			return *adjacent.X - *room.X, *room.Y - *adjacent.Y
+		}
 	}
 
 	switch direction {
@@ -112,26 +145,14 @@ func (room *Room) Displacement(direction string) (int, int) {
 	case "nw":
 		return -1, -1
 
-	case "u":
-		if !room.HasExit("n") {
-			return 0, -1
-		}
-		return 0, 0
-
-	case "d":
-		if !room.HasExit("s") {
-			return 0, 1
-		}
-		return 0, 0
-
 	case "out":
-		if !room.HasExit("w") {
+		if !room.HasAnyExits("w", "n sw", "s nw") {
 			return -1, 0
 		}
 		return 0, 0
 
 	case "in":
-		if !room.HasExit("e") {
+		if !room.HasAnyExits("e", "n se", "s ne") {
 			return 1, 0
 		}
 		return 0, 0

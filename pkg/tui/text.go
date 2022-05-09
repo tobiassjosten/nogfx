@@ -25,6 +25,14 @@ func NewCell(r rune, style tcell.Style) Cell {
 	}
 }
 
+func (cell *Cell) Background(color tcell.Color) {
+	cell.Style = cell.Style.Background(color)
+}
+
+func (cell *Cell) Foreground(color tcell.Color) {
+	cell.Style = cell.Style.Foreground(color)
+}
+
 // Text is a slice of Cells (e.g. a line of characters).
 // @todo Rename this `Cells`, which is more apt for non-textual output, like
 // the minimap and other visuals.
