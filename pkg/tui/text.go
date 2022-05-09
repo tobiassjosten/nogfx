@@ -25,10 +25,12 @@ func NewCell(r rune, style tcell.Style) Cell {
 	}
 }
 
+// Background sets the background color of the cell.
 func (cell *Cell) Background(color tcell.Color) {
 	cell.Style = cell.Style.Background(color)
 }
 
+// Foreground sets the foreground color of the cell.
 func (cell *Cell) Foreground(color tcell.Color) {
 	cell.Style = cell.Style.Foreground(color)
 }
