@@ -9,17 +9,19 @@ import (
 
 // Panes is a collection of various panes used throughout the user interface.
 type Panes struct {
-	Input  *InputPane
-	Output *OutputPane
-	Vitals *VitalsPane
+	Input   *InputPane
+	Output  *OutputPane
+	Vitals  *VitalsPane
+	Minimap *MinimapPane
 }
 
 // NewPanes creates a new Panes with the standard collection of panes.
 func NewPanes() Panes {
 	return Panes{
-		Input:  NewInputPane(),
-		Output: NewOutputPane(),
-		Vitals: NewVitalsPane(),
+		Input:   NewInputPane(),
+		Output:  NewOutputPane(),
+		Vitals:  NewVitalsPane(),
+		Minimap: NewMinimapPane(),
 	}
 }
 
@@ -125,10 +127,27 @@ func (tui *TUI) Draw() {
 
 	width, height := tui.screen.Size()
 
-	mainWidth := int(min(120, width))
+	mainMinWidth := 80
+	mainWidth := width
+
+	borderWidth := 2
+
+	roomWidth, _, roomsMargin := 4, 2, 3
+	minimapMinWidth := roomWidth*3 + roomsMargin
+	minimapWidth, minimapHeight := 0, 0
+
+	// If we can fit a minimap, let's calculate how much space we can
+	// afford it. Main panes get at least 80 and at most 120 but in between
+	// share the excess with the minimap, before giving it all the rest.
+	if width >= mainMinWidth+borderWidth+minimapMinWidth {
+		mainWidth = min(120, mainMinWidth+(width-mainMinWidth-borderWidth-minimapMinWidth)/2)
+
+		minimapWidth = width - mainWidth - borderWidth
+		minimapHeight = height
+	}
 
 	inputWidth := mainWidth
-	inputHeight := int(min(height, tui.panes.Input.Height()))
+	inputHeight := min(height, tui.panes.Input.Height())
 	inputX, inputY := 0, height-inputHeight
 	tui.panes.Input.Position(inputX, inputY, inputWidth, inputHeight)
 
@@ -147,7 +166,8 @@ func (tui *TUI) Draw() {
 	tui.paint(0, outputX, outputWidth, output, 0)
 	tui.paint(0, 0, outputWidth, history, tcell.Color236)
 
-	// @todo Färga padding också.
+	minimap := tui.panes.Minimap.Texts(minimapWidth-2, minimapHeight)
+	tui.paint(mainWidth+2, height-minimapHeight, minimapWidth, minimap, 0)
 
 	tui.screen.Show()
 }

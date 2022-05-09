@@ -3,6 +3,7 @@ package gmcp
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -17,8 +18,12 @@ var (
 
 // RoomDetails is a set of flags denoting how to interact with a room.
 type RoomDetails struct {
-	Shop bool
-	Bank bool
+	Bank        bool
+	Indoors     bool
+	Outdoors    bool
+	Sewer       bool
+	Shop        bool
+	Subdivision bool
 }
 
 // UnmarshalJSON hydrates RoomDetails from a list of unstructured strings.
@@ -34,11 +39,23 @@ func (details *RoomDetails) UnmarshalJSON(data []byte) error {
 		case "bank":
 			details.Bank = true
 
+		case "indoors":
+			details.Outdoors = true
+
+		case "outdoors":
+			details.Outdoors = true
+
+		case "sewer":
+			details.Sewer = true
+
 		case "shop":
 			details.Shop = true
 
+		case "subdivision":
+			details.Subdivision = true
+
 		default:
-			return fmt.Errorf("unknown room detail '%s'", item)
+			log.Printf("unknown Room.Info detail '%s'", item)
 		}
 	}
 
@@ -50,6 +67,7 @@ func (details *RoomDetails) UnmarshalJSON(data []byte) error {
 type RoomInfo struct {
 	Number      int    `json:"num"`
 	Name        string `json:"name"`
+	Description string `json:"desc"`
 	AreaName    string `json:"area"`
 	AreaNumber  int
 	Environment string `json:"environment"`
@@ -66,7 +84,7 @@ func (msg RoomInfo) Hydrate(data []byte) (ServerMessage, error) {
 	type RoomInfoAlias RoomInfo
 	var child struct {
 		RoomInfoAlias
-		Coords string `json:"coords"`
+		Coords *string `json:"coords"`
 	}
 
 	err := json.Unmarshal(data, &child)
@@ -76,50 +94,52 @@ func (msg RoomInfo) Hydrate(data []byte) (ServerMessage, error) {
 
 	msg = (RoomInfo)(child.RoomInfoAlias)
 
-	coords := strings.Split(child.Coords, ",")
-	switch {
-	case len(coords) == 4:
-		building, err := strconv.Atoi(coords[3])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing building from coords '%s': %w",
-				coords, err,
-			)
+	if child.Coords != nil {
+		coords := strings.Split(*child.Coords, ",")
+		switch {
+		case len(coords) == 4:
+			building, err := strconv.Atoi(coords[3])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing building from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.Building = building
+
+			fallthrough
+
+		case len(coords) == 3:
+			areaNumber, err := strconv.Atoi(coords[0])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing area number from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.AreaNumber = areaNumber
+
+			x, err := strconv.Atoi(coords[1])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing x from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.X = x
+
+			y, err := strconv.Atoi(coords[2])
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed parsing y from coords '%s': %w",
+					coords, err,
+				)
+			}
+			msg.Y = y
+
+		default:
+			return nil, fmt.Errorf("failed parsing coords '%s'", coords)
 		}
-		msg.Building = building
-
-		fallthrough
-
-	case len(coords) == 3:
-		areaNumber, err := strconv.Atoi(coords[0])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing area number from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.AreaNumber = areaNumber
-
-		x, err := strconv.Atoi(coords[1])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing x from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.X = x
-
-		y, err := strconv.Atoi(coords[2])
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing y from coords '%s': %w",
-				coords, err,
-			)
-		}
-		msg.Y = y
-
-	default:
-		return nil, fmt.Errorf("failed parsing coords '%s'", coords)
 	}
 
 	return msg, nil

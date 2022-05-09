@@ -25,8 +25,52 @@ func NewCell(r rune, style tcell.Style) Cell {
 	}
 }
 
+// Background sets the background color of the cell.
+func (cell *Cell) Background(color tcell.Color) {
+	cell.Style = cell.Style.Background(color)
+}
+
+// Foreground sets the foreground color of the cell.
+func (cell *Cell) Foreground(color tcell.Color) {
+	cell.Style = cell.Style.Foreground(color)
+}
+
 // Text is a slice of Cells (e.g. a line of characters).
+// @todo Rename this `Cells`, which is more apt for non-textual output, like
+// the minimap and other visuals.
 type Text []Cell
+
+// NewRow creates a new row of cells with the given width.
+func NewRow(width int, cells ...Cell) Text {
+	row := Text{}
+
+	cell := Cell{Content: ' '}
+	if len(cells) > 0 {
+		cell = cells[0]
+	}
+
+	for len(row) < width {
+		row = append(row, cell)
+	}
+
+	return row
+}
+
+// NewRows creates a given number of rows with the given width.
+func NewRows(width, height int, cells ...Cell) []Text {
+	rows := []Text{}
+
+	cell := Cell{Content: ' '}
+	if len(cells) > 0 {
+		cell = cells[0]
+	}
+
+	for len(rows) < height {
+		rows = append(rows, NewRow(width, cell))
+	}
+
+	return rows
+}
 
 // NewText parses a byte slice and creates a Text, with ANSI color codes
 // abstracted into Cell styles.

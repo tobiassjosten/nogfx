@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"io"
+
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
 
 // Client is the application's main connection to the game server.
@@ -42,6 +44,8 @@ type UI interface {
 
 	AddVital(string, interface{})
 	UpdateVital(string, int, int)
+
+	SetRoom(*navigation.Room)
 }
 
 // World represents a game and hooks into all their various specific logic.

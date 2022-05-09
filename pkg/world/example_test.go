@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/world"
 
 	"github.com/stretchr/testify/assert"
@@ -24,6 +25,7 @@ func TestExampleWorld(t *testing.T) {
 		PrintFunc: func(data []byte) {
 			printed = append(printed, data)
 		},
+		SetRoomFunc: func(room *navigation.Room) {},
 	}
 
 	world := world.NewExampleWorld(client, ui)
