@@ -112,7 +112,7 @@ paths:
 			continue
 		}
 
-		dirchar := ' '
+		var dirchar rune
 		switch direction {
 		case "n":
 			dirchar = '|'
