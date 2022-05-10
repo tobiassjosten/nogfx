@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOutputTexts(t *testing.T) {
-	textToRunes := func(text tui.Text) (rs []rune) {
-		for _, cell := range text {
+func TestOutputRows(t *testing.T) {
+	rowToRunes := func(row tui.Row) (rs []rune) {
+		for _, cell := range row {
 			rs = append(rs, cell.Content)
 		}
 		return
 	}
 
-	textsToRunes := func(texts []tui.Text) (rss [][]rune) {
-		for _, text := range texts {
-			rss = append(rss, textToRunes(text))
+	rowsToRunes := func(rows tui.Rows) (rss [][]rune) {
+		for _, row := range rows {
+			rss = append(rss, rowToRunes(row))
 		}
 		return
 	}
@@ -128,9 +128,9 @@ func TestOutputTexts(t *testing.T) {
 				pane.HandleEvent(event)
 			}
 
-			outputRows, historyRows := pane.Texts(tc.size[0], tc.size[1])
-			output := textsToRunes(outputRows)
-			history := textsToRunes(historyRows)
+			outputRows, historyRows := pane.Rows(tc.size[0], tc.size[1])
+			output := rowsToRunes(outputRows)
+			history := rowsToRunes(historyRows)
 
 			assert.Equal(t, tc.output, output)
 			assert.Equal(t, tc.history, history)

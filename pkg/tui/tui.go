@@ -161,22 +161,22 @@ func (tui *TUI) Draw() {
 	outputWidth := mainWidth
 	outputHeight := height - inputHeight - vitalsHeight
 
-	output, history := tui.panes.Output.Texts(outputWidth, outputHeight)
+	output, history := tui.panes.Output.Rows(outputWidth, outputHeight)
 	outputX := len(history) + (outputHeight - len(history) - len(output))
 	tui.paint(0, outputX, outputWidth, output, 0)
 	tui.paint(0, 0, outputWidth, history, tcell.Color236)
 
-	minimap := tui.panes.Minimap.Texts(minimapWidth-2, minimapHeight)
+	minimap := tui.panes.Minimap.Rows(minimapWidth-2, minimapHeight)
 	tui.paint(mainWidth+2, height-minimapHeight, minimapWidth, minimap, 0)
 
 	tui.screen.Show()
 }
 
-func (tui *TUI) paint(x, y, width int, texts []Text, bgOverride tcell.Color) {
+func (tui *TUI) paint(x, y, width int, rows Rows, bgOverride tcell.Color) {
 	var style tcell.Style
 
-	for yy, text := range texts {
-		for xx, cell := range text {
+	for yy, row := range rows {
+		for xx, cell := range row {
 			style = cell.Style
 			if bgOverride > 0 {
 				style = cell.Style.Background(bgOverride)
@@ -185,7 +185,7 @@ func (tui *TUI) paint(x, y, width int, texts []Text, bgOverride tcell.Color) {
 			tui.screen.SetContent(x+xx, y+yy, cell.Content, nil, style)
 		}
 
-		for xx := len(text); xx < width; xx++ {
+		for xx := len(row); xx < width; xx++ {
 			tui.screen.SetContent(x+xx, y+yy, ' ', nil, style)
 		}
 	}

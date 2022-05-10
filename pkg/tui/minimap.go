@@ -24,10 +24,10 @@ func NewMinimapPane() *MinimapPane {
 	return &MinimapPane{}
 }
 
-// Texts renders cascading layers of adjacent rooms, based on the current one.
-func (pane *MinimapPane) Texts(width, height int) []Text {
+// Rows renders cascading layers of adjacent rooms, based on the current one.
+func (pane *MinimapPane) Rows(width, height int) Rows {
 	if pane.room == nil || width == 0 || height == 0 {
-		return []Text{}
+		return Rows{}
 	}
 
 	rows := NewRows(width, height)
@@ -39,7 +39,7 @@ func (pane *MinimapPane) Texts(width, height int) []Text {
 	)
 }
 
-func renderRoom(rows []Text, room *navigation.Room, x, y, depth int, rendered map[int]struct{}) []Text {
+func renderRoom(rows Rows, room *navigation.Room, x, y, depth int, rendered map[int]struct{}) Rows {
 	// Make sure we have enough padding to render room borders and exits.
 	if x < 2 || y < 2 || y > len(rows)-3 || x > len(rows[0])-3 {
 		return rows

@@ -139,9 +139,9 @@ func (pane *VitalsPane) Draw(screen tcell.Screen) {
 
 		fullBreak := int(float64(vital.Value) / float64(vital.Max) * float64(vwidth))
 
-		text := []rune(strconv.Itoa(vital.Value))
-		text = append(text, []rune(strings.Repeat(
-			" ", max(0, vwidth-len(text)),
+		row := []rune(strconv.Itoa(vital.Value))
+		row = append(row, []rune(strings.Repeat(
+			" ", max(0, vwidth-len(row)),
 		))...)
 
 		for i := 0; i < vwidth; i++ {
@@ -150,7 +150,7 @@ func (pane *VitalsPane) Draw(screen tcell.Screen) {
 				style = vital.EmptyStyle
 			}
 
-			screen.SetContent(x+i, y, text[i], nil, style)
+			screen.SetContent(x+i, y, row[i], nil, style)
 		}
 
 		x += vwidth

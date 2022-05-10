@@ -52,10 +52,10 @@ func NewEngine(client pkg.Client, ui pkg.UI, address string) *Engine {
 func (engine *Engine) Run(pctx context.Context) error {
 	ctx, cancel := context.WithCancel(pctx)
 
-	clientOutput := make(chan []byte)
-	clientErrs := make(chan error)
-	clientDone := make(chan struct{})
-	go engine.RunClient(clientOutput, clientErrs, clientDone)
+	serverOutput := make(chan []byte)
+	serverErrs := make(chan error)
+	serverDone := make(chan struct{})
+	go engine.RunClient(serverOutput, serverErrs, serverDone)
 
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
@@ -65,16 +65,16 @@ func (engine *Engine) Run(pctx context.Context) error {
 		case _ = <-ctx.Done():
 			return nil
 
-		case err := <-clientErrs:
+		case err := <-serverErrs:
 			return err
 
 		case err := <-uiErrs:
 			return err
 
-		case _ = <-clientDone:
+		case _ = <-serverDone:
 			engine.ui.Outputs() <- []byte("server disconnected")
 
-		case output := <-clientOutput:
+		case output := <-serverOutput:
 			if output[len(output)-1] == telnet.GA {
 				// @todo Trigger special event to work through output buffer.
 				output = output[:len(output)-1]
