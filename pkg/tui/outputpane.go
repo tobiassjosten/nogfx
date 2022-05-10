@@ -31,10 +31,16 @@ func NewOutputPane() *OutputPane {
 }
 
 func (pane *OutputPane) style() tcell.Style {
-	if len(pane.rows) == 0 {
-		return tcell.Style{}
+	// @todo Figure out why we have empty rows and revert this to a normal
+	// slice access for the last cell in the most recent row.
+	for _, row := range pane.rows {
+		if len(row) == 0 {
+			continue
+		}
+		return row[len(row)-1].Style
 	}
-	return pane.rows[0][0].Style
+
+	return tcell.Style{}
 }
 
 // Outputs exposes the incoming channel for server output.
@@ -57,31 +63,31 @@ func (pane *OutputPane) Add(output []byte) {
 	}
 }
 
-// Rows distributes Cells from the buffer to be printed to the screen, in the
-// form of an output area and an optional history scrollback area.
-func (pane *OutputPane) Rows(width, height int) (Rows, Rows) {
+// Render processes the output buffer and distributes its rows within the given
+// width and height confines, potentially with a history scrollback split.
+func (pane *OutputPane) Render(width, height int) Rows {
 	rows := Rows{}
 
 	if width == 0 || height == 0 {
-		return rows, rows
+		return rows
 	}
 
-	// Resizing the window resets history scrollback, simply because it's a
-	// pain in the ass to calculate and maintain that state. For now.
-	// @todo Make resizing maintain history scrollback.
+	// @todo Make resizing maintain history scrollback. Resetting it is a
+	// temporary workaround because calculating and maintaining scrollback
+	// state through resizing is a pain in the ass.
 	if pane.pwidth > 0 && pane.pwidth != width {
 		pane.offset = 0
 	}
 	pane.pwidth = width
 
-	// Make sure to calculate enough for a history subpane.
+	// Make sure to render enough for a history scrollback split.
 	height += pane.offset
 
 	for _, row := range pane.rows {
 		paragraph := row.Wrap(width)
 
 		// Rows are ordered with the most recent one first, so we
-		// prepend older paragraphs to the area.
+		// prepend older paragraphs to the rows.
 		for i := len(paragraph) - 1; i >= 0; i-- {
 			rows = rows.Prepend(paragraph[i])
 		}
@@ -96,28 +102,30 @@ func (pane *OutputPane) Rows(width, height int) (Rows, Rows) {
 	length := len(rows)
 
 	// For simpler cases we just return the full buffer.
-	if height == 1 || length <= height || pane.offset == 0 {
-		return rows[max(0, length-height):], Rows{}
+	if height <= 2 || length <= height || pane.offset == 0 {
+		return rows[max(0, length-height):]
 	}
 
 	// Cap offset to the last row in the buffer.
 	pane.offset = min(length-height, pane.offset)
 
-	history := length - height - pane.offset
-	historyPane := rows[history : history+(height-height/2)]
+	hheight := length - height - pane.offset
+	history := rows[hheight : hheight+height/2]
 
-	output := rows[length-height/2:]
-
-	divider := NewRow(width, NewCell(tcell.RuneHLine))
-
-	if height > 2 {
-		hlength := len(historyPane)
-		if hlength > len(output) {
-			historyPane[hlength-1] = divider
-		} else {
-			output[0] = divider
+	// Color history scrollback split background.
+	hstyle := (tcell.Style{}).Background(tcell.Color236)
+	for y, row := range history {
+		for x := range row {
+			history[y][x].Background(tcell.Color236)
+		}
+		for i := len(row); i < width; i++ {
+			history[y] = append(history[y], NewCell(' ', hstyle))
 		}
 	}
 
-	return output, historyPane
+	divider := NewRow(width, NewCell(tcell.RuneHLine))
+
+	output := rows[length-(height-height/2)+1:]
+
+	return append(history, append(Rows{divider}, output...)...)
 }

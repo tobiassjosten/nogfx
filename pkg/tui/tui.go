@@ -5,23 +5,22 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
 
 // Panes is a collection of various panes used throughout the user interface.
 type Panes struct {
-	Input   *InputPane
-	Output  *OutputPane
-	Vitals  *VitalsPane
-	Minimap *MinimapPane
+	Input  *InputPane
+	Output *OutputPane
+	Vitals *VitalsPane
 }
 
 // NewPanes creates a new Panes with the standard collection of panes.
 func NewPanes() Panes {
 	return Panes{
-		Input:   NewInputPane(),
-		Output:  NewOutputPane(),
-		Vitals:  NewVitalsPane(),
-		Minimap: NewMinimapPane(),
+		Input:  NewInputPane(),
+		Output: NewOutputPane(),
+		Vitals: NewVitalsPane(),
 	}
 }
 
@@ -30,6 +29,7 @@ type TUI struct {
 	screen  tcell.Screen
 	panes   Panes
 	inputs  chan []byte
+	room    *navigation.Room
 	running bool
 }
 
@@ -54,6 +54,12 @@ func NewTUI(screen tcell.Screen, panes Panes) *TUI {
 // Inputs exposes the outgoing channel for player input.
 func (tui *TUI) Inputs() <-chan []byte {
 	return tui.inputs
+}
+
+// SetRoom updates the current room and causes a repaint.
+func (tui *TUI) SetRoom(room *navigation.Room) {
+	tui.room = room
+	tui.Draw()
 }
 
 // Run is the main loop of the user interface, where everything is orchestrated.
@@ -123,6 +129,8 @@ func (tui *TUI) Draw() {
 		return
 	}
 
+	// @todo Cache renditions so as to not redraw everything every time.
+
 	tui.screen.Clear()
 
 	width, height := tui.screen.Size()
@@ -161,32 +169,23 @@ func (tui *TUI) Draw() {
 	outputWidth := mainWidth
 	outputHeight := height - inputHeight - vitalsHeight
 
-	output, history := tui.panes.Output.Rows(outputWidth, outputHeight)
-	outputX := len(history) + (outputHeight - len(history) - len(output))
-	tui.paint(0, outputX, outputWidth, output, 0)
-	tui.paint(0, 0, outputWidth, history, tcell.Color236)
+	tui.paint(0, 0, tui.panes.Output.Render(outputWidth, outputHeight))
 
-	minimap := tui.panes.Minimap.Rows(minimapWidth-2, minimapHeight)
-	tui.paint(mainWidth+2, height-minimapHeight, minimapWidth, minimap, 0)
+	tui.paint(
+		mainWidth+borderWidth, height-minimapHeight,
+		RenderMap(tui.room, minimapWidth, minimapHeight),
+	)
 
 	tui.screen.Show()
 }
 
-func (tui *TUI) paint(x, y, width int, rows Rows, bgOverride tcell.Color) {
-	var style tcell.Style
-
+func (tui *TUI) paint(x, y int, rows Rows) {
 	for yy, row := range rows {
 		for xx, cell := range row {
-			style = cell.Style
-			if bgOverride > 0 {
-				style = cell.Style.Background(bgOverride)
-			}
-
-			tui.screen.SetContent(x+xx, y+yy, cell.Content, nil, style)
-		}
-
-		for xx := len(row); xx < width; xx++ {
-			tui.screen.SetContent(x+xx, y+yy, ' ', nil, style)
+			tui.screen.SetContent(
+				x+xx, y+yy,
+				cell.Content, nil, cell.Style,
+			)
 		}
 	}
 }

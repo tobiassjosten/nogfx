@@ -121,6 +121,16 @@ func (row Row) Parse(output []byte, style tcell.Style) Row {
 	return row
 }
 
+func (row Row) Copy() Row {
+	newrow := Row{}
+
+	for _, cell := range row {
+		newrow = append(newrow, cell)
+	}
+
+	return newrow
+}
+
 // Wrap breaks a Row down into lines to fit a specified width.
 func (row Row) Wrap(width int) Rows {
 	lines := Rows{}
@@ -135,7 +145,7 @@ wordwrap:
 
 		// If the remains fits the width, we're done.
 		if len(row[i:]) <= width {
-			lines = append(lines, row[i:])
+			lines = append(lines, row[i:].Copy())
 			break wordwrap
 		}
 
@@ -144,14 +154,14 @@ wordwrap:
 		rowwidth := min(width, len(row[i:]))
 		for ii := rowwidth; ii >= 0; ii-- {
 			if row[i+ii].Content == ' ' {
-				lines = append(lines, row[i:i+ii])
+				lines = append(lines, row[i:i+ii].Copy())
 				i += ii + 1
 				continue wordwrap
 			}
 		}
 
 		// No space found, so we cut it as is and move on.
-		lines = append(lines, row[i:i+rowwidth])
+		lines = append(lines, row[i:i+rowwidth].Copy())
 		i += rowwidth
 	}
 

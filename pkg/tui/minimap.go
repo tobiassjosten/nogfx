@@ -8,59 +8,46 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-// SetRoom updates the current room and causes a repaint.
-func (tui *TUI) SetRoom(room *navigation.Room) {
-	tui.panes.Minimap.room = room
-	tui.Draw()
+// Minimap is a map rendition based on the given room.
+type Minimap struct {
+	room     *navigation.Room
+	rows     Rows
+	rendered map[int]struct{}
 }
 
-// MinimapPane is a map rendition based on the current room.
-type MinimapPane struct {
-	room *navigation.Room
-}
-
-// NewMinimapPane creates a new MinimapPane.
-func NewMinimapPane() *MinimapPane {
-	return &MinimapPane{}
-}
-
-// Rows renders cascading layers of adjacent rooms, based on the current one.
-func (pane *MinimapPane) Rows(width, height int) Rows {
-	if pane.room == nil || width == 0 || height == 0 {
+// RenderMap renders cascading layers of adjacent rooms, based on the given.
+func RenderMap(room *navigation.Room, width, height int) Rows {
+	if room == nil || width == 0 || height == 0 {
 		return Rows{}
 	}
 
-	rows := NewRows(width, height)
+	m := Minimap{room, NewRows(width, height), map[int]struct{}{}}
 
-	return renderRoom(
-		rows, pane.room,
-		len(rows[0])/2, len(rows)/2,
-		5, map[int]struct{}{},
-	)
+	return m.render(room, len(m.rows[0])/2, len(m.rows)/2, 5)
 }
 
-func renderRoom(rows Rows, room *navigation.Room, x, y, depth int, rendered map[int]struct{}) Rows {
+func (mmap Minimap) render(room *navigation.Room, x, y, depth int) Rows {
 	// Make sure we have enough padding to render room borders and exits.
-	if x < 2 || y < 2 || y > len(rows)-3 || x > len(rows[0])-3 {
-		return rows
+	if x < 2 || y < 2 || y > len(mmap.rows)-3 || x > len(mmap.rows[0])-3 {
+		return mmap.rows
 	}
 
-	rows[y][x].Content = ' '
+	mmap.rows[y][x].Content = ' '
 	if room.HasPlayer {
-		rows[y][x].Content = '+'
+		mmap.rows[y][x].Content = '+'
 	}
 
-	rendered[room.ID] = struct{}{}
+	mmap.rendered[room.ID] = struct{}{}
 
-	rows[y][x-1].Content = '['
-	rows[y][x+1].Content = ']'
+	mmap.rows[y][x-1].Content = '['
+	mmap.rows[y][x+1].Content = ']'
 
 	// @todo Consider which environments that are actually important for
 	// the map to visualise and color the brackets accordingly.
 
 	if !room.Known {
-		rows[y][x-1].Style = rows[y][x-1].Style.Foreground(tcell.Color237)
-		rows[y][x+1].Style = rows[y][x+1].Style.Foreground(tcell.Color237)
+		mmap.rows[y][x-1].Style = mmap.rows[y][x-1].Style.Foreground(tcell.Color237)
+		mmap.rows[y][x+1].Style = mmap.rows[y][x+1].Style.Foreground(tcell.Color237)
 	}
 
 paths:
@@ -72,13 +59,13 @@ paths:
 			}
 
 			if room.HasExit("d") {
-				rows[y][x].Content = '='
-				rows[y][x].Foreground(tcell.Color245)
+				mmap.rows[y][x].Content = '='
+				mmap.rows[y][x].Foreground(tcell.Color245)
 				continue
 			}
 
-			rows[y][x].Content = '^'
-			rows[y][x].Foreground(tcell.Color245)
+			mmap.rows[y][x].Content = '^'
+			mmap.rows[y][x].Foreground(tcell.Color245)
 			continue
 
 		case "d":
@@ -90,16 +77,16 @@ paths:
 				continue
 			}
 
-			rows[y][x].Content = 'v'
-			rows[y][x].Foreground(tcell.Color245)
+			mmap.rows[y][x].Content = 'v'
+			mmap.rows[y][x].Foreground(tcell.Color245)
 			continue
 
 		case "out":
-			rows[y][x-1].Content = '{'
+			mmap.rows[y][x-1].Content = '{'
 			continue
 
 		case "in":
-			rows[y][x+1].Content = '}'
+			mmap.rows[y][x+1].Content = '}'
 			continue
 		}
 
@@ -108,7 +95,7 @@ paths:
 			continue
 		}
 
-		if _, done := rendered[adjacent.ID]; done {
+		if _, done := mmap.rendered[adjacent.ID]; done {
 			continue
 		}
 
@@ -162,21 +149,21 @@ paths:
 			xx := x + rel(1, diffx) + proc(diffx, i, steps)
 			yy := y + proc(diffy, i, steps)
 
-			if yy < 0 || xx < 0 || yy >= len(rows) || xx >= len(rows[yy]) {
-				log.Println("overflow", len(rows), len(rows[0]), "coords", yy, xx)
+			if yy < 0 || xx < 0 || yy >= len(mmap.rows) || xx >= len(mmap.rows[yy]) {
+				log.Println("overflow", len(mmap.rows), len(mmap.rows[0]), "coords", yy, xx)
 				break
 			}
 
-			rows[yy][xx].Content = dirchar
+			mmap.rows[yy][xx].Content = dirchar
 		}
 	}
 
 	if depth == 0 {
-		return rows
+		return mmap.rows
 	}
 
 	for direction, adjacent := range room.Exits {
-		if _, done := rendered[adjacent.ID]; done {
+		if _, done := mmap.rendered[adjacent.ID]; done {
 			continue
 		}
 
@@ -189,8 +176,8 @@ paths:
 			continue
 		}
 
-		rows = renderRoom(rows, adjacent, x+4*diffx, y+2*diffy, depth-1, rendered)
+		mmap.rows = mmap.render(adjacent, x+4*diffx, y+2*diffy, depth-1)
 	}
 
-	return rows
+	return mmap.rows
 }
