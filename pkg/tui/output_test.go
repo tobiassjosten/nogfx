@@ -1,174 +1,210 @@
-package tui_test
+package tui
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
-	"github.com/tobiassjosten/nogfx/pkg/tui"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOutputRows(t *testing.T) {
-	rowToRunes := func(row tui.Row) (rs []rune) {
-		for _, cell := range row {
-			rs = append(rs, cell.Content)
+func TestRenderOutput(t *testing.T) {
+	rowToString := func(row Row) (str string) {
+		for _, c := range row {
+			str += string(c.Content)
 		}
 		return
 	}
 
-	rowsToRunes := func(rows tui.Rows) (rss [][]rune) {
+	rowsToStrings := func(rows Rows) (strs []string) {
 		for _, row := range rows {
-			rss = append(rss, rowToRunes(row))
+			strs = append(strs, rowToString(row))
 		}
 		return
 	}
 
 	tcs := map[string]struct {
-		outputs [][]byte
-		events  []*tcell.EventKey
-		size    []int
-		output  [][]rune
-		history [][]rune
+		buffer string
+		datas  [][]byte
+		prints [][]byte
+		width  int
+		height int
+		pwidth int
+		offset int
+		rows   []string
 	}{
-		"no output": {
-			outputs: [][]byte{},
-			size:    []int{1, 1},
+		"empty": {
+			width:  1,
+			height: 1,
+			rows:   nil,
 		},
 
-		"single cell output": {
-			outputs: [][]byte{{'x'}},
-			size:    []int{1, 1},
-			output:  [][]rune{{'x'}},
+		"simple output": {
+			buffer: "a",
+			width:  1,
+			height: 1,
+			rows:   []string{"a"},
 		},
 
-		"correct order plain": {
-			outputs: [][]byte{{'x'}, {'y'}, {'z'}},
-			size:    []int{1, 3},
-			output:  [][]rune{{'x'}, {'y'}, {'z'}},
+		"cramped height output": {
+			buffer: "a",
+			width:  1,
+			height: 0,
+			rows:   nil,
 		},
 
-		"correct order scroll back one": {
-			outputs: [][]byte{{'a'}, {'b'}, {'c'}, {'d'}, {'e'}},
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyUp, 0, 0),
-			},
-			size:    []int{1, 3},
-			output:  [][]rune{{'e'}},
-			history: [][]rune{{'b'}, {tcell.RuneHLine}},
+		"cramped width output": {
+			buffer: "a",
+			width:  0,
+			height: 1,
+			rows:   nil,
 		},
 
-		"correct order scroll back two": {
-			outputs: [][]byte{{'a'}, {'b'}, {'c'}, {'d'}, {'e'}},
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyUp, 0, 0),
-				tcell.NewEventKey(tcell.KeyUp, 0, 0),
-			},
-			size:    []int{1, 3},
-			output:  [][]rune{{'e'}},
-			history: [][]rune{{'a'}, {tcell.RuneHLine}},
+		"output without padding": {
+			buffer: "a",
+			width:  2,
+			height: 1,
+			rows:   []string{"a"},
 		},
 
-		"no width": {
-			outputs: [][]byte{{'x'}},
-			size:    []int{0, 1},
+		"word wrap simple": {
+			buffer: "a sdf",
+			width:  2,
+			height: 3,
+			rows:   []string{"a", "sd", "f"},
 		},
 
-		"no height": {
-			outputs: [][]byte{{'x'}},
-			size:    []int{1, 0},
+		"word wrap overflow": {
+			buffer: "a sdf",
+			width:  2,
+			height: 2,
+			rows:   []string{"sd", "f"},
 		},
 
-		"linebreak": {
-			outputs: [][]byte{{'a', 's', 'd', 'f'}},
-			size:    []int{2, 2},
-			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		"history scrollback even": {
+			buffer: "a sdfgh",
+			width:  2,
+			height: 3,
+			offset: 1,
+			rows:   []string{"a ", "──", "h"},
 		},
 
-		"wordwrap one": {
-			outputs: [][]byte{{'a', 's', ' ', 'd', 'f'}},
-			size:    []int{2, 2},
-			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		"history scrollback odd": {
+			buffer: "a sdfghjk",
+			width:  2,
+			height: 4,
+			offset: 1,
+			rows:   []string{"a ", "sd", "──", "k"},
 		},
 
-		"wordwrap two": {
-			outputs: [][]byte{{'a', 's', ' ', 'd', 'f'}},
-			size:    []int{3, 2},
-			output:  [][]rune{{'a', 's'}, {'d', 'f'}},
+		"resize kill history scrollback": {
+			buffer: "a sdfgh",
+			width:  2,
+			height: 3,
+			pwidth: 1,
+			offset: 1,
+			rows:   []string{"sd", "fg", "h"},
 		},
 
-		"wordwrap long word": {
-			outputs: [][]byte{{'a', 's', ' ', 'd', 'f', 'g'}},
-			size:    []int{2, 3},
-			output:  [][]rune{{'a', 's'}, {'d', 'f'}, {'g'}},
+		"maintain history scrollback": {
+			buffer: "a sdfghjk",
+			datas:  [][]byte{[]byte("xy")},
+			width:  2,
+			height: 4,
+			offset: 1,
+			rows:   []string{"a ", "sd", "──", "xy"},
 		},
 
-		"wordwrap long word scroll back one": {
-			outputs: [][]byte{{'a', 's', ' ', 'd', 'f', 'g'}},
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyUp, 0, 0),
-			},
-			size:    []int{2, 2},
-			output:  [][]rune{{'g'}},
-			history: [][]rune{{'a', 's'}},
+		"print message": {
+			buffer: "asdf",
+			prints: [][]byte{[]byte("xy")},
+			width:  2,
+			height: 3,
+			rows:   []string{"as", "df", "xy"},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			pane := tui.NewOutputPane()
+			tui := NewTUI(&mock.ScreenMock{
+				HideCursorFunc:     func() {},
+				SetCursorStyleFunc: func(_ tcell.CursorStyle) {},
+				SetStyleFunc:       func(_ tcell.Style) {},
+			})
+			tui.output.pwidth = tc.pwidth
 
-			for _, output := range tc.outputs {
-				pane.Add(output)
+			if tc.buffer != "" {
+				tui.output.buffer = Rows{NewRowFromRunes([]rune(tc.buffer))}
 			}
 
-			for _, event := range tc.events {
-				pane.HandleEvent(event)
+			if tc.offset > 0 {
+				tui.output.offset = tc.offset
 			}
 
-			outputRows, historyRows := pane.Rows(tc.size[0], tc.size[1])
-			output := rowsToRunes(outputRows)
-			history := rowsToRunes(historyRows)
+			if len(tc.datas) > 0 {
+				tui.output.pwidth = tc.width
+				for _, data := range tc.datas {
+					tui.output.Append(data)
+				}
+			}
 
-			assert.Equal(t, tc.output, output)
-			assert.Equal(t, tc.history, history)
+			for _, print := range tc.prints {
+				tui.Print(print)
+			}
+
+			rows := tui.RenderOutput(tc.width, tc.height)
+			assert.Equal(t, tc.rows, rowsToStrings(rows))
 		})
 	}
 }
 
-func TestOutputsChannel(t *testing.T) {
-	tcs := []struct {
-		output []byte
+func TestOutputAppend(t *testing.T) {
+	redStyle := (tcell.Style{}).
+		Foreground(tcell.ColorGreen).
+		Background(tcell.ColorBlue)
+
+	tcs := map[string]struct {
+		datas  [][]byte
+		buffer Rows
 	}{
-		{
-			output: []byte("asdf"),
+		"plain text xy": {
+			datas:  [][]byte{[]byte("xy")},
+			buffer: Rows{Row{NewCell('x'), NewCell('y')}},
+		},
+
+		"plain text yz": {
+			datas:  [][]byte{[]byte("yx")},
+			buffer: Rows{Row{NewCell('y'), NewCell('x')}},
+		},
+
+		"reverse order": {
+			datas:  [][]byte{[]byte("x"), []byte("y")},
+			buffer: Rows{Row{NewCell('y')}, Row{NewCell('x')}},
+		},
+
+		"maintain color": {
+			datas: [][]byte{
+				[]byte(""),
+				[]byte("\033[32;44my"),
+				[]byte("z"),
+			},
+			buffer: Rows{
+				Row{NewCell('z', redStyle)},
+				Row{NewCell('y', redStyle)},
+				Row{}, // sometimes, somehow, we get empties
+			},
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			screen := &mock.ScreenMock{
-				SetStyleFunc:       func(_ tcell.Style) {},
-				SetCursorStyleFunc: func(_ tcell.CursorStyle) {},
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			output := &Output{}
+			for _, data := range tc.datas {
+				output.Append(data)
 			}
 
-			pane := tui.NewOutputPane()
-
-			ui := tui.NewTUI(screen, tui.Panes{Output: pane})
-
-			output := []byte{}
-
-			done := make(chan struct{})
-			go func() {
-				output = <-pane.Outputs()
-				done <- struct{}{}
-			}()
-
-			ui.Outputs() <- tc.output
-
-			assert.Equal(t, tc.output, output)
+			assert.Equal(t, tc.buffer, output.buffer)
 		})
 	}
 }
