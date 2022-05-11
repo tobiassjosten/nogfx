@@ -37,17 +37,17 @@ func (tui *TUI) RenderInput(width int) Rows {
 }
 
 func RenderInput(input *Input, width int) Rows {
+	if width == 0 {
+		return nil
+	}
+
 	if !input.inputting {
-		return Rows{}
+		return nil
 	}
 
 	style := (tcell.Style{}).
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorGray)
-
-	if len(input.buffer) == 0 {
-		return NewRows(width, 1, NewCell(' ', style))
-	}
 
 	if input.inputted {
 		style = (tcell.Style{}).
