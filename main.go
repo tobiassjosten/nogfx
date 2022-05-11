@@ -129,5 +129,5 @@ func ui() (*tui.TUI, error) {
 		return nil, err
 	}
 
-	return tui.NewTUI(screen, tui.NewPanes()), nil
+	return tui.NewTUI(screen), nil
 }

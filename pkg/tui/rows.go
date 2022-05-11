@@ -56,6 +56,21 @@ func NewRow(width int, cells ...Cell) Row {
 	return row
 }
 
+func NewRowFromRunes(rs []rune, styles ...tcell.Style) Row {
+	row := Row{}
+
+	style := tcell.Style{}
+	if len(styles) > 0 {
+		style = styles[0]
+	}
+
+	for _, r := range rs {
+		row = row.Append(NewCell(r, style))
+	}
+
+	return row
+}
+
 // Append adds a new Cell to the end of the Row.
 func (row Row) Append(cells ...Cell) Row {
 	for _, cell := range cells {
@@ -74,14 +89,16 @@ func (row Row) Prepend(cells ...Cell) Row {
 	return row
 }
 
-// Parse traveses a raw text with ANSI control sequences and transforms that
-// into styled Cells.
-func (row Row) Parse(output []byte, style tcell.Style) Row {
+// NewRowFromBytes traveses a raw text with ANSI control sequences and
+// transforms that into styled Cells.
+func NewRowFromBytes(bs []byte, style tcell.Style) Row {
+	row := Row{}
+
 	escaped := false
 	parsing := false
 	ansi := []rune{}
 
-	for _, r := range []rune(string(output)) {
+	for _, r := range []rune(string(bs)) {
 		if r == '\033' {
 			escaped = true
 			continue

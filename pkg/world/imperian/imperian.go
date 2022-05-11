@@ -107,7 +107,7 @@ func (world *World) SendGMCP(message gmcp.ClientMessage) error {
 func (world *World) UpdateVitals(msg igmcp.CharVitals) error {
 	order := []string{"health", "mana"}
 
-	vitals := map[string]tui.Vital{
+	vitals := map[string]*tui.Vital{
 		"health": tui.HealthVital,
 		"mana":   tui.ManaVital,
 	}
