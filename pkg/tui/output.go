@@ -23,7 +23,7 @@ type Output struct {
 
 func (output *Output) Append(data []byte) {
 	row := NewRowFromBytes(data, output.lastStyle())
-	output.buffer = output.buffer.Prepend(row)
+	output.buffer = output.buffer.prepend(row)
 
 	if output.offset > 0 && output.pwidth > 0 {
 		output.offset += len(row.Wrap(output.pwidth))
@@ -74,7 +74,7 @@ func RenderOutput(output *Output, width, height int) Rows {
 		// Rows are ordered with the most recent one first, so we
 		// prepend older paragraphs to the rows.
 		for i := len(paragraph) - 1; i >= 0; i-- {
-			rows = rows.Prepend(paragraph[i])
+			rows = rows.prepend(paragraph[i])
 		}
 
 		if len(rows) >= height {

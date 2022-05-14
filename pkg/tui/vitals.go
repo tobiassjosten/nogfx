@@ -76,8 +76,8 @@ func (tui *TUI) RenderVitals(width int) Rows {
 
 	row := Row{}
 	for i, name := range tui.vorder {
-		row = row.Append(NewRow(min(1, i), NewCell(' '))...)
-		row = row.Append(RenderVital(
+		row = row.append(NewRow(min(1, i), NewCell(' '))...)
+		row = row.append(RenderVital(
 			tui.vitals[name],
 			(width-len(row))/(len(tui.vorder)-i),
 		)...)

@@ -44,13 +44,12 @@ type Row []Cell
 func NewRow(width int, cells ...Cell) Row {
 	row := Row{}
 
-	cell := Cell{Content: ' '}
-	if len(cells) > 0 {
-		cell = cells[0]
+	if len(cells) == 0 {
+		cells = []Cell{NewCell(' ')}
 	}
 
 	for len(row) < width {
-		row = row.Append(cell)
+		row = row.append(cells[0])
 	}
 
 	return row
@@ -59,31 +58,12 @@ func NewRow(width int, cells ...Cell) Row {
 func NewRowFromRunes(rs []rune, styles ...tcell.Style) Row {
 	row := Row{}
 
-	style := tcell.Style{}
-	if len(styles) > 0 {
-		style = styles[0]
+	if len(styles) == 0 {
+		styles = []tcell.Style{{}}
 	}
 
 	for _, r := range rs {
-		row = row.Append(NewCell(r, style))
-	}
-
-	return row
-}
-
-// Append adds a new Cell to the end of the Row.
-func (row Row) Append(cells ...Cell) Row {
-	for _, cell := range cells {
-		row = append(row, cell)
-	}
-
-	return row
-}
-
-// Prepend adds a new Cell to the beginning of the Row.
-func (row Row) Prepend(cells ...Cell) Row {
-	for _, cell := range cells {
-		row = append(Row{cell}, row...)
+		row = row.append(NewCell(r, styles[0]))
 	}
 
 	return row
@@ -91,8 +71,13 @@ func (row Row) Prepend(cells ...Cell) Row {
 
 // NewRowFromBytes traveses a raw text with ANSI control sequences and
 // transforms that into styled Cells.
-func NewRowFromBytes(bs []byte, style tcell.Style) Row {
+func NewRowFromBytes(bs []byte, styles ...tcell.Style) Row {
 	row := Row{}
+
+	if len(styles) == 0 {
+		styles = []tcell.Style{{}}
+	}
+	style := styles[0]
 
 	escaped := false
 	parsing := false
@@ -108,7 +93,7 @@ func NewRowFromBytes(bs []byte, style tcell.Style) Row {
 			if r == '[' {
 				parsing = true
 			} else {
-				row = row.Append(NewCell('^', style), NewCell(r, style))
+				row = row.append(NewCell('^', style), NewCell(r, style))
 			}
 			escaped = false
 			continue
@@ -132,57 +117,116 @@ func NewRowFromBytes(bs []byte, style tcell.Style) Row {
 			continue
 		}
 
-		row = row.Append(NewCell(r, style))
+		row = row.append(NewCell(r, style))
 	}
 
 	return row
 }
 
-func (row Row) Copy() Row {
-	newrow := Row{}
-
-	for _, cell := range row {
-		newrow = append(newrow, cell)
-	}
-
-	return newrow
+// Append adds a new Cell to the end of the Row.
+func (row Row) append(cells ...Cell) Row {
+	return append(row, cells...)
 }
 
-// Wrap breaks a Row down into lines to fit a specified width.
+func (row Row) copy() Row {
+	return append(Row{}, row...)
+}
+
+// revIndexSpace finds the first space in the last block of spaces, or -1 if
+// there are no spaces.
+func (row Row) revIndexSpace() int {
+	space := -1
+
+	for i := len(row) - 1; i >= 0; i-- {
+		if row[i].Content == ' ' {
+			space = i
+		} else if space > 0 {
+			return space
+		}
+	}
+
+	return space
+}
+
+// indexNospace finds the first non-space, or -1 if there are no non-spaces.
+func (row Row) indexNospace() int {
+	for i := 0; i < len(row); i++ {
+		if row[i].Content != ' ' {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// revIndexNospace finds the first non-space in the last block of non-spaces,
+// or -1 if there are no non-spaces.
+func (row Row) revIndexNospace() int {
+	nospace := -1
+
+	for i := len(row) - 1; i >= 0; i-- {
+		if row[i].Content != ' ' {
+			nospace = i
+		} else if nospace > 0 {
+			return nospace
+		}
+	}
+
+	return nospace
+}
+
 func (row Row) Wrap(width int) Rows {
-	lines := Rows{}
+	if len(row) == 0 || len(row) <= width {
+		return Rows{row}
+	}
+
+	rows := Rows{}
 
 wordwrap:
 	for i := 0; i < len(row); {
-		// Avoid multiple consecutive spaces bleeding over
-		// after being wrapped, causing indendation.
-		for i > 0 && row[i].Content == ' ' {
-			i++
-		}
-
 		// If the remains fits the width, we're done.
 		if len(row[i:]) <= width {
-			lines = append(lines, row[i:].Copy())
+			rows = append(rows, row[i:].copy())
 			break wordwrap
 		}
 
-		// Jump to where the width would cut the row and look
-		// for the first preceding space, to wrap it there.
-		rowwidth := min(width, len(row[i:]))
-		for ii := rowwidth; ii >= 0; ii-- {
-			if row[i+ii].Content == ' ' {
-				lines = append(lines, row[i:i+ii].Copy())
-				i += ii + 1
-				continue wordwrap
-			}
+		// Jump to where the width would cut the row and look back
+		// from there to know where to wrap.
+		ii := min(width, len(row[i:]))
+		riSpace := row[i : i+ii].revIndexSpace()
+		riNospace := row[i : i+ii].revIndexNospace()
+
+		switch {
+		// Either it's all spaces or all non-spaces, or its only space
+		// exists in the beginning of the row, which we preseve. So we
+		// can't wrap it but take the lot.
+		case riSpace < 0 || riNospace < 0 || riSpace == 0:
+			rows = append(rows, row[i:i+ii].copy())
+
+		// It ends with spaces. So we wrap at the preceding non-space
+		// and skip the following spaces.
+		case riSpace > riNospace:
+			rows = append(rows, row[i:i+riSpace].copy())
+
+		// It ends with non-spaces and it succeeded by a space. So we
+		// can conveniently take the whole row and then skip the spaces.
+		case row[i+ii].Content == ' ':
+			rows = append(rows, row[i:i+ii].copy())
+
+		case riNospace > riSpace:
+			rows = append(rows, row[i:i+riSpace].copy())
+			ii = riNospace
 		}
 
-		// No space found, so we cut it as is and move on.
-		lines = append(lines, row[i:i+rowwidth].Copy())
-		i += rowwidth
+		i += ii
+		if iii := row[i:].indexNospace(); iii > 0 {
+			i += iii
+		} else if iii == -1 {
+			break
+		}
 	}
 
-	return lines
+	return rows
 }
 
 // Rows is a slice of Row and represents an area to be printed to the screen.
@@ -192,20 +236,20 @@ type Rows []Row
 func NewRows(width, height int, cells ...Cell) Rows {
 	rows := Rows{}
 
-	cell := Cell{Content: ' '}
+	cell := NewCell(' ')
 	if len(cells) > 0 {
 		cell = cells[0]
 	}
 
 	for len(rows) < height {
-		rows = rows.Append(NewRow(width, cell))
+		rows = rows.append(NewRow(width, cell))
 	}
 
 	return rows
 }
 
 // Append adds a new Row to the end of the Rows.
-func (rows Rows) Append(rowses ...Row) Rows {
+func (rows Rows) append(rowses ...Row) Rows {
 	for _, row := range rowses {
 		rows = append(rows, row)
 	}
@@ -214,7 +258,7 @@ func (rows Rows) Append(rowses ...Row) Rows {
 }
 
 // Prepend adds a new Row to the beginning of the Rows.
-func (rows Rows) Prepend(rowses ...Row) Rows {
+func (rows Rows) prepend(rowses ...Row) Rows {
 	for _, row := range rowses {
 		rows = append(Rows{row}, rows...)
 	}
