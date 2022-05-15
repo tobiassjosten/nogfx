@@ -108,8 +108,8 @@ func (world *World) UpdateVitals(msg igmcp.CharVitals) error {
 	order := []string{"health", "mana"}
 
 	vitals := map[string]*tui.Vital{
-		"health": tui.HealthVital,
-		"mana":   tui.ManaVital,
+		"health": tui.NewHealthVital(),
+		"mana":   tui.NewManaVital(),
 	}
 
 	values := map[string][]int{

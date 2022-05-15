@@ -1,18 +1,17 @@
 package tui
 
 import (
-	"log"
+	"fmt"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 // AddVital adds a new pane to show a vital metric.
-func (tui *TUI) AddVital(name string, v interface{}) {
+func (tui *TUI) AddVital(name string, v interface{}) error {
 	vital, ok := v.(*Vital)
 	if !ok {
-		log.Printf("unsupported '%s' vital", name)
-		return
+		return fmt.Errorf("unsupported vital '%s'", name)
 	}
 
 	if _, ok := tui.vitals[name]; !ok {
@@ -21,45 +20,24 @@ func (tui *TUI) AddVital(name string, v interface{}) {
 	}
 
 	tui.Draw()
+
+	return nil
 }
 
 // UpdateVital updates a given Vital with new current and max values.
-func (tui *TUI) UpdateVital(name string, value, max int) {
+func (tui *TUI) UpdateVital(name string, value, max int) error {
 	vital, ok := tui.vitals[name]
 	if !ok {
-		log.Printf("couldn't update non-existent 'health' vital")
-		return
+		return fmt.Errorf("couldn't update non-existent '%s' vital", name)
 	}
 
 	vital.value = value
 	vital.max = max
 
 	tui.Draw()
-}
 
-// Default vitals suitable for most games.
-var (
-	HealthVital = &Vital{
-		fullStyle:  tcell.StyleDefault.Background(tcell.ColorGreen).Foreground(tcell.ColorBlack),
-		emptyStyle: tcell.StyleDefault.Background(tcell.ColorDarkGreen).Foreground(tcell.ColorBlack),
-	}
-	ManaVital = &Vital{
-		fullStyle:  tcell.StyleDefault.Background(tcell.ColorBlue).Foreground(tcell.ColorBlack),
-		emptyStyle: tcell.StyleDefault.Background(tcell.ColorDarkBlue).Foreground(tcell.ColorBlack),
-	}
-	EnduranceVital = &Vital{
-		fullStyle:  tcell.StyleDefault.Background(tcell.ColorTeal).Foreground(tcell.ColorBlack),
-		emptyStyle: tcell.StyleDefault.Background(tcell.ColorDarkCyan).Foreground(tcell.ColorBlack),
-	}
-	WillpowerVital = &Vital{
-		fullStyle:  tcell.StyleDefault.Background(tcell.ColorFuchsia).Foreground(tcell.ColorBlack),
-		emptyStyle: tcell.StyleDefault.Background(tcell.ColorRebeccaPurple).Foreground(tcell.ColorBlack),
-	}
-	EnergyVital = &Vital{
-		fullStyle:  tcell.StyleDefault.Background(tcell.ColorRed).Foreground(tcell.ColorBlack),
-		emptyStyle: tcell.StyleDefault.Background(tcell.ColorRosyBrown).Foreground(tcell.ColorBlack),
-	}
-)
+	return nil
+}
 
 // Vital represents a vital metric (health, mana, etc).
 type Vital struct {
@@ -67,6 +45,71 @@ type Vital struct {
 	max        int
 	fullStyle  tcell.Style
 	emptyStyle tcell.Style
+}
+
+func setVitalNumbers(vital *Vital, numbers ...int) *Vital {
+	if len(numbers) >= 1 {
+		vital.value = numbers[0]
+	}
+	if len(numbers) >= 2 {
+		vital.max = numbers[1]
+	}
+	return vital
+}
+
+func NewHealthVital(numbers ...int) *Vital {
+	return setVitalNumbers(&Vital{
+		fullStyle: tcell.StyleDefault.
+			Background(tcell.ColorGreen).
+			Foreground(tcell.ColorBlack),
+		emptyStyle: tcell.StyleDefault.
+			Background(tcell.ColorDarkGreen).
+			Foreground(tcell.ColorBlack),
+	}, numbers...)
+}
+
+func NewManaVital(numbers ...int) *Vital {
+	return setVitalNumbers(&Vital{
+		fullStyle: tcell.StyleDefault.
+			Background(tcell.ColorBlue).
+			Foreground(tcell.ColorBlack),
+		emptyStyle: tcell.StyleDefault.
+			Background(tcell.ColorDarkBlue).
+			Foreground(tcell.ColorBlack),
+	}, numbers...)
+}
+
+func NewEnduranceVital(numbers ...int) *Vital {
+	return setVitalNumbers(&Vital{
+		fullStyle: tcell.StyleDefault.
+			Background(tcell.ColorTeal).
+			Foreground(tcell.ColorBlack),
+		emptyStyle: tcell.StyleDefault.
+			Background(tcell.ColorDarkCyan).
+			Foreground(tcell.ColorBlack),
+	}, numbers...)
+}
+
+func NewWillpowerVital(numbers ...int) *Vital {
+	return setVitalNumbers(&Vital{
+		fullStyle: tcell.StyleDefault.
+			Background(tcell.ColorFuchsia).
+			Foreground(tcell.ColorBlack),
+		emptyStyle: tcell.StyleDefault.
+			Background(tcell.ColorRebeccaPurple).
+			Foreground(tcell.ColorBlack),
+	}, numbers...)
+}
+
+func NewEnergyVital(numbers ...int) *Vital {
+	return setVitalNumbers(&Vital{
+		fullStyle: tcell.StyleDefault.
+			Background(tcell.ColorRed).
+			Foreground(tcell.ColorBlack),
+		emptyStyle: tcell.StyleDefault.
+			Background(tcell.ColorRosyBrown).
+			Foreground(tcell.ColorBlack),
+	}, numbers...)
 }
 
 func (tui *TUI) RenderVitals(width int) Rows {
@@ -98,7 +141,7 @@ func RenderVital(vital *Vital, width int) Row {
 	value := strconv.Itoa(vital.value)
 
 	if len(value) <= len(row) {
-		for i, x := 0, width/2-len(value)/2; i < len(value); i++ {
+		for i, x := 0, (width-len(value))/2; i < len(value); i++ {
 			row[x+i].Content = rune(value[i])
 		}
 	}

@@ -102,6 +102,8 @@ func (tui *TUI) Run(pctx context.Context) error {
 		}
 	}()
 
+	tui.Draw()
+
 	for {
 		select {
 		case output := <-tui.outputs:
@@ -112,10 +114,6 @@ func (tui *TUI) Run(pctx context.Context) error {
 			return nil
 		}
 	}
-}
-
-// Resize calculates the layout of the various panes.
-func (tui *TUI) Resize(width, height int) {
 }
 
 // Draw updates the terminal and prints the contents of the panes.

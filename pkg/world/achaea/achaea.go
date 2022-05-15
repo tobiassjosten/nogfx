@@ -163,10 +163,10 @@ func (world *World) UpdateVitals() {
 	order := []string{"health", "mana", "endurance", "willpower"}
 
 	vitals := map[string]*tui.Vital{
-		"health":    tui.HealthVital,
-		"mana":      tui.ManaVital,
-		"endurance": tui.EnduranceVital,
-		"willpower": tui.WillpowerVital,
+		"health":    tui.NewHealthVital(),
+		"mana":      tui.NewManaVital(),
+		"endurance": tui.NewEnduranceVital(),
+		"willpower": tui.NewWillpowerVital(),
 	}
 
 	values := map[string][]int{

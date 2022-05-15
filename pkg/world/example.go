@@ -117,9 +117,9 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 
 	ui.SetRoom(x)
 
-	ui.AddVital("health", tui.HealthVital)
+	ui.AddVital("health", tui.NewHealthVital())
 	ui.UpdateVital("health", 800, 1000)
-	ui.AddVital("mana", tui.ManaVital)
+	ui.AddVital("mana", tui.NewManaVital())
 	ui.UpdateVital("mana", 950, 1000)
 
 	return &ExampleWorld{
