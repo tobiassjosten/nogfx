@@ -385,7 +385,7 @@ func TestRenderVitals(t *testing.T) {
 			}
 			require.Nil(t, err)
 
-			ui.Run(ctx)
+			_ = ui.Run(ctx)
 
 			assert.Equal(t, tc.rows, rows)
 		})
