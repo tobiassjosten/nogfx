@@ -15,12 +15,14 @@ func (tui *TUI) Print(output []byte) {
 	tui.Draw()
 }
 
+// Output is the widget where game output is shown.
 type Output struct {
 	buffer Rows
 	offset int
 	pwidth int
 }
 
+// Append adds a new paragraph to the Output.
 func (output *Output) Append(data []byte) {
 	row := NewRowFromBytes(data, output.lastStyle())
 	output.buffer = output.buffer.prepend(row)
@@ -46,10 +48,12 @@ func (output *Output) lastStyle() tcell.Style {
 	return tcell.Style{}
 }
 
+// RenderOutput renders the current Output.
 func (tui *TUI) RenderOutput(width, height int) Rows {
 	return RenderOutput(tui.output, width, height)
 }
 
+// RenderOutput renders the given Output.
 func RenderOutput(output *Output, width, height int) Rows {
 	rows := Rows{}
 

@@ -57,6 +57,7 @@ func setVitalNumbers(vital *Vital, numbers ...int) *Vital {
 	return vital
 }
 
+// NewHealthVital creates a new Vital for a 'health' type.
 func NewHealthVital(numbers ...int) *Vital {
 	return setVitalNumbers(&Vital{
 		fullStyle: tcell.StyleDefault.
@@ -68,6 +69,7 @@ func NewHealthVital(numbers ...int) *Vital {
 	}, numbers...)
 }
 
+// NewManaVital creates a new Vital for a 'mana' type.
 func NewManaVital(numbers ...int) *Vital {
 	return setVitalNumbers(&Vital{
 		fullStyle: tcell.StyleDefault.
@@ -79,6 +81,7 @@ func NewManaVital(numbers ...int) *Vital {
 	}, numbers...)
 }
 
+// NewEnduranceVital creates a new Vital for a 'endurance' type.
 func NewEnduranceVital(numbers ...int) *Vital {
 	return setVitalNumbers(&Vital{
 		fullStyle: tcell.StyleDefault.
@@ -90,6 +93,7 @@ func NewEnduranceVital(numbers ...int) *Vital {
 	}, numbers...)
 }
 
+// NewWillpowerVital creates a new Vital for a 'willpower' type.
 func NewWillpowerVital(numbers ...int) *Vital {
 	return setVitalNumbers(&Vital{
 		fullStyle: tcell.StyleDefault.
@@ -101,6 +105,7 @@ func NewWillpowerVital(numbers ...int) *Vital {
 	}, numbers...)
 }
 
+// NewEnergyVital creates a new Vital for an 'energy' type.
 func NewEnergyVital(numbers ...int) *Vital {
 	return setVitalNumbers(&Vital{
 		fullStyle: tcell.StyleDefault.
@@ -112,6 +117,7 @@ func NewEnergyVital(numbers ...int) *Vital {
 	}, numbers...)
 }
 
+// RenderVitals renders the current Vitals.
 func (tui *TUI) RenderVitals(width int) Rows {
 	if len(tui.vorder) == 0 {
 		return Rows{}
@@ -129,6 +135,7 @@ func (tui *TUI) RenderVitals(width int) Rows {
 	return Rows{row}
 }
 
+// RenderVital renders the given Vital.
 func RenderVital(vital *Vital, width int) Row {
 	full := NewRow(
 		proc(width, vital.value, vital.max),

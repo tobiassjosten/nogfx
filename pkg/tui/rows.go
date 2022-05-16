@@ -55,6 +55,7 @@ func NewRow(width int, cells ...Cell) Row {
 	return row
 }
 
+// NewRowFromRunes creates a new Row from a slice of runes.
 func NewRowFromRunes(rs []rune, styles ...tcell.Style) Row {
 	row := Row{}
 
@@ -175,6 +176,7 @@ func (row Row) revIndexNospace() int {
 	return nospace
 }
 
+// Wrap breaks the Row into Rows to fit the given width.
 func (row Row) Wrap(width int) Rows {
 	if len(row) == 0 || len(row) <= width {
 		return Rows{row}

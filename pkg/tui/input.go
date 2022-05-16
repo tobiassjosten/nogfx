@@ -18,6 +18,7 @@ func (tui *TUI) UnmaskInput() {
 	tui.input.masked = false
 }
 
+// Input is the widget where the player types what's sent to the game.
 type Input struct {
 	buffer    []rune
 	inputting bool
@@ -26,6 +27,7 @@ type Input struct {
 	cursor    int
 }
 
+// RenderInput renders the current Input.
 func (tui *TUI) RenderInput(width int) Rows {
 	rows := RenderInput(tui.input, width)
 
@@ -36,6 +38,7 @@ func (tui *TUI) RenderInput(width int) Rows {
 	return rows
 }
 
+// RenderInput renders the given Input.
 func RenderInput(input *Input, width int) Rows {
 	if width == 0 {
 		return nil
