@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"log"
-
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 
 	"github.com/gdamore/tcell/v2"
@@ -26,21 +24,44 @@ type Minimap struct {
 	rendered map[int]struct{}
 }
 
+type maproom struct {
+	room *navigation.Room
+	x    int
+	y    int
+}
+
 // RenderMap renders cascading layers of adjacent rooms, based on the given.
 func RenderMap(room *navigation.Room, width, height int) Rows {
 	if room == nil || width == 0 || height == 0 {
 		return Rows{}
 	}
 
-	m := Minimap{room, NewRows(width, height), map[int]struct{}{}}
+	mmap := Minimap{room, NewRows(width, height), map[int]struct{}{}}
 
-	return m.render(room, len(m.rows[0])/2, len(m.rows)/2, 5)
+	rooms := []maproom{{
+		room: room,
+		x:    len(mmap.rows[0]) / 2,
+		y:    len(mmap.rows) / 2,
+	}}
+
+	for len(rooms) > 0 {
+		q := rooms[0]
+		rooms = append(rooms[1:], mmap.render(q.room, q.x, q.y)...)
+	}
+
+	return mmap.rows
 }
 
-func (mmap Minimap) render(room *navigation.Room, x, y, depth int) Rows {
-	// Make sure we have enough padding to render room borders and exits.
-	if x < 2 || y < 2 || y > len(mmap.rows)-3 || x > len(mmap.rows[0])-3 {
-		return mmap.rows
+func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
+	// Make sure we have enough padding to render room and exits.
+	if x < 2 || y < 1 || y > len(mmap.rows)-2 || x > len(mmap.rows[0])-3 {
+		return nil
+	}
+
+	if room.ID != 0 {
+		if _, done := mmap.rendered[room.ID]; done {
+			return nil
+		}
 	}
 
 	mmap.rows[y][x].Content = ' '
@@ -61,7 +82,8 @@ func (mmap Minimap) render(room *navigation.Room, x, y, depth int) Rows {
 		mmap.rows[y][x+1].Style = mmap.rows[y][x+1].Style.Foreground(tcell.Color237)
 	}
 
-paths:
+	var adjacents []maproom
+
 	for direction, adjacent := range room.Exits {
 		switch direction {
 		case "u":
@@ -92,13 +114,17 @@ paths:
 			mmap.rows[y][x].Foreground(tcell.Color245)
 			continue
 
-		case "out":
-			mmap.rows[y][x-1].Content = '{'
-			continue
-
 		case "in":
 			mmap.rows[y][x+1].Content = '}'
-			continue
+
+		case "out":
+			mmap.rows[y][x-1].Content = '{'
+		}
+
+		if adjacent.ID != 0 {
+			if _, done := mmap.rendered[adjacent.ID]; done {
+				continue
+			}
 		}
 
 		diffx, diffy := room.Displacement(direction)
@@ -106,8 +132,12 @@ paths:
 			continue
 		}
 
-		if _, done := mmap.rendered[adjacent.ID]; done {
-			continue
+		if room.Area == nil || adjacent.Area == nil || room.Area.ID == adjacent.Area.ID {
+			adjacents = append(adjacents, maproom{
+				room: adjacent,
+				x:    x + 4*diffx,
+				y:    y + 2*diffy,
+			})
 		}
 
 		var dirchar rune
@@ -136,8 +166,8 @@ paths:
 		case "nw":
 			dirchar = '\\'
 
-		default:
-			continue paths
+		case "in", "out":
+			continue
 		}
 
 		// Calculate the number of steps, taking into account the fact
@@ -161,34 +191,16 @@ paths:
 			yy := y + proc(diffy, i, steps)
 
 			if yy < 0 || xx < 0 || yy >= len(mmap.rows) || xx >= len(mmap.rows[yy]) {
-				log.Println("overflow", len(mmap.rows), len(mmap.rows[0]), "coords", yy, xx)
 				break
+			}
+
+			if (dirchar == '/' || dirchar == '\\') && mmap.rows[yy][xx].Content != ' ' {
+				dirchar = 'X'
 			}
 
 			mmap.rows[yy][xx].Content = dirchar
 		}
 	}
 
-	if depth == 0 {
-		return mmap.rows
-	}
-
-	for direction, adjacent := range room.Exits {
-		if _, done := mmap.rendered[adjacent.ID]; done {
-			continue
-		}
-
-		if room.Area != nil && adjacent.Area != nil && room.Area.ID != adjacent.Area.ID {
-			continue
-		}
-
-		diffx, diffy := room.Displacement(direction)
-		if diffx == 0 && diffy == 0 {
-			continue
-		}
-
-		mmap.rows = mmap.render(adjacent, x+4*diffx, y+2*diffy, depth-1)
-	}
-
-	return mmap.rows
+	return adjacents
 }

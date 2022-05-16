@@ -108,6 +108,7 @@ func (tui *TUI) Run(pctx context.Context) error {
 		select {
 		case output := <-tui.outputs:
 			tui.output.Append(output)
+			tui.Draw()
 
 		case <-ctx.Done():
 			tui.screen.Fini()
