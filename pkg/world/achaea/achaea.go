@@ -130,7 +130,9 @@ func (world *World) ProcessGMCP(data []byte) error {
 
 	case agmcp.CharVitals:
 		world.character.FromCharVitals(msg)
-		world.UpdateVitals()
+		if err := world.UpdateVitals(); err != nil {
+			return err
+		}
 
 	case gmcp.RoomInfo:
 		if world.room != nil {
@@ -158,15 +160,24 @@ func (world *World) SendGMCP(message gmcp.ClientMessage) error {
 	return nil
 }
 
-// UpdateVitals creates sends new current and max values to UI's VitalPanes.
-func (world *World) UpdateVitals() {
-	order := []string{"health", "mana", "endurance", "willpower"}
+var (
+	vorder = []string{"health", "mana", "endurance", "willpower"}
+	vitals = map[string]*tui.Vital{
+		"health":    tui.NewHealthVital(),
+		"mana":      tui.NewManaVital(),
+		"endurance": tui.NewEnduranceVital(),
+		"willpower": tui.NewWillpowerVital(),
+	}
+)
 
-	vitals := map[string]tui.Vital{
-		"health":    tui.HealthVital,
-		"mana":      tui.ManaVital,
-		"endurance": tui.EnduranceVital,
-		"willpower": tui.WillpowerVital,
+// UpdateVitals creates sends new current and max values to UI's VitalPanes.
+func (world *World) UpdateVitals() error {
+	for len(vorder) > 0 {
+		err := world.ui.AddVital(vorder[0], vitals[vorder[0]])
+		if err != nil {
+			return fmt.Errorf("failed adding vital: %w", err)
+		}
+		vorder = vorder[1:]
 	}
 
 	values := map[string][]int{
@@ -176,12 +187,12 @@ func (world *World) UpdateVitals() {
 		"willpower": {world.character.Willpower, world.character.MaxWillpower},
 	}
 
-	for _, name := range order {
-		if _, ok := world.uiVitals[name]; !ok {
-			world.ui.AddVital(name, vitals[name])
-			world.uiVitals[name] = struct{}{}
+	for name, value := range values {
+		err := world.ui.UpdateVital(name, value[0], value[1])
+		if err != nil {
+			return fmt.Errorf("failed updating vital: %w", err)
 		}
-
-		world.ui.UpdateVital(name, values[name][0], values[name][1])
 	}
+
+	return nil
 }

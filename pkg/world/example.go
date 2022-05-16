@@ -4,6 +4,7 @@ import (
 	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
+	"github.com/tobiassjosten/nogfx/pkg/tui"
 )
 
 // ExampleWorld is a mock implementation of the pkg.World interface.
@@ -115,6 +116,11 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 	x.Exits["w"] = w
 
 	ui.SetRoom(x)
+
+	_ = ui.AddVital("health", tui.NewHealthVital())
+	_ = ui.UpdateVital("health", 800, 1000)
+	_ = ui.AddVital("mana", tui.NewManaVital())
+	_ = ui.UpdateVital("mana", 950, 1000)
 
 	return &ExampleWorld{
 		ui: ui,

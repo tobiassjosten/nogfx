@@ -27,7 +27,9 @@ func TestWorldBasics(t *testing.T) {
 
 	client := &mock.ClientMock{}
 	ui := &mock.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) {},
+		AddVitalFunc: func(_ string, _ interface{}) error {
+			return nil
+		},
 	}
 
 	world := NewWorld(client, ui)
@@ -83,7 +85,9 @@ func TestCommandsReply(t *testing.T) {
 			}
 
 			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) {},
+				AddVitalFunc: func(_ string, _ interface{}) error {
+					return nil
+				},
 			}
 
 			world := NewWorld(client, ui)
@@ -122,12 +126,15 @@ func TestCommandsMutateVitals(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			vitals := map[string][][]int{}
 			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) {},
-				UpdateVitalFunc: func(name string, value, max int) {
+				AddVitalFunc: func(_ string, _ interface{}) error {
+					return nil
+				},
+				UpdateVitalFunc: func(name string, value, max int) error {
 					if _, ok := vitals[name]; !ok {
 						vitals[name] = [][]int{}
 					}
 					vitals[name] = append(vitals[name], []int{value, max})
+					return nil
 				},
 			}
 

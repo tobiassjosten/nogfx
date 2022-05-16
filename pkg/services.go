@@ -42,8 +42,8 @@ type UI interface {
 	MaskInput()
 	UnmaskInput()
 
-	AddVital(string, interface{})
-	UpdateVital(string, int, int)
+	AddVital(string, interface{}) error
+	UpdateVital(string, int, int) error
 
 	SetRoom(*navigation.Room)
 }

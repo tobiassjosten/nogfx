@@ -5,44 +5,42 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
-
-// Panes is a collection of various panes used throughout the user interface.
-type Panes struct {
-	Input   *InputPane
-	Output  *OutputPane
-	Vitals  *VitalsPane
-	Minimap *MinimapPane
-}
-
-// NewPanes creates a new Panes with the standard collection of panes.
-func NewPanes() Panes {
-	return Panes{
-		Input:   NewInputPane(),
-		Output:  NewOutputPane(),
-		Vitals:  NewVitalsPane(),
-		Minimap: NewMinimapPane(),
-	}
-}
 
 // TUI orchestrates different panes to make up the primary user interface.
 type TUI struct {
-	screen  tcell.Screen
-	panes   Panes
-	inputs  chan []byte
+	screen tcell.Screen
+
+	inputs chan []byte
+	input  *Input
+
+	outputs chan []byte
+	output  *Output
+
+	vitals map[string]*Vital
+	vorder []string
+
+	room    *navigation.Room
 	running bool
 }
 
 // NewTUI creates a new TUI.
-func NewTUI(screen tcell.Screen, panes Panes) *TUI {
+func NewTUI(screen tcell.Screen) *TUI {
 	var (
 		outputStyle = tcell.Style{}
 	)
 
 	tui := &TUI{
 		screen: screen,
+
 		inputs: make(chan []byte),
-		panes:  panes,
+		input:  &Input{},
+
+		outputs: make(chan []byte),
+		output:  &Output{},
+
+		vitals: map[string]*Vital{},
 	}
 
 	screen.SetStyle(outputStyle)
@@ -54,6 +52,17 @@ func NewTUI(screen tcell.Screen, panes Panes) *TUI {
 // Inputs exposes the outgoing channel for player input.
 func (tui *TUI) Inputs() <-chan []byte {
 	return tui.inputs
+}
+
+// Outputs exposes the incoming channel for server output.
+func (tui *TUI) Outputs() chan<- []byte {
+	return tui.outputs
+}
+
+// SetRoom updates the current room and causes a repaint.
+func (tui *TUI) SetRoom(room *navigation.Room) {
+	tui.room = room
+	tui.Draw()
 }
 
 // Run is the main loop of the user interface, where everything is orchestrated.
@@ -86,24 +95,19 @@ func (tui *TUI) Run(pctx context.Context) error {
 					return
 				}
 
-				if ok := tui.panes.Output.HandleEvent(ev); ok {
-					tui.Draw()
-				}
-
-				if ok, input := tui.panes.Input.HandleEvent(ev); ok {
-					if input != nil {
-						tui.inputs <- []byte(string(input))
-					}
+				if ok := tui.HandleEvent(ev); ok {
 					tui.Draw()
 				}
 			}
 		}
 	}()
 
+	tui.Draw()
+
 	for {
 		select {
-		case output := <-tui.panes.Output.outputs:
-			tui.panes.Output.Add(output)
+		case output := <-tui.outputs:
+			tui.output.Append(output)
 			tui.Draw()
 
 		case <-ctx.Done():
@@ -113,80 +117,66 @@ func (tui *TUI) Run(pctx context.Context) error {
 	}
 }
 
-// Resize calculates the layout of the various panes.
-func (tui *TUI) Resize(width, height int) {
-}
-
 // Draw updates the terminal and prints the contents of the panes.
 func (tui *TUI) Draw() {
 	if !tui.running {
 		return
 	}
 
-	tui.screen.Clear()
+	// @todo Cache renditions so as to not redraw everything every time.
 
 	width, height := tui.screen.Size()
 
-	mainMinWidth := 80
-	mainWidth := width
+	mainWidth, borderWidth := width, 2
+	mainMinWidth := outputMinWidth + borderWidth
 
-	borderWidth := 2
-
-	roomWidth, _, roomsMargin := 4, 2, 3
-	minimapMinWidth := roomWidth*3 + roomsMargin
-	minimapWidth, minimapHeight := 0, 0
+	minimapWidth, minimapHeight := 0, height
 
 	// If we can fit a minimap, let's calculate how much space we can
 	// afford it. Main panes get at least 80 and at most 120 but in between
 	// share the excess with the minimap, before giving it all the rest.
-	if width >= mainMinWidth+borderWidth+minimapMinWidth {
-		mainWidth = min(120, mainMinWidth+(width-mainMinWidth-borderWidth-minimapMinWidth)/2)
-
+	if width >= mainMinWidth+minimapMinWidth && height >= minimapMinHeight {
+		mainWidth = min(
+			outputMaxWidth,
+			outputMinWidth+(width-mainMinWidth-minimapMinWidth)/2,
+		)
 		minimapWidth = width - mainWidth - borderWidth
-		minimapHeight = height
 	}
 
-	inputWidth := mainWidth
-	inputHeight := min(height, tui.panes.Input.Height())
-	inputX, inputY := 0, height-inputHeight
-	tui.panes.Input.Position(inputX, inputY, inputWidth, inputHeight)
+	tui.screen.Clear()
 
-	// Draw VitalsPane if OutputPane has at least one row.
-	vitalsHeight := min(tui.panes.Vitals.Height(), max(0, height-inputHeight-1))
-	tui.panes.Vitals.Position(inputX, inputY-1, mainWidth, vitalsHeight)
+	input := tui.RenderInput(mainWidth)
+	tui.paint(0, height-len(input), input)
 
-	tui.panes.Input.Draw(tui.screen)
-	tui.panes.Vitals.Draw(tui.screen)
+	if len(input) > 0 {
+		tui.screen.ShowCursor(tui.input.cursor, height-len(input))
+	} else {
+		tui.screen.HideCursor()
+	}
 
-	outputWidth := mainWidth
-	outputHeight := height - inputHeight - vitalsHeight
+	// Only give vitals space if there's leftovers from the input.
+	vitals := tui.RenderVitals(mainWidth)
+	vitals = vitals[0:max(0, min(len(vitals), height-len(input)-1))]
+	tui.paint(0, height-len(input)-len(vitals), vitals)
 
-	output, history := tui.panes.Output.Texts(outputWidth, outputHeight)
-	outputX := len(history) + (outputHeight - len(history) - len(output))
-	tui.paint(0, outputX, outputWidth, output, 0)
-	tui.paint(0, 0, outputWidth, history, tcell.Color236)
+	output := tui.RenderOutput(mainWidth, height-len(input)-len(vitals))
+	tui.paint(0, height-len(output)-len(input)-len(vitals), output)
 
-	minimap := tui.panes.Minimap.Texts(minimapWidth-2, minimapHeight)
-	tui.paint(mainWidth+2, height-minimapHeight, minimapWidth, minimap, 0)
+	tui.paint(
+		mainWidth+borderWidth, height-minimapHeight,
+		RenderMap(tui.room, minimapWidth, minimapHeight),
+	)
 
 	tui.screen.Show()
 }
 
-func (tui *TUI) paint(x, y, width int, texts []Text, bgOverride tcell.Color) {
-	var style tcell.Style
-
-	for yy, text := range texts {
-		for xx, cell := range text {
-			style = cell.Style
-			if bgOverride > 0 {
-				style = cell.Style.Background(bgOverride)
-			}
-
-			tui.screen.SetContent(x+xx, y+yy, cell.Content, nil, style)
-		}
-
-		for xx := len(text); xx < width; xx++ {
-			tui.screen.SetContent(x+xx, y+yy, ' ', nil, style)
+func (tui *TUI) paint(x, y int, rows Rows) {
+	for yy, row := range rows {
+		for xx, cell := range row {
+			tui.screen.SetContent(
+				x+xx, y+yy,
+				cell.Content, nil, cell.Style,
+			)
 		}
 	}
 }

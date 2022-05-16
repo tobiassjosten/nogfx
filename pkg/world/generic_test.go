@@ -13,7 +13,9 @@ func TestGenericWorld(t *testing.T) {
 	client := &mock.ClientMock{}
 
 	ui := &mock.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) {},
+		AddVitalFunc: func(_ string, _ interface{}) error {
+			return nil
+		},
 	}
 
 	world := world.NewGenericWorld(client, ui)
