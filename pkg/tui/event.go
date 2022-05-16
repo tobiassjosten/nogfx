@@ -200,8 +200,7 @@ func (tui *TUI) handleRightInput(_ rune) bool {
 func (tui *TUI) handleRuneNormal(r rune) bool {
 	switch r {
 	case '1':
-		tui.inputs <- []byte{'s'}
-		tui.inputs <- []byte{'w'}
+		tui.inputs <- []byte{'s', 'w'}
 		return true
 
 	case '2':
@@ -209,8 +208,7 @@ func (tui *TUI) handleRuneNormal(r rune) bool {
 		return true
 
 	case '3':
-		tui.inputs <- []byte{'s'}
-		tui.inputs <- []byte{'e'}
+		tui.inputs <- []byte{'s', 'e'}
 		return true
 
 	case '4':
@@ -226,8 +224,7 @@ func (tui *TUI) handleRuneNormal(r rune) bool {
 		return true
 
 	case '7':
-		tui.inputs <- []byte{'n'}
-		tui.inputs <- []byte{'w'}
+		tui.inputs <- []byte{'n', 'w'}
 		return true
 
 	case '8':
@@ -235,8 +232,7 @@ func (tui *TUI) handleRuneNormal(r rune) bool {
 		return true
 
 	case '9':
-		tui.inputs <- []byte{'n'}
-		tui.inputs <- []byte{'e'}
+		tui.inputs <- []byte{'n', 'e'}
 		return true
 	}
 

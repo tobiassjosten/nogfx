@@ -29,13 +29,7 @@ type Input struct {
 
 // RenderInput renders the current Input.
 func (tui *TUI) RenderInput(width int) Rows {
-	rows := RenderInput(tui.input, width)
-
-	if len(rows) == 0 {
-		tui.screen.HideCursor()
-	}
-
-	return rows
+	return RenderInput(tui.input, width)
 }
 
 // RenderInput renders the given Input.

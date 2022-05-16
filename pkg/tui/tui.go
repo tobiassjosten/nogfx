@@ -148,6 +148,12 @@ func (tui *TUI) Draw() {
 	input := tui.RenderInput(mainWidth)
 	tui.paint(0, height-len(input), input)
 
+	if len(input) > 0 {
+		tui.screen.ShowCursor(tui.input.cursor, height-len(input))
+	} else {
+		tui.screen.HideCursor()
+	}
+
 	// Only give vitals space if there's leftovers from the input.
 	vitals := tui.RenderVitals(mainWidth)
 	vitals = vitals[0:max(0, min(len(vitals), height-len(input)-1))]
