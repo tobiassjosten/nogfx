@@ -23,8 +23,6 @@ func wrapGMCP(msgs []string) []byte {
 }
 
 func TestWorldBasics(t *testing.T) {
-	assert := assert.New(t)
-
 	client := &mock.ClientMock{}
 	ui := &mock.UIMock{
 		AddVitalFunc: func(_ string, _ interface{}) error {
@@ -34,11 +32,11 @@ func TestWorldBasics(t *testing.T) {
 
 	world := NewWorld(client, ui)
 
-	input := []byte("input")
-	assert.Equal(input, world.ProcessInput(input))
+	inputs := [][]byte{[]byte("input")}
+	assert.Equal(t, inputs, world.ProcessInput(inputs[0]))
 
-	output := []byte("output")
-	assert.Equal(output, world.ProcessOutput(output))
+	outputs := [][]byte{[]byte("output")}
+	assert.Equal(t, outputs, world.ProcessOutput(outputs[0]))
 }
 
 func TestCommandsReply(t *testing.T) {

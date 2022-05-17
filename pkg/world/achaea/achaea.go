@@ -10,6 +10,8 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
+	"github.com/tobiassjosten/nogfx/pkg/world/module"
 
 	"github.com/icza/gox/gox"
 )
@@ -23,8 +25,8 @@ type World struct {
 
 	modules []pkg.Module
 
-	character *Character
-	room      *navigation.Room
+	Character *Character
+	Room      *navigation.Room
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
@@ -42,30 +44,83 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 
 		modules: modules,
 
-		character: &Character{},
+		Character: &Character{},
 	}
+}
+
+var moduleConstructors = []pkg.ModuleConstructor{
+	module.NewRepeatInput,
+	amodule.NewLearnMultipleLessons,
 }
 
 // ProcessInput processes player input.
-func (world *World) ProcessInput(input []byte) []byte {
-	for _, module := range world.modules {
-		if input = module.ProcessInput(input); input == nil {
-			break
+func (world *World) ProcessInput(input []byte) [][]byte {
+	// @todo Figure out if the `;` character is configurable, so that we
+	// have to make this dynamic.
+	inputs := bytes.Split(input, []byte(";"))
+
+	inputs = processInputs(inputs, world.modules)
+	if inputs == nil {
+		return nil
+	}
+
+	// @todo Figure out if the `;` character is configurable, so that we
+	// have to make this dynamic.
+	return [][]byte{bytes.Join(inputs, []byte(";"))}
+}
+
+func processInputs(inputs [][]byte, modules []pkg.Module) [][]byte {
+	nullinputs := false
+
+	for i := 0; i < len(inputs); i++ {
+		input := inputs[i]
+
+		var newinputs [][]byte
+
+		for _, module := range modules {
+			newnewinputs := module.ProcessInput(input)
+			if newnewinputs == nil {
+				nullinputs = true
+				continue
+			}
+
+			newinputs = append(newinputs, newnewinputs...)
+		}
+
+		if nullinputs {
+			inputs = append(inputs[:i], inputs[i+1:]...)
+		} else if len(newinputs) > 0 {
+			inputs = append(inputs[:i], append(
+				newinputs,
+				inputs[i+1:]...,
+			)...)
 		}
 	}
 
-	return input
+	if nullinputs && len(inputs) == 0 {
+		return nil
+	}
+
+	return inputs
 }
 
 // ProcessOutput processes game output.
-func (world *World) ProcessOutput(output []byte) []byte {
+func (world *World) ProcessOutput(output []byte) [][]byte {
+	var outputs [][]byte
+
 	for _, module := range world.modules {
-		if output = module.ProcessOutput(output); output == nil {
-			break
+		newoutputs := module.ProcessOutput(output)
+		if newoutputs == nil {
+			return nil
 		}
+		outputs = append(outputs, newoutputs...)
 	}
 
-	return output
+	if len(outputs) == 0 {
+		outputs = [][]byte{output}
+	}
+
+	return outputs
 }
 
 // ProcessCommand processes telnet commands.
@@ -111,7 +166,7 @@ func (world *World) ProcessGMCP(data []byte) error {
 
 	switch msg := message.(type) {
 	case gmcp.CharName:
-		world.character.FromCharName(msg)
+		world.Character.FromCharName(msg)
 
 		if err := world.SendGMCP(gmcp.CharItemsInv{}); err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)
@@ -126,22 +181,22 @@ func (world *World) ProcessGMCP(data []byte) error {
 		}
 
 	case agmcp.CharStatus:
-		world.character.FromCharStatus(msg)
+		world.Character.FromCharStatus(msg)
 
 	case agmcp.CharVitals:
-		world.character.FromCharVitals(msg)
+		world.Character.FromCharVitals(msg)
 		if err := world.UpdateVitals(); err != nil {
 			return err
 		}
 
 	case gmcp.RoomInfo:
-		if world.room != nil {
-			world.room.HasPlayer = false
+		if world.Room != nil {
+			world.Room.HasPlayer = false
 		}
-		world.room = navigation.RoomFromGMCP(msg)
-		world.room.HasPlayer = true
+		world.Room = navigation.RoomFromGMCP(msg)
+		world.Room.HasPlayer = true
 
-		world.ui.SetRoom(world.room)
+		world.ui.SetRoom(world.Room)
 
 		// @todo Implement this to download the official map.
 		// case gmcp.ClientMap:
@@ -181,10 +236,10 @@ func (world *World) UpdateVitals() error {
 	}
 
 	values := map[string][]int{
-		"health":    {world.character.Health, world.character.MaxHealth},
-		"mana":      {world.character.Mana, world.character.MaxMana},
-		"endurance": {world.character.Endurance, world.character.MaxEndurance},
-		"willpower": {world.character.Willpower, world.character.MaxWillpower},
+		"health":    {world.Character.Health, world.Character.MaxHealth},
+		"mana":      {world.Character.Mana, world.Character.MaxMana},
+		"endurance": {world.Character.Endurance, world.Character.MaxEndurance},
+		"willpower": {world.Character.Willpower, world.Character.MaxWillpower},
 	}
 
 	for name, value := range values {

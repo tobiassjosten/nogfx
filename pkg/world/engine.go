@@ -85,21 +85,25 @@ func (engine *Engine) Run(pctx context.Context) error {
 				continue
 			}
 
-			output = engine.world.ProcessOutput(output)
-			if output == nil {
+			outputs := engine.world.ProcessOutput(output)
+			if len(outputs) == 0 {
 				continue
 			}
 
-			engine.ui.Outputs() <- output
+			for _, output := range outputs {
+				engine.ui.Outputs() <- output
+			}
 
 		case input := <-engine.ui.Inputs():
-			input = engine.world.ProcessInput(input)
-			if input == nil {
+			inputs := engine.world.ProcessInput(input)
+			if len(inputs) == 0 {
 				continue
 			}
 
-			if _, err := engine.client.Write(input); err != nil {
-				return fmt.Errorf("failed sending: %w", err)
+			for _, input := range inputs {
+				if _, err := engine.client.Write(input); err != nil {
+					return fmt.Errorf("failed sending: %w", err)
+				}
 			}
 
 		case command, ok := <-engine.client.Commands():

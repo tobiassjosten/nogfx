@@ -11,6 +11,7 @@ import (
 // Client is the application's main connection to the game server.
 type Client interface {
 	io.ReadWriter
+	Send([]byte)
 	Commands() <-chan []byte
 	Scanner() *bufio.Scanner
 
@@ -24,8 +25,8 @@ type Client interface {
 
 // Module is an atomic extension of game logic.
 type Module interface {
-	ProcessInput([]byte) []byte
-	ProcessOutput([]byte) []byte
+	ProcessInput([]byte) [][]byte
+	ProcessOutput([]byte) [][]byte
 }
 
 // ModuleConstructor is a function that constructs a Module.
@@ -49,8 +50,11 @@ type UI interface {
 }
 
 // World represents a game and hooks into all their various specific logic.
+// When processors return a slice of slices of bytes, they can use that to
+// signal that player input or server output should be omitted (nil) or that it
+// should be replaced (a new [][]byte).
 type World interface {
-	ProcessInput([]byte) []byte
-	ProcessOutput([]byte) []byte
+	ProcessInput([]byte) [][]byte
+	ProcessOutput([]byte) [][]byte
 	ProcessCommand([]byte) error
 }

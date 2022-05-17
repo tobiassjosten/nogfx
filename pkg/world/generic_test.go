@@ -22,7 +22,11 @@ func TestGenericWorld(t *testing.T) {
 
 	in := []byte("asdf")
 
-	assert.Equal(t, in, world.ProcessInput(in))
-	assert.Equal(t, in, world.ProcessOutput(in))
+	inputs := [][]byte{[]byte("input")}
+	assert.Equal(t, inputs, world.ProcessInput(inputs[0]))
+
+	outputs := [][]byte{[]byte("output")}
+	assert.Equal(t, outputs, world.ProcessOutput(outputs[0]))
+
 	assert.Nil(t, world.ProcessCommand(in))
 }

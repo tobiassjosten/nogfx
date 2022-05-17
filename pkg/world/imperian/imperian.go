@@ -32,13 +32,13 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 }
 
 // ProcessInput processes player input.
-func (world *World) ProcessInput(input []byte) []byte {
-	return input
+func (world *World) ProcessInput(input []byte) [][]byte {
+	return [][]byte{input}
 }
 
 // ProcessOutput processes game output.
-func (world *World) ProcessOutput(output []byte) []byte {
-	return output
+func (world *World) ProcessOutput(output []byte) [][]byte {
+	return [][]byte{output}
 }
 
 // ProcessCommand processes telnet commands.

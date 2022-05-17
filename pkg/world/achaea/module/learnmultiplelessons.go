@@ -1,4 +1,4 @@
-package achaea
+package module
 
 import (
 	"fmt"
@@ -11,9 +11,11 @@ import (
 
 var (
 	modLMLIStart    = []byte("learn {^} {^ from *}")
-	modLMLOBegin    = []byte("* bows to you and commences the lesson in ^.")
+	modLMLOBegin1   = []byte("* begins the lesson in ^.")
+	modLMLOBegin2   = []byte("* bows to you and commences the lesson in ^.")
 	modLMLOContinue = []byte("* continues your training in ^.")
-	modLMLOFinish   = []byte("* bows to you - the lesson in ^ is over.")
+	modLMLOFinish1  = []byte("* bows to you - the lesson in ^ is over.")
+	modLMLOFinish2  = []byte("* finishes the lesson in ^.")
 )
 
 // LearnMultipleLessons lets players learn more than 15 lessons in one swoop by
@@ -37,45 +39,54 @@ func NewLearnMultipleLessons(client pkg.Client, ui pkg.UI) pkg.Module {
 }
 
 // ProcessInput processes player input.
-func (mod *LearnMultipleLessons) ProcessInput(input []byte) []byte {
+func (mod *LearnMultipleLessons) ProcessInput(input []byte) [][]byte {
 	matches := simpex.Match(modLMLIStart, input)
 	if matches == nil {
-		return input
+		return [][]byte{}
 	}
 
 	number, err := strconv.Atoi(string(matches[0]))
 	if err != nil || number <= 15 {
-		return input
+		return [][]byte{}
 	}
 
 	mod.total = number
 	mod.remaining = number
 	mod.target = matches[1]
 
-	mod.learn()
+	newinput := mod.learn()
 
-	return nil
+	return [][]byte{newinput}
 }
 
 // ProcessOutput processes server output.
-func (mod *LearnMultipleLessons) ProcessOutput(output []byte) []byte {
+func (mod *LearnMultipleLessons) ProcessOutput(output []byte) [][]byte {
 	if mod.total == 0 {
-		return output
+		return [][]byte{}
 	}
 
 	switch {
-	case simpex.Match(modLMLOBegin, output) != nil:
+	case simpex.Match(modLMLOBegin1, output) != nil,
+		simpex.Match(modLMLOBegin2, output) != nil:
 		mod.time()
 
 	case simpex.Match(modLMLOContinue, output) != nil:
 		mod.time()
 
-	case simpex.Match(modLMLOFinish, output) != nil:
-		output = append(output, []byte(fmt.Sprintf(" [%d/%d]", mod.total-mod.remaining, mod.total))...)
-		mod.learn()
+	case simpex.Match(modLMLOFinish1, output) != nil,
+		simpex.Match(modLMLOFinish2, output) != nil:
+		output = append(output, []byte(
+			fmt.Sprintf(" [%d/%d]", mod.total-mod.remaining, mod.total),
+		)...)
+
+		if input := mod.learn(); len(input) > 0 {
+			mod.client.Send(input)
+		}
+
+		return [][]byte{output}
 	}
 
-	return output
+	return [][]byte{}
 }
 
 func (mod *LearnMultipleLessons) stop() {
@@ -99,7 +110,7 @@ func (mod *LearnMultipleLessons) time() {
 	})
 }
 
-func (mod *LearnMultipleLessons) learn() {
+func (mod *LearnMultipleLessons) learn() []byte {
 	count := 15
 	if mod.remaining < count {
 		count = mod.remaining
@@ -107,18 +118,12 @@ func (mod *LearnMultipleLessons) learn() {
 
 	if count == 0 {
 		mod.stop()
-		return
-	}
-
-	// @todo Replace with Client.Send() so as to let Client handle errors.
-	_, err := mod.client.Write([]byte(fmt.Sprintf(
-		"learn %d %s", count, mod.target,
-	)))
-	if err != nil {
-		mod.ui.Print([]byte(fmt.Sprintf("[Failed learning! %s]", err)))
+		return []byte{}
 	}
 
 	mod.remaining -= count
 
 	mod.time()
+
+	return []byte(fmt.Sprintf("learn %d %s", count, mod.target))
 }

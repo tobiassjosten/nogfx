@@ -5,12 +5,23 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type FuncModule func([]byte) [][]byte
+
+func (mod FuncModule) ProcessInput(data []byte) [][]byte {
+	return mod(data)
+}
+
+func (mod FuncModule) ProcessOutput(data []byte) [][]byte {
+	return mod(data)
+}
 
 func wrapGMCP(msgs []string) []byte {
 	var bs []byte
@@ -22,75 +33,79 @@ func wrapGMCP(msgs []string) []byte {
 	return bs
 }
 
-func TestWorldBasics(t *testing.T) {
-	client := &mock.ClientMock{}
-	ui := &mock.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) error {
-			return nil
+func TestProcessInput(t *testing.T) {
+	tcs := map[string]struct {
+		in  []byte
+		out [][]byte
+		mod pkg.Module
+	}{
+		"plain asdf": {
+			in:  []byte("asdf"),
+			out: [][]byte{[]byte("asdf")},
+		},
+
+		"separated, repeated input": {
+			in:  []byte("asdf;3 qwer;zxcv"),
+			out: [][]byte{[]byte("asdf;qwer;qwer;qwer;zxcv")},
+		},
+
+		"blocked input": {
+			in:  []byte("asdf"),
+			out: nil,
+			mod: FuncModule(func(_ []byte) [][]byte {
+				return nil
+			}),
 		},
 	}
 
-	world := NewWorld(client, ui)
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			client := &mock.ClientMock{}
+			ui := &mock.UIMock{}
 
-	input := []byte("input")
-	assert.Equal(t, input, world.ProcessInput(input))
+			world := NewWorld(client, ui).(*World)
 
-	output := []byte("output")
-	assert.Equal(t, output, world.ProcessOutput(output))
+			if tc.mod != nil {
+				world.modules = append(world.modules, tc.mod)
+			}
+
+			assert.Equal(t, tc.out, world.ProcessInput(tc.in))
+		})
+	}
 }
 
-func TestModuleInput(t *testing.T) {
-	tcs := []struct {
-		data      [][][]byte
-		inputted  [][]byte
-		outputted [][]byte
-		written   [][]byte
+func TestProcessOutput(t *testing.T) {
+	tcs := map[string]struct {
+		in  []byte
+		out [][]byte
+		mod pkg.Module
 	}{
-		{
-			data: [][][]byte{
-				[][]byte{[]byte{1}, []byte("learn 16 x from y")},
-				[][]byte{[]byte{0}, []byte("y bows to you - the lesson in x is over.")},
-			},
-			inputted:  [][]byte{nil},
-			outputted: [][]byte{[]byte("y bows to you - the lesson in x is over. [15/16]")},
-			written: [][]byte{
-				[]byte("learn 15 x from y"),
-				[]byte("learn 1 x from y"),
-			},
+		"plain asdf": {
+			in:  []byte("asdf"),
+			out: [][]byte{[]byte("asdf")},
+		},
+
+		"blocked output": {
+			in:  []byte("asdf"),
+			out: nil,
+			mod: FuncModule(func(_ []byte) [][]byte {
+				return nil
+			}),
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			var written [][]byte
-			client := &mock.ClientMock{
-				WriteFunc: func(data []byte) (int, error) {
-					written = append(written, data)
-					return 0, nil
-				},
-			}
-			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) error {
-					return nil
-				},
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			client := &mock.ClientMock{}
+			ui := &mock.UIMock{}
+
+			world := NewWorld(client, ui).(*World)
+
+			if tc.mod != nil {
+				world.modules = append(world.modules, tc.mod)
 			}
 
-			world := NewWorld(client, ui)
-
-			var inputted [][]byte
-			var outputted [][]byte
-
-			for _, data := range tc.data {
-				if data[0][0] == 1 {
-					inputted = append(inputted, world.ProcessInput(data[1]))
-				} else {
-					outputted = append(outputted, world.ProcessOutput(data[1]))
-				}
-			}
-
-			assert.Equal(t, tc.inputted, inputted)
-			assert.Equal(t, tc.outputted, outputted)
-			assert.Equal(t, tc.written, written)
+			assert.Equal(t, tc.out, world.ProcessOutput(tc.in))
 		})
 	}
 }
@@ -263,7 +278,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 			require.Nil(t, err)
 
 			if tc.character != nil {
-				assert.Equal(t, tc.character, aworld.character)
+				assert.Equal(t, tc.character, aworld.Character)
 			}
 		})
 	}
