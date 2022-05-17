@@ -38,10 +38,10 @@ func TestExampleWorld(t *testing.T) {
 	in := []byte("asdf")
 
 	assert.Equal(t, [][]byte{}, printed)
-	assert.Equal(t, in, world.ProcessInput(in))
+	assert.Equal(t, [][]byte{in}, world.ProcessInput(in))
 	assert.Equal(t, [][]byte{append([]byte("> "), in...)}, printed)
 
-	assert.Equal(t, in, world.ProcessOutput(in))
+	assert.Equal(t, [][]byte{in}, world.ProcessOutput(in))
 
 	assert.Nil(t, world.ProcessCommand(in))
 }

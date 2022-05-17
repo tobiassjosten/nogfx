@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 )
 
@@ -112,6 +113,14 @@ func (client *Client) Write(data []byte) (int, error) {
 	}
 
 	return client.data.Write(data)
+}
+
+// Send wraps the Send() method and handles potential errors by logging them.
+func (client *Client) Send(data []byte) {
+	_, err := client.Write(data)
+	if err != nil {
+		log.Printf("failed sending data to server: %s", err)
+	}
 }
 
 // Commands returns the commands channel.

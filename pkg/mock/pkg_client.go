@@ -34,6 +34,9 @@ var _ pkg.Client = &ClientMock{}
 // 			ScannerFunc: func() *bufio.Scanner {
 // 				panic("mock out the Scanner method")
 // 			},
+// 			SendFunc: func(bytes []byte)  {
+// 				panic("mock out the Send method")
+// 			},
 // 			SubnegFunc: func(v byte, bytes []byte) error {
 // 				panic("mock out the Subneg method")
 // 			},
@@ -67,6 +70,9 @@ type ClientMock struct {
 
 	// ScannerFunc mocks the Scanner method.
 	ScannerFunc func() *bufio.Scanner
+
+	// SendFunc mocks the Send method.
+	SendFunc func(bytes []byte)
 
 	// SubnegFunc mocks the Subneg method.
 	SubnegFunc func(v byte, bytes []byte) error
@@ -103,6 +109,11 @@ type ClientMock struct {
 		// Scanner holds details about calls to the Scanner method.
 		Scanner []struct {
 		}
+		// Send holds details about calls to the Send method.
+		Send []struct {
+			// Bytes is the bytes argument value.
+			Bytes []byte
+		}
 		// Subneg holds details about calls to the Subneg method.
 		Subneg []struct {
 			// V is the v argument value.
@@ -131,6 +142,7 @@ type ClientMock struct {
 	lockDont     sync.RWMutex
 	lockRead     sync.RWMutex
 	lockScanner  sync.RWMutex
+	lockSend     sync.RWMutex
 	lockSubneg   sync.RWMutex
 	lockWill     sync.RWMutex
 	lockWont     sync.RWMutex
@@ -279,6 +291,37 @@ func (mock *ClientMock) ScannerCalls() []struct {
 	mock.lockScanner.RLock()
 	calls = mock.calls.Scanner
 	mock.lockScanner.RUnlock()
+	return calls
+}
+
+// Send calls SendFunc.
+func (mock *ClientMock) Send(bytes []byte) {
+	if mock.SendFunc == nil {
+		panic("ClientMock.SendFunc: method is nil but Client.Send was just called")
+	}
+	callInfo := struct {
+		Bytes []byte
+	}{
+		Bytes: bytes,
+	}
+	mock.lockSend.Lock()
+	mock.calls.Send = append(mock.calls.Send, callInfo)
+	mock.lockSend.Unlock()
+	mock.SendFunc(bytes)
+}
+
+// SendCalls gets all the calls that were made to Send.
+// Check the length with:
+//     len(mockedClient.SendCalls())
+func (mock *ClientMock) SendCalls() []struct {
+	Bytes []byte
+} {
+	var calls []struct {
+		Bytes []byte
+	}
+	mock.lockSend.RLock()
+	calls = mock.calls.Send
+	mock.lockSend.RUnlock()
 	return calls
 }
 

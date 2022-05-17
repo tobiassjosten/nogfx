@@ -18,10 +18,10 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 		// make and configure a mocked pkg.Module
 // 		mockedModule := &ModuleMock{
-// 			ProcessInputFunc: func(bytes []byte) []byte {
+// 			ProcessInputFunc: func(bytes []byte) [][]byte {
 // 				panic("mock out the ProcessInput method")
 // 			},
-// 			ProcessOutputFunc: func(bytes []byte) []byte {
+// 			ProcessOutputFunc: func(bytes []byte) [][]byte {
 // 				panic("mock out the ProcessOutput method")
 // 			},
 // 		}
@@ -32,10 +32,10 @@ var _ pkg.Module = &ModuleMock{}
 // 	}
 type ModuleMock struct {
 	// ProcessInputFunc mocks the ProcessInput method.
-	ProcessInputFunc func(bytes []byte) []byte
+	ProcessInputFunc func(bytes []byte) [][]byte
 
 	// ProcessOutputFunc mocks the ProcessOutput method.
-	ProcessOutputFunc func(bytes []byte) []byte
+	ProcessOutputFunc func(bytes []byte) [][]byte
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -55,7 +55,7 @@ type ModuleMock struct {
 }
 
 // ProcessInput calls ProcessInputFunc.
-func (mock *ModuleMock) ProcessInput(bytes []byte) []byte {
+func (mock *ModuleMock) ProcessInput(bytes []byte) [][]byte {
 	if mock.ProcessInputFunc == nil {
 		panic("ModuleMock.ProcessInputFunc: method is nil but Module.ProcessInput was just called")
 	}
@@ -86,7 +86,7 @@ func (mock *ModuleMock) ProcessInputCalls() []struct {
 }
 
 // ProcessOutput calls ProcessOutputFunc.
-func (mock *ModuleMock) ProcessOutput(bytes []byte) []byte {
+func (mock *ModuleMock) ProcessOutput(bytes []byte) [][]byte {
 	if mock.ProcessOutputFunc == nil {
 		panic("ModuleMock.ProcessOutputFunc: method is nil but Module.ProcessOutput was just called")
 	}

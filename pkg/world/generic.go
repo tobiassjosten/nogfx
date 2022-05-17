@@ -14,13 +14,13 @@ func NewGenericWorld(_ pkg.Client, _ pkg.UI) pkg.World {
 }
 
 // ProcessInput processes player input.
-func (world *GenericWorld) ProcessInput(input []byte) []byte {
-	return input
+func (world *GenericWorld) ProcessInput(input []byte) [][]byte {
+	return [][]byte{input}
 }
 
 // ProcessOutput processes game output.
-func (world *GenericWorld) ProcessOutput(output []byte) []byte {
-	return output
+func (world *GenericWorld) ProcessOutput(output []byte) [][]byte {
+	return [][]byte{output}
 }
 
 // ProcessCommand processes telnet commands.

@@ -128,14 +128,14 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 }
 
 // ProcessInput processes player input.
-func (world *ExampleWorld) ProcessInput(input []byte) []byte {
+func (world *ExampleWorld) ProcessInput(input []byte) [][]byte {
 	world.ui.Print(append([]byte("> "), input...))
-	return input
+	return [][]byte{input}
 }
 
 // ProcessOutput processes game output.
-func (world *ExampleWorld) ProcessOutput(output []byte) []byte {
-	return output
+func (world *ExampleWorld) ProcessOutput(output []byte) [][]byte {
+	return [][]byte{output}
 }
 
 // ProcessCommand processes telnet commands.
