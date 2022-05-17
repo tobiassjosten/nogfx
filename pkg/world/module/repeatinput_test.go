@@ -48,7 +48,7 @@ func TestRepeatInput(t *testing.T) {
 
 			mod := module.NewRepeatInput(client, ui)
 
-			module.Test(t, mod, tc, client)
+			tc.Eval(t, mod, client)
 		})
 	}
 }

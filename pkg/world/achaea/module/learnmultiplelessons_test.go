@@ -76,7 +76,7 @@ func TestLearnMultipleLessons(t *testing.T) {
 
 			mod := amodule.NewLearnMultipleLessons(client, ui)
 
-			module.Test(t, mod, tc, client)
+			tc.Eval(t, mod, client)
 		})
 	}
 }

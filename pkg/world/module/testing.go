@@ -10,11 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestEvent represents a player input or server output.
 type TestEvent struct {
 	Input bool
 	Data  []byte
 }
 
+// NewTestEvent creates a new TestEvent.
 func NewTestEvent(input bool, data []byte) TestEvent {
 	return TestEvent{
 		Input: input,
@@ -22,6 +24,7 @@ func NewTestEvent(input bool, data []byte) TestEvent {
 	}
 }
 
+// TestCase is a sequence of inputs/outputs and desired states.
 type TestCase struct {
 	Events  []TestEvent
 	Inputs  [][]byte
@@ -29,7 +32,8 @@ type TestCase struct {
 	Sent    [][]byte
 }
 
-func Test(t *testing.T, mod pkg.Module, tc TestCase, client *mock.ClientMock) {
+// Eval plays the TestCase's inputs/outputs and asserts its desired states.
+func (tc TestCase) Eval(t *testing.T, mod pkg.Module, client *mock.ClientMock) {
 	var inputs, outputs, sent [][]byte
 
 	for _, event := range tc.Events {
