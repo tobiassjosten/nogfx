@@ -2,6 +2,8 @@
 
 Because the book is always better.
 
+## Demonstration
+
 ![nogfx demonstration](nogfx-demo.gif)
 
 ## Installation
