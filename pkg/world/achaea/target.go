@@ -24,7 +24,7 @@ type Target struct {
 	roomNPCs []string
 }
 
-// FromRoom handles auto targeting when moving between bashing zones.
+// FromRoomInfo handles targeting when moving between rooms (areas, in effect).
 func (target *Target) FromRoomInfo(msg gmcp.RoomInfo) {
 	current := navigation.RoomFromGMCP(msg)
 	if current == nil || current.Area == nil {
@@ -65,6 +65,7 @@ func (target *Target) FromRoomInfo(msg gmcp.RoomInfo) {
 	}
 }
 
+// FromCharItemsList builds the list of NPCs in the room and retargets.
 func (target *Target) FromCharItemsList(msg gmcp.CharItemsList) {
 	if msg.Location != "room" {
 		return
@@ -83,6 +84,7 @@ func (target *Target) FromCharItemsList(msg gmcp.CharItemsList) {
 	target.retarget()
 }
 
+// FromCharItemsAdd adds an NPC to the room list and retargets.
 func (target *Target) FromCharItemsAdd(msg gmcp.CharItemsAdd) {
 	if msg.Location != "room" {
 		return
@@ -98,6 +100,7 @@ func (target *Target) FromCharItemsAdd(msg gmcp.CharItemsAdd) {
 	target.retarget()
 }
 
+// FromCharItemsRemove removes an NPC to the room list and retargets.
 func (target *Target) FromCharItemsRemove(msg gmcp.CharItemsRemove) {
 	if msg.Location != "room" {
 		return
@@ -116,12 +119,14 @@ func (target *Target) FromCharItemsRemove(msg gmcp.CharItemsRemove) {
 	target.retarget()
 }
 
+// FromCharStatus updates the current target.
 func (target *Target) FromCharStatus(msg agmcp.CharStatus) {
 	if msg.Target != nil {
 		target.Name = strings.ToLower(*msg.Target)
 	}
 }
 
+// FromIRETargetSet updates the player status of the current target.
 func (target *Target) FromIRETargetSet(msg gmcp.IRETargetSet) {
 	// This message works so inconsistenyly that we can only rely
 	// on it for knowing that non-numbers equalling a player.
@@ -131,9 +136,9 @@ func (target *Target) FromIRETargetSet(msg gmcp.IRETargetSet) {
 	}
 }
 
+// FromIRETargetInfo updates the current NPC-target's health.
 func (target *Target) FromIRETargetInfo(msg gmcp.IRETargetInfo) {
 	if msg.Health > 0 {
-		// @todo hur vet vi när vi ska ta bort vital? timeout bara?
 		target.Health = msg.Health
 	}
 }
