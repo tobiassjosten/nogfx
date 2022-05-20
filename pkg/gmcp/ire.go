@@ -1,6 +1,7 @@
 package gmcp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -12,8 +13,8 @@ var (
 	_ ServerMessage = &IRERiftChange{}
 	_ ServerMessage = &IRERiftList{}
 
-	_ ClientMessage = IRETargetSet("")
-	_ ServerMessage = IRETargetSet("")
+	_ ClientMessage = IRETargetSet{}
+	_ ServerMessage = IRETargetSet{}
 	_ ServerMessage = &IRETargetInfo{}
 )
 
@@ -61,28 +62,23 @@ func (msg IRERiftRequest) String() string {
 
 // IRETargetSet is both a a client- and server-sent GMCP message to either set
 // or verify the setting of the in-game target variable.
-type IRETargetSet string
+type IRETargetSet struct {
+	Target string
+}
 
 // String is the message's string representation.
 func (msg IRETargetSet) String() string {
-	// @todo Consider removing overbearing validation from this layer. If
-	// someone wants to break protocol, maybe let them?
-	if msg == "" {
-		return "IRE.Target.Set"
-	}
-	return strings.TrimSpace(fmt.Sprintf(`IRE.Target.Set "%s"`, string(msg)))
+	return strings.TrimSpace(fmt.Sprintf(`IRE.Target.Set "%s"`, msg.Target))
 }
 
 // Hydrate populates the message with data.
 func (msg IRETargetSet) Hydrate(data []byte) (ServerMessage, error) {
-	var target string
-
-	err := json.Unmarshal(data, &target)
+	err := json.Unmarshal(data, &msg.Target)
 	if err != nil {
 		return nil, err
 	}
 
-	return IRETargetSet(target), nil
+	return msg, nil
 }
 
 // IRETargetInfo is both a a client- and server-sent GMCP message with
@@ -95,6 +91,10 @@ type IRETargetInfo struct {
 
 // Hydrate populates the message with data.
 func (msg IRETargetInfo) Hydrate(data []byte) (ServerMessage, error) {
+	if bytes.Equal(data, []byte(`""`)) {
+		return msg, nil
+	}
+
 	type IRETargetInfoAlias IRETargetInfo
 	var child struct {
 		IRETargetInfoAlias

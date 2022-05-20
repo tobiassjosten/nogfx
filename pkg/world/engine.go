@@ -106,6 +106,9 @@ func (engine *Engine) Run(pctx context.Context) error {
 				}
 			}
 
+			// @todo Send to engine.ui as well, for the player to
+			// see what they have sent (excluding automated commands).
+
 		case command, ok := <-engine.client.Commands():
 			if !ok {
 				continue

@@ -40,7 +40,7 @@ type CharStatus struct {
 	Bank             *int    `json:"bank,string"`
 	UnreadNews       *int    `json:"unread_news,string"`
 	UnreadMessages   *int    `json:"unread_msgs,string"`
-	Target           *int
+	Target           *string `json:"target"`
 }
 
 // Hydrate populates the message with data.
@@ -48,10 +48,9 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 	type CharStatusAlias CharStatus
 	var child struct {
 		CharStatusAlias
-		CCity   *string `json:"city"`
-		CHouse  *string `json:"house"`
-		COrder  *string `json:"order"`
-		CTarget *string `json:"target"`
+		CCity  *string `json:"city"`
+		CHouse *string `json:"house"`
+		COrder *string `json:"order"`
 	}
 
 	err := json.Unmarshal(data, &child)
@@ -73,6 +72,11 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 		)
 	}
 	msg.CharStatus = parentMsg
+
+	// @todo The CharStatus fields are only set when they change (or are
+	// first initiated). So rather than treating "(None)" as a non-value,
+	// it should be considered as "", to communicate that a change happened
+	// and that the new value is empty. Like .Target does it below.
 
 	if child.CCity != nil && *child.CCity != "(None)" {
 		city, rank := splitRank(*child.CCity)
@@ -110,16 +114,13 @@ func (msg CharStatus) Hydrate(data []byte) (gmcp.ServerMessage, error) {
 		msg.OrderRank = rank
 	}
 
-	if child.CTarget != nil && *child.CTarget != "None" {
-		// Yes, sometimes it's a string, sometimes it's an int. Yay!
-		target, err := strconv.Atoi(*child.CTarget)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed parsing target '%s'", *child.CTarget,
-			)
+	if msg.Target != nil {
+		target := strings.TrimSuffix(*msg.Target, " (player)")
+		if target == "None" {
+			msg.Target = gox.NewString("")
+		} else {
+			msg.Target = &target
 		}
-
-		msg.Target = gox.NewInt(target)
 	}
 
 	return msg, nil

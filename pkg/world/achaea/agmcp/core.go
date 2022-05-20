@@ -16,7 +16,8 @@ var (
 // CoreSupports is a list of potentially supported modules.
 type CoreSupports struct {
 	gmcp.CoreSupports
-	IRERift *int
+	IRERift   *int
+	IRETarget *int
 }
 
 // Strings transforms CoreSupports to a list of strings.
@@ -24,6 +25,9 @@ func (msg CoreSupports) Strings() []string {
 	list := msg.CoreSupports.Strings()
 	if msg.IRERift != nil {
 		list = append(list, fmt.Sprintf("IRE.Rift %d", *msg.IRERift))
+	}
+	if msg.IRETarget != nil {
+		list = append(list, fmt.Sprintf("IRE.Target %d", *msg.IRETarget))
 	}
 
 	return list

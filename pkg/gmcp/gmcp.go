@@ -58,8 +58,8 @@ var ServerMessages = map[string]ServerMessage{
 	"IRE.Rift.Change": IRERiftChange{},
 	"IRE.Rift.List":   IRERiftList{},
 
-	"IRE.Target.Set":  IRETargetSet(""),
-	"IRE.Target.Info": &IRETargetInfo{},
+	"IRE.Target.Set":  IRETargetSet{},
+	"IRE.Target.Info": IRETargetInfo{},
 
 	"Room.Info":         RoomInfo{},
 	"Room.Players":      RoomPlayers{},

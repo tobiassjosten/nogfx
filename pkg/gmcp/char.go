@@ -27,7 +27,6 @@ var (
 	_ ServerMessage = &CharItemsList{}
 	_ ServerMessage = &CharItemsRemove{}
 	_ ServerMessage = &CharItemsUpdate{}
-	_ ServerMessage = &CharItemsUpdate{}
 	_ ServerMessage = &CharName{}
 	_ ServerMessage = &CharSkillsGroups{}
 	_ ServerMessage = &CharSkillsInfo{}

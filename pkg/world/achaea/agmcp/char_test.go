@@ -40,12 +40,16 @@ func TestCharServerMessages(t *testing.T) {
 			err:     `failed hydrating agmcp.CharStatus: failed parsing order 'invalid'`,
 		},
 		{
-			command: []byte(`Char.Status { "target": "invalid" }`),
-			err:     `failed hydrating agmcp.CharStatus: failed parsing target 'invalid'`,
+			command: []byte(`Char.Status { "city": "(None)", "house": "(None)", "order": "(None)", "target": "None" }`),
+			message: agmcp.CharStatus{
+				Target: gox.NewString(""),
+			},
 		},
 		{
-			command: []byte(`Char.Status { "city": "(None)", "house": "(None)", "order": "(None)", "target": "None" }`),
-			message: agmcp.CharStatus{},
+			command: []byte(`Char.Status { "target": "Someone (player)" }`),
+			message: agmcp.CharStatus{
+				Target: gox.NewString("Someone"),
+			},
 		},
 		{
 			command: []byte(`Char.Status { "name": "Durak", "fullname": "Mason Durak", "age": "184", "race": "Dwarf", "specialisation": "Brawler", "level": "68 (19%)", "xp": "19%", "xprank": "999", "class": "Monk", "city": "Hashan (1)", "house": "The Somatikos(1)", "order": "Blabla (1)", "boundcredits": "20", "unboundcredits": "1", "lessons": "4073", "explorerrank": "an Itinerant", "mayancrowns": "1", "boundmayancrowns": "2", "gold": "35", "bank": "1590", "unread_news": "3751", "unread_msgs": "1", "target": "123456", "gender": "male" }`),
@@ -78,7 +82,7 @@ func TestCharServerMessages(t *testing.T) {
 				Bank:             gox.NewInt(1590),
 				UnreadNews:       gox.NewInt(3751),
 				UnreadMessages:   gox.NewInt(1),
-				Target:           gox.NewInt(123456),
+				Target:           gox.NewString("123456"),
 			},
 		},
 

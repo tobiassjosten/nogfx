@@ -24,6 +24,7 @@ type RoomDetails struct {
 	Sewer       bool
 	Shop        bool
 	Subdivision bool
+	Wilderness  bool
 }
 
 // UnmarshalJSON hydrates RoomDetails from a list of unstructured strings.
@@ -53,6 +54,9 @@ func (details *RoomDetails) UnmarshalJSON(data []byte) error {
 
 		case "subdivision":
 			details.Subdivision = true
+
+		case "wilderness":
+			details.Wilderness = true
 
 		default:
 			log.Printf("unknown Room.Info detail '%s'", item)

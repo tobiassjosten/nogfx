@@ -27,6 +27,7 @@ type World struct {
 
 	Character *Character
 	Room      *navigation.Room
+	Target    *Target
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
@@ -45,6 +46,7 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 		modules: modules,
 
 		Character: &Character{},
+		Target:    &Target{client: client},
 	}
 }
 
@@ -140,7 +142,8 @@ func (world *World) ProcessCommand(command []byte) error {
 					CommChannel: gox.NewInt(1),
 					Room:        gox.NewInt(1),
 				},
-				IRERift: gox.NewInt(1),
+				IRERift:   gox.NewInt(1),
+				IRETarget: gox.NewInt(1),
 			},
 		})
 		if err != nil {
@@ -165,6 +168,15 @@ func (world *World) ProcessGMCP(data []byte) error {
 	}
 
 	switch msg := message.(type) {
+	case gmcp.CharItemsList:
+		world.Target.FromCharItemsList(msg)
+
+	case gmcp.CharItemsAdd:
+		world.Target.FromCharItemsAdd(msg)
+
+	case gmcp.CharItemsRemove:
+		world.Target.FromCharItemsRemove(msg)
+
 	case gmcp.CharName:
 		world.Character.FromCharName(msg)
 
@@ -182,6 +194,7 @@ func (world *World) ProcessGMCP(data []byte) error {
 
 	case agmcp.CharStatus:
 		world.Character.FromCharStatus(msg)
+		world.Target.FromCharStatus(msg)
 
 	case agmcp.CharVitals:
 		world.Character.FromCharVitals(msg)
@@ -190,6 +203,8 @@ func (world *World) ProcessGMCP(data []byte) error {
 		}
 
 	case gmcp.RoomInfo:
+		world.Target.FromRoomInfo(msg)
+
 		if world.Room != nil {
 			world.Room.HasPlayer = false
 		}
@@ -200,6 +215,12 @@ func (world *World) ProcessGMCP(data []byte) error {
 
 		// @todo Implement this to download the official map.
 		// case gmcp.ClientMap:
+
+	case gmcp.IRETargetSet:
+		world.Target.FromIRETargetSet(msg)
+
+	case gmcp.IRETargetInfo:
+		world.Target.FromIRETargetInfo(msg)
 	}
 
 	return nil
