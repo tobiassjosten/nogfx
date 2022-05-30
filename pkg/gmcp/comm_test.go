@@ -1,7 +1,7 @@
 package gmcp_test
 
 import (
-	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -10,147 +10,205 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCommClientMessages(t *testing.T) {
-	tcs := []struct {
-		message gmcp.ClientMessage
-		output  string
+func TestCommMessages(t *testing.T) {
+	tcs := map[string]struct {
+		msg         gmcp.Message
+		data        string
+		unmarshaled gmcp.Message
+		marshaled   string
+		err         string
 	}{
-		{
-			message: gmcp.CommChannelEnable("newbie"),
-			output:  `Comm.Channel.Enable "newbie"`,
-		},
-		{
-			message: gmcp.CommChannelPlayers{},
-			output:  "Comm.Channel.Players",
-		},
-	}
-
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
-			assert.Equal(tc.output, tc.message.String())
-		})
-	}
-}
-
-func TestCommServerMessages(t *testing.T) {
-	tcs := []struct {
-		command []byte
-		message gmcp.ServerMessage
-		err     string
-	}{
-		{
-			command: []byte("Comm.Channel.End"),
-			err:     "failed hydrating gmcp.CommChannelEnd: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Comm.Channel.End "tell Jeremy"`),
-			message: gmcp.CommChannelEnd("tell Jeremy"),
+		"Comm.Channel.Enable empty": {
+			msg:         &gmcp.CommChannelEnable{},
+			data:        `Comm.Channel.Enable ""`,
+			unmarshaled: &gmcp.CommChannelEnable{},
+			marshaled:   `Comm.Channel.Enable ""`,
 		},
 
-		{
-			command: []byte(`Comm.Channel.List`),
-			err:     "failed hydrating gmcp.CommChannelList: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Comm.Channel.List [}`),
-			err:     `failed hydrating gmcp.CommChannelList: invalid character '}' looking for beginning of value`,
-		},
-		{
-			command: []byte(`Comm.Channel.List ["asdf"]`),
-			err:     `failed hydrating gmcp.CommChannelList: json: cannot unmarshal string into Go value of type gmcp.CommChannel`,
-		},
-		{
-			command: []byte(`Comm.Channel.List [{"name":"ct", "caption":"Some city", "command":"ct"}]`),
-			message: gmcp.CommChannelList{gmcp.CommChannel{
-				Name:    "ct",
-				Caption: "Some city",
-				Command: "ct",
-			}},
+		"Comm.Channel.Enable hydrated": {
+			msg:  &gmcp.CommChannelEnable{},
+			data: `Comm.Channel.Enable "asdf"`,
+			unmarshaled: &gmcp.CommChannelEnable{
+				Channel: "asdf",
+			},
+			marshaled: `Comm.Channel.Enable "asdf"`,
 		},
 
-		{
-			command: []byte("Comm.Channel.Players"),
-			err:     "failed hydrating gmcp.CommChannelPlayers: unexpected end of JSON input",
+		"Comm.Channel.Enable invalid JSON": {
+			msg:  &gmcp.CommChannelEnable{},
+			data: `Comm.Channel.Enable asdf`,
+			err:  "invalid character 'a' looking for beginning of value",
 		},
-		{
-			command: []byte(`Comm.Channel.Players [}`),
-			err:     `failed hydrating gmcp.CommChannelPlayers: invalid character '}' looking for beginning of value`,
+
+		"Comm.Channel.End empty": {
+			msg:         &gmcp.CommChannelEnd{},
+			data:        `Comm.Channel.End ""`,
+			unmarshaled: &gmcp.CommChannelEnd{},
+			marshaled:   `Comm.Channel.End ""`,
 		},
-		{
-			command: []byte(`Comm.Channel.Players ["asdf"]`),
-			err:     `failed hydrating gmcp.CommChannelPlayers: json: cannot unmarshal string into Go value of type gmcp.CommChannelPlayer`,
+
+		"Comm.Channel.End hydrated": {
+			msg:  &gmcp.CommChannelEnd{},
+			data: `Comm.Channel.End "asdf"`,
+			unmarshaled: &gmcp.CommChannelEnd{
+				Channel: "asdf",
+			},
+			marshaled: `Comm.Channel.End "asdf"`,
 		},
-		{
-			command: []byte(`Comm.Channel.Players [{"name": "Player1", "channels": ["Some city", "Some guild"]}, {"name": "Player2"}]`),
-			message: gmcp.CommChannelPlayers{
-				gmcp.CommChannelPlayer{
-					Name:     "Player1",
-					Channels: []string{"Some city", "Some guild"},
+
+		"Comm.Channel.End invalid JSON": {
+			msg:  &gmcp.CommChannelEnd{},
+			data: `Comm.Channel.End asdf`,
+			err:  "invalid character 'a' looking for beginning of value",
+		},
+
+		"Comm.Channel.List empty": {
+			msg:         &gmcp.CommChannelList{},
+			data:        "Comm.Channel.List []",
+			unmarshaled: &gmcp.CommChannelList{},
+			marshaled:   "Comm.Channel.List []",
+		},
+
+		"Comm.Channel.List hydrated": {
+			msg: &gmcp.CommChannelList{},
+			data: makeGMCP("Comm.Channel.List", []map[string]interface{}{
+				{
+					"name":    "ct",
+					"caption": "Some city",
+					"command": "ct",
 				},
-				gmcp.CommChannelPlayer{
-					Name: "Player2",
+			}),
+			unmarshaled: &gmcp.CommChannelList{
+				{
+					Name:    "ct",
+					Caption: "Some city",
+					Command: "ct",
 				},
 			},
+			marshaled: makeGMCP("Comm.Channel.List", []map[string]interface{}{
+				{
+					"name":    "ct",
+					"caption": "Some city",
+					"command": "ct",
+				},
+			}),
 		},
 
-		{
-			command: []byte("Comm.Channel.Text"),
-			err:     "failed hydrating gmcp.CommChannelText: unexpected end of JSON input",
+		"Comm.Channel.Players empty": {
+			msg:         &gmcp.CommChannelPlayers{},
+			data:        "Comm.Channel.Players []",
+			unmarshaled: &gmcp.CommChannelPlayers{},
+			marshaled:   "Comm.Channel.Players []",
 		},
-		{
-			command: []byte(`Comm.Channel.Text [}`),
-			err:     `failed hydrating gmcp.CommChannelText: invalid character '}' looking for beginning of value`,
-		},
-		{
-			command: []byte(`Comm.Channel.Text []`),
-			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal array into Go value of type gmcp.CommChannelText`,
-		},
-		{
-			command: []byte(`Comm.Channel.Text ""`),
-			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal string into Go value of type gmcp.CommChannelText`,
-		},
-		{
-			command: []byte(`Comm.Channel.Text 1234`),
-			err:     `failed hydrating gmcp.CommChannelText: json: cannot unmarshal number into Go value of type gmcp.CommChannelText`,
-		},
-		{
-			command: []byte(`Comm.Channel.Text { "channel": "newbie", "talker": "Olad", "text": "\u001b[0;1;32m(Newbie): You say, \"Hello.\"\u001b[0;37m" }`),
-			message: gmcp.CommChannelText{
-				Channel: "newbie",
-				Talker:  "Olad",
-				Text:    "\u001b[0;1;32m(Newbie): You say, \"Hello.\"\u001b[0;37m",
+
+		"Comm.Channel.Players hydrated": {
+			msg: &gmcp.CommChannelPlayers{},
+			data: makeGMCP("Comm.Channel.Players", []map[string]interface{}{
+				{
+					"name":     "Durak",
+					"channels": []string{"Some city"},
+				},
+			}),
+			unmarshaled: &gmcp.CommChannelPlayers{
+				{
+					Name:     "Durak",
+					Channels: []string{"Some city"},
+				},
 			},
+			marshaled: makeGMCP("Comm.Channel.Players", []map[string]interface{}{
+				{
+					"name":     "Durak",
+					"channels": []string{"Some city"},
+				},
+			}),
 		},
 
-		{
-			command: []byte("Comm.Channel.Start"),
-			err:     "failed hydrating gmcp.CommChannelStart: unexpected end of JSON input",
+		"Comm.Channel.Start empty": {
+			msg:         &gmcp.CommChannelStart{},
+			data:        `Comm.Channel.Start ""`,
+			unmarshaled: &gmcp.CommChannelStart{},
+			marshaled:   `Comm.Channel.Start ""`,
 		},
-		{
-			command: []byte(`Comm.Channel.Start "ct"`),
-			message: gmcp.CommChannelStart("ct"),
+
+		"Comm.Channel.Start hydrated": {
+			msg:  &gmcp.CommChannelStart{},
+			data: `Comm.Channel.Start "asdf"`,
+			unmarshaled: &gmcp.CommChannelStart{
+				Channel: "asdf",
+			},
+			marshaled: `Comm.Channel.Start "asdf"`,
+		},
+
+		"Comm.Channel.Start invalid JSON": {
+			msg:  &gmcp.CommChannelStart{},
+			data: `Comm.Channel.Start asdf`,
+			err:  "invalid character 'a' looking for beginning of value",
+		},
+
+		"Comm.Channel.Text empty": {
+			msg:         &gmcp.CommChannelText{},
+			data:        `Comm.Channel.Text {}`,
+			unmarshaled: &gmcp.CommChannelText{},
+			marshaled: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+				"channel": "",
+				"talker":  "",
+				"text":    "",
+			}),
+		},
+
+		"Comm.Channel.Text hydrated": {
+			msg: &gmcp.CommChannelText{},
+			data: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+				"channel": "ct",
+				"talker":  "Durak",
+				"text":    `(Somecity): Durak says, "Yo!"`,
+			}),
+			unmarshaled: &gmcp.CommChannelText{
+				Channel: "ct",
+				Talker:  "Durak",
+				Text:    `(Somecity): Durak says, "Yo!"`,
+			},
+			marshaled: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+				"channel": "ct",
+				"talker":  "Durak",
+				"text":    `(Somecity): Durak says, "Yo!"`,
+			}),
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-			require := require.New(t)
-
-			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			err := tc.msg.Unmarshal([]byte(tc.data))
 
 			if tc.err != "" {
-				require.NotNil(err, fmt.Sprintf(
-					"wanted: %s", tc.err,
-				))
-				assert.Equal(tc.err, err.Error())
+				require.NotNil(t, err)
+				assert.Equal(t, tc.err, err.Error())
+				return
+			} else if err != nil {
+				require.Equal(t, "", err.Error())
+			}
+
+			require.Equal(t, tc.unmarshaled, tc.msg, "unmarshaling hydrates message")
+
+			if tc.marshaled == "" {
 				return
 			}
 
-			require.Nil(err)
-			assert.Equal(tc.message, message)
+			marshaled := tc.msg.Marshal()
+			data := strings.TrimSpace(strings.TrimPrefix(marshaled, tc.msg.ID()))
+			tcdata := strings.TrimSpace(strings.TrimPrefix(tc.marshaled, tc.msg.ID()))
+
+			assert.NotEqual(t, marshaled, data, "marshaled data has ID prefix")
+			assert.NotEqual(t, tc.marshaled, tcdata, "marshaled data has ID prefix")
+
+			if tcdata == "" {
+				assert.Equal(t, tcdata, data)
+				return
+			}
+
+			assert.JSONEq(t, tcdata, data, "marshaling maintains data integrity")
+
+			require.Equal(t, tc.unmarshaled, tc.msg, "marshaling doesn't mutate")
 		})
 	}
 }

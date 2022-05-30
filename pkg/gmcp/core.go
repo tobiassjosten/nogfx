@@ -1,29 +1,27 @@
 package gmcp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
 
-var (
-	_ ClientMessage = &CoreHello{}
-	_ ClientMessage = &CoreKeepAlive{}
-	_ ClientMessage = &CorePing{}
-	_ ClientMessage = &CoreSupportsAdd{}
-	_ ClientMessage = &CoreSupportsRemove{}
-	_ ClientMessage = &CoreSupportsSet{}
-
-	_ ServerMessage = &CoreGoodbye{}
-	_ ServerMessage = &CorePing{}
-)
-
 // CoreGoodbye is a server-sent GMCP message finishing a game session.
-type CoreGoodbye struct {
+type CoreGoodbye struct{}
+
+// ID is the prefix before the message's data.
+func (msg *CoreGoodbye) ID() string {
+	return "Core.Goodbye"
 }
 
-// Hydrate populates the message with data.
-func (msg CoreGoodbye) Hydrate(_ []byte) (ServerMessage, error) {
-	return msg, nil
+// Marshal converts the message to a string.
+func (msg *CoreGoodbye) Marshal() string {
+	return msg.ID()
+}
+
+// Unmarshal populates the message with data.
+func (msg *CoreGoodbye) Unmarshal(_ []byte) error {
+	return nil
 }
 
 // CoreHello is a client-sent GMCP message used to identify the client. It has
@@ -33,19 +31,37 @@ type CoreHello struct {
 	Version string `json:"version"`
 }
 
-// String is the message's string representation.
-func (msg CoreHello) String() string {
-	data, _ := json.Marshal(msg)
-	return fmt.Sprintf("Core.Hello %s", data)
+// ID is the prefix before the message's data.
+func (msg *CoreHello) ID() string {
+	return "Core.Hello"
+}
+
+// Marshal converts the message to a string.
+func (msg *CoreHello) Marshal() string {
+	return Marshal(msg)
+}
+
+// Unmarshal populates the message with data.
+func (msg *CoreHello) Unmarshal(data []byte) error {
+	return Unmarshal(data, msg)
 }
 
 // CoreKeepAlive is a client-sent GMCP message resetting the timeout counter.
-type CoreKeepAlive struct {
+type CoreKeepAlive struct{}
+
+// ID is the prefix before the message's data.
+func (msg *CoreKeepAlive) ID() string {
+	return "Core.KeepAlive"
 }
 
-// String is the message's string representation.
-func (msg CoreKeepAlive) String() string {
-	return "Core.KeepAlive"
+// Marshal converts the message to a string.
+func (msg *CoreKeepAlive) Marshal() string {
+	return msg.ID()
+}
+
+// Unmarshal populates the message with data.
+func (msg *CoreKeepAlive) Unmarshal(_ []byte) error {
+	return nil
 }
 
 // CorePing is a client- and server-sent GMCP message measuring latency.
@@ -53,82 +69,31 @@ type CorePing struct {
 	Latency *int
 }
 
-// Hydrate populates the message with data.
-func (msg CorePing) Hydrate(_ []byte) (ServerMessage, error) {
-	return msg, nil
-}
-
-// String is the message's string representation.
-func (msg CorePing) String() string {
-	if msg.Latency != nil {
-		return fmt.Sprintf("Core.Ping %d", *msg.Latency)
-	}
+// ID is the prefix before the message's data.
+func (msg *CorePing) ID() string {
 	return "Core.Ping"
 }
 
-// CoreSupports is a list of potentially supported modules.
-type CoreSupports struct {
-	Char        *int
-	CharSkills  *int
-	CharItems   *int
-	CommChannel *int
-	Room        *int
+// Marshal converts the message to a string.
+func (msg *CorePing) Marshal() string {
+	if msg.Latency != nil {
+		return fmt.Sprintf("%s %d", msg.ID(), *msg.Latency)
+	}
+	return msg.ID()
 }
 
-// Strings transforms CoreSupports to a list of strings.
-func (msg CoreSupports) Strings() []string {
-	list := []string{}
-	if msg.Char != nil {
-		list = append(list, fmt.Sprintf("Char %d", *msg.Char))
-	}
-	if msg.CharSkills != nil {
-		list = append(list, fmt.Sprintf("Char.Skills %d", *msg.CharSkills))
-	}
-	if msg.CharItems != nil {
-		list = append(list, fmt.Sprintf("Char.Items %d", *msg.CharItems))
-	}
-	if msg.CommChannel != nil {
-		list = append(list, fmt.Sprintf("Comm.Channel %d", *msg.CommChannel))
-	}
-	if msg.Room != nil {
-		list = append(list, fmt.Sprintf("Room %d", *msg.Room))
+// Unmarshal populates the message with data.
+func (msg *CorePing) Unmarshal(data []byte) error {
+	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
+
+	if len(data) == 0 {
+		return nil
 	}
 
-	return list
-}
+	err := json.Unmarshal(data, &msg.Latency)
+	if err != nil {
+		return err
+	}
 
-// String is the message's string representation.
-func (msg CoreSupports) String() string {
-	data, _ := json.Marshal(msg.Strings())
-	return string(data)
-}
-
-// CoreSupportsSet is a client-sent GMCP message containing supported modules.
-type CoreSupportsSet struct {
-	CoreSupports
-}
-
-// String is the message's string representation.
-func (msg CoreSupportsSet) String() string {
-	return fmt.Sprintf("Core.Supports.Set %s", msg.CoreSupports)
-}
-
-// CoreSupportsAdd is a client-sent GMCP message adding supported modules.
-type CoreSupportsAdd struct {
-	CoreSupports
-}
-
-// String is the message's string representation.
-func (msg CoreSupportsAdd) String() string {
-	return fmt.Sprintf("Core.Supports.Add %s", msg.CoreSupports)
-}
-
-// CoreSupportsRemove is a client-sent GMCP message removing supported modules.
-type CoreSupportsRemove struct {
-	CoreSupports
-}
-
-// String is the message's string representation.
-func (msg CoreSupportsRemove) String() string {
-	return fmt.Sprintf("Core.Supports.Remove %s", msg.CoreSupports)
+	return nil
 }

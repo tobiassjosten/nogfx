@@ -2,6 +2,7 @@ package gmcp
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,87 +10,78 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
-// ClientMessage is a GMCP message sent from the client.
-type ClientMessage interface {
-	String() string
+// Message is a GMCP data object.
+type Message interface {
+	ID() string
+	Marshal() string
+	Unmarshal([]byte) error
 }
 
-// ServerMessage is a GMCP message sent from the server.
-type ServerMessage interface {
-	Hydrate([]byte) (ServerMessage, error)
+func msger(msg Message) func() Message {
+	return func() Message { return msg }
 }
 
-// ServerMessages maps GMCP messages to associated structs.
-// @todo Consider turning all messages into structs, for consistency.
-var ServerMessages = map[string]ServerMessage{
-	"Comm.Channel.End":     CommChannelEnd(""),
-	"Comm.Channel.List":    CommChannelList{},
-	"Comm.Channel.Players": CommChannelPlayers{},
-	"Comm.Channel.Start":   CommChannelStart(""),
-	"Comm.Channel.Text":    CommChannelText{},
+var messages = map[string]func() Message{
+	(&CharLogin{}).ID():      msger(&CharLogin{}),
+	(&CharName{}).ID():       msger(&CharName{}),
+	(&CharStatus{}).ID():     msger(&CharStatus{}),
+	(&CharStatusVars{}).ID(): msger(&CharStatusVars{}),
+	(&CharVitals{}).ID():     msger(&CharVitals{}),
 
-	"Char.Afflictions.Add":    CharAfflictionsAdd{},
-	"Char.Afflictions.List":   CharAfflictionsList{},
-	"Char.Afflictions.Remove": CharAfflictionsRemove{},
+	(&CharAfflictionsList{}).ID():   msger(&CharAfflictionsList{}),
+	(&CharAfflictionsAdd{}).ID():    msger(&CharAfflictionsAdd{}),
+	(&CharAfflictionsRemove{}).ID(): msger(&CharAfflictionsRemove{}),
 
-	"Char.Defences.Add":    CharDefencesAdd{},
-	"Char.Defences.List":   CharDefencesList{},
-	"Char.Defences.Remove": CharDefencesRemove{},
+	(&CharDefencesList{}).ID():   msger(&CharDefencesList{}),
+	(&CharDefencesAdd{}).ID():    msger(&CharDefencesAdd{}),
+	(&CharDefencesRemove{}).ID(): msger(&CharDefencesRemove{}),
 
-	"Char.Items.Add":    CharItemsAdd{},
-	"Char.Items.List":   CharItemsList{},
-	"Char.Items.Remove": CharItemsRemove{},
-	"Char.Items.Update": CharItemsUpdate{},
+	(&CharItemsContents{}).ID(): msger(&CharItemsContents{}),
+	(&CharItemsInv{}).ID():      msger(&CharItemsInv{}),
+	(&CharItemsRoom{}).ID():     msger(&CharItemsRoom{}),
+	(&CharItemsList{}).ID():     msger(&CharItemsList{}),
+	(&CharItemsAdd{}).ID():      msger(&CharItemsAdd{}),
+	(&CharItemsRemove{}).ID():   msger(&CharItemsRemove{}),
+	(&CharItemsUpdate{}).ID():   msger(&CharItemsUpdate{}),
 
-	"Char.Name": CharName{},
+	(&CharSkillsGet{}).ID():    msger(&CharSkillsGet{}),
+	(&CharSkillsGroups{}).ID(): msger(&CharSkillsGroups{}),
+	(&CharSkillsInfo{}).ID():   msger(&CharSkillsInfo{}),
+	(&CharSkillsList{}).ID():   msger(&CharSkillsList{}),
 
-	"Char.Skills.Groups": CharSkillsGroups{},
-	"Char.Skills.Info":   CharSkillsInfo{},
-	"Char.Skills.List":   CharSkillsList{},
+	(&CommChannelEnable{}).ID():  msger(&CommChannelEnable{}),
+	(&CommChannelEnd{}).ID():     msger(&CommChannelEnd{}),
+	(&CommChannelList{}).ID():    msger(&CommChannelList{}),
+	(&CommChannelPlayers{}).ID(): msger(&CommChannelPlayers{}),
+	(&CommChannelStart{}).ID():   msger(&CommChannelStart{}),
+	(&CommChannelText{}).ID():    msger(&CommChannelText{}),
 
-	"Char.Status":     CharStatus{},
-	"Char.StatusVars": CharStatusVars{},
+	(&CoreGoodbye{}).ID():        msger(&CoreGoodbye{}),
+	(&CoreHello{}).ID():          msger(&CoreHello{}),
+	(&CoreKeepAlive{}).ID():      msger(&CoreKeepAlive{}),
+	(&CorePing{}).ID():           msger(&CorePing{}),
+	(&CoreSupportsSet{}).ID():    msger(&CoreSupportsSet{}),
+	(&CoreSupportsAdd{}).ID():    msger(&CoreSupportsAdd{}),
+	(&CoreSupportsRemove{}).ID(): msger(&CoreSupportsRemove{}),
 
-	"Char.Vitals": CharVitals{},
-
-	"Core.Goodbye": CoreGoodbye{},
-	"Core.Ping":    CorePing{},
-
-	"IRE.Rift.Change": IRERiftChange{},
-	"IRE.Rift.List":   IRERiftList{},
-
-	"IRE.Target.Set":  IRETargetSet{},
-	"IRE.Target.Info": IRETargetInfo{},
-
-	"Room.Info":         RoomInfo{},
-	"Room.Players":      RoomPlayers{},
-	"Room.AddPlayer":    RoomAddPlayer{},
-	"Room.RemovePlayer": RoomRemovePlayer{},
-	"Room.WrongDir":     RoomWrongDir(""),
+	(&RoomInfo{}).ID():         msger(&RoomInfo{}),
+	(&RoomPlayers{}).ID():      msger(&RoomPlayers{}),
+	(&RoomAddPlayer{}).ID():    msger(&RoomAddPlayer{}),
+	(&RoomRemovePlayer{}).ID(): msger(&RoomRemovePlayer{}),
+	(&RoomWrongDir{}).ID():     msger(&RoomWrongDir{}),
 }
 
 // Parse converts a byte slice into a GMCP message.
-func Parse(command []byte, messages map[string]ServerMessage) (ServerMessage, error) {
-	parts := bytes.SplitN(command, []byte{' '}, 2)
+func Parse(data []byte) (Message, error) {
+	parts := strings.SplitN(string(data), " ", 2)
 
-	message, ok := messages[string(parts[0])]
-	if !ok {
-		if _, ok := ServerMessages[string(parts[0])]; ok {
-			return Parse(command, ServerMessages)
-		}
+	if _, ok := messages[parts[0]]; !ok {
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
+	msg := messages[parts[0]]()
 
-	// Some messages don't have a message body but we want each message to
-	// be responsible for its own hydration and validation. So we mock
-	// missing bodies and proceed with hydration as normal.
-	if len(parts) == 1 {
-		parts = append(parts, []byte{})
-	}
-
-	msg, err := message.Hydrate(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("failed hydrating %T: %w", message, err)
+	if err := msg.Unmarshal(data); err != nil {
+		return nil, fmt.Errorf("couldn't unmarshal %T: %w", msg, err)
 	}
 
 	return msg, nil
@@ -101,34 +93,67 @@ var (
 )
 
 // Wrap embeds a GMCP message in a telnet negotiation sequence.
-func Wrap(gmcp []byte) []byte {
-	return append(append(gmcpPrefix, gmcp...), gmcpSuffix...)
+func Wrap(data []byte) []byte {
+	return append(append(gmcpPrefix, data...), gmcpSuffix...)
 }
 
 // Unwrap removes telnet control codes from a GMCP message. Returns nil if the
 // command actually isn't a GMCP message.
-func Unwrap(command []byte) []byte {
-	if !bytes.HasPrefix(command, gmcpPrefix) {
+func Unwrap(data []byte) []byte {
+	if !bytes.HasPrefix(data, gmcpPrefix) {
 		return nil
 	}
-	if !bytes.HasSuffix(command, gmcpSuffix) {
+	if !bytes.HasSuffix(data, gmcpSuffix) {
 		return nil
 	}
 
-	return command[len(gmcpPrefix) : len(command)-len(gmcpSuffix)]
+	return data[len(gmcpPrefix) : len(data)-len(gmcpSuffix)]
 }
 
-func splitRank(str string) (string, *int) {
-	parts := strings.SplitN(str, "(", 2)
-	name := strings.Trim(parts[0], " ")
+func Marshal(msg Message) string {
+	data, _ := json.Marshal(msg)
+	return fmt.Sprintf("%s %s", msg.ID(), string(data))
+}
 
-	var rank *int
-	if len(parts) > 1 {
-		r, err := strconv.Atoi(strings.Trim(parts[1], "%)"))
-		if err == nil {
-			rank = &r
-		}
+func Unmarshal(data []byte, msg Message) error {
+	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
+
+	err := json.Unmarshal(data, msg)
+	if err != nil {
+		return err
 	}
 
-	return name, rank
+	return nil
+}
+
+func SplitRank(str string) (string, string) {
+	parts := strings.SplitN(str, "(", 2)
+
+	if len(parts) == 1 {
+		return str, ""
+	}
+
+	return strings.TrimSpace(parts[0]), strings.Trim(parts[1], " (%)")
+}
+
+func SplitRankInt(str string) (string, int) {
+	str, strRank := SplitRank(str)
+
+	rank, err := strconv.Atoi(strRank)
+	if err != nil {
+		return "", 0
+	}
+
+	return str, rank
+}
+
+func SplitRankFloat(str string) (string, float64) {
+	str, strRank := SplitRank(str)
+
+	rank, err := strconv.ParseFloat(strRank, 64)
+	if err != nil {
+		return "", 0
+	}
+
+	return str, rank
 }
