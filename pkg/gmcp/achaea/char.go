@@ -13,9 +13,9 @@ import (
 	"github.com/icza/gox/gox"
 )
 
-// CharStatus is a server-sent GMCP message containing character values. The
-// initial message sent contains all values but subsequent messages only carry
-// changes, with omitted properties assumed unchanged.
+// CharStatus is a GMCP message containing character values. The initial
+// message sent contains all values but subsequent messages only carry changes,
+// with omitted properties assumed unchanged.
 type CharStatus struct {
 	Age              *int     `json:"age,string,omitempty"`
 	Bank             *int     `json:"bank,string,omitempty"`
@@ -192,7 +192,7 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 	return nil
 }
 
-// CharVitals is a server-sent GMCP message containing character attributes.
+// CharVitals is a GMCP message containing character attributes.
 type CharVitals struct {
 	HP    int `json:"hp,string"`
 	MaxHP int `json:"maxhp,string"`
@@ -300,26 +300,26 @@ type CharVitalsStats struct {
 }
 
 // MarshalJSON transforms the struct to JSON.
-func (as *CharVitalsStats) MarshalJSON() ([]byte, error) {
+func (stats *CharVitalsStats) MarshalJSON() ([]byte, error) {
 	list := []string{
-		fmt.Sprintf("Bleed: %d", as.Bleed),
-		fmt.Sprintf("Rage: %d", as.Rage),
+		fmt.Sprintf("Bleed: %d", stats.Bleed),
+		fmt.Sprintf("Rage: %d", stats.Rage),
 	}
 
-	if as.Ferocity != nil {
-		list = append(list, fmt.Sprintf("Ferocity: %d", *as.Ferocity))
+	if stats.Ferocity != nil {
+		list = append(list, fmt.Sprintf("Ferocity: %d", *stats.Ferocity))
 	}
-	if as.Kai != nil {
-		list = append(list, fmt.Sprintf("Kai: %d%%", *as.Kai))
+	if stats.Kai != nil {
+		list = append(list, fmt.Sprintf("Kai: %d%%", *stats.Kai))
 	}
-	if as.Karma != nil {
-		list = append(list, fmt.Sprintf("Karma: %d%%", *as.Karma))
+	if stats.Karma != nil {
+		list = append(list, fmt.Sprintf("Karma: %d%%", *stats.Karma))
 	}
-	if as.Spec != nil {
-		list = append(list, fmt.Sprintf("Spec: %s", *as.Spec))
+	if stats.Spec != nil {
+		list = append(list, fmt.Sprintf("Spec: %s", *stats.Spec))
 	}
-	if as.Stance != nil {
-		list = append(list, fmt.Sprintf("Stance: %s", *as.Stance))
+	if stats.Stance != nil {
+		list = append(list, fmt.Sprintf("Stance: %s", *stats.Stance))
 	}
 
 	return json.Marshal(list)

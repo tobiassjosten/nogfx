@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// CoreGoodbye is a server-sent GMCP message finishing a game session.
+// CoreGoodbye is a GMCP message finishing a game session.
 type CoreGoodbye struct{}
 
 // ID is the prefix before the message's data.
@@ -24,8 +24,8 @@ func (msg *CoreGoodbye) Unmarshal(_ []byte) error {
 	return nil
 }
 
-// CoreHello is a client-sent GMCP message used to identify the client. It has
-// to be the first message sent.
+// CoreHello is a GMCP message used to identify the client. It has to be the
+// first message sent.
 type CoreHello struct {
 	Client  string `json:"client"`
 	Version string `json:"version"`
@@ -46,7 +46,7 @@ func (msg *CoreHello) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CoreKeepAlive is a client-sent GMCP message resetting the timeout counter.
+// CoreKeepAlive is a GMCP message resetting the timeout counter.
 type CoreKeepAlive struct{}
 
 // ID is the prefix before the message's data.
@@ -64,7 +64,7 @@ func (msg *CoreKeepAlive) Unmarshal(_ []byte) error {
 	return nil
 }
 
-// CorePing is a client- and server-sent GMCP message measuring latency.
+// CorePing is a GMCP message measuring latency.
 type CorePing struct {
 	Latency *int
 }

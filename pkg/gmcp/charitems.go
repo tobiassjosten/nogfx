@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-// CharItemsContents is a client-sent GMCP message to request a list of items
-// located inside another item.
+// CharItemsContents is a GMCP message to request a list of items located
+// inside another item.
 type CharItemsContents struct {
 	Container int
 }
@@ -36,8 +36,8 @@ func (msg *CharItemsContents) Unmarshal(data []byte) error {
 	return nil
 }
 
-// CharItemsInv is a client-sent GMCP message to request a list of items in the
-// player's inventory.
+// CharItemsInv is a GMCP message to request a list of items in the player's
+// inventory.
 type CharItemsInv struct{}
 
 // ID is the prefix before the message's data.
@@ -55,8 +55,8 @@ func (msg *CharItemsInv) Unmarshal(_ []byte) error {
 	return nil
 }
 
-// CharItemsRoom is a client-sent GMCP message to request an updated list of
-// items in the current room.
+// CharItemsRoom is a GMCP message to request an updated list of items in the
+// current room.
 type CharItemsRoom struct{}
 
 // ID is the prefix before the message's data.
@@ -210,8 +210,7 @@ func (as *CharItemAttributes) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// CharItemsList is a server-sent GMCP message listing items at the specified
-// location.
+// CharItemsList is a GMCP message listing items at the specified location.
 type CharItemsList struct {
 	Location string     `json:"location"`
 	Items    []CharItem `json:"items"`
@@ -244,8 +243,8 @@ func (msg *CharItemsList) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharItemsAdd is a server-sent GMCP message informing the client about an
-// item being added to the specified location.
+// CharItemsAdd is a GMCP message detailing an item being added to the
+// specified location.
 type CharItemsAdd struct {
 	Location string   `json:"location"`
 	Item     CharItem `json:"item"`
@@ -266,8 +265,8 @@ func (msg *CharItemsAdd) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharItemsRemove is a server-sent GMCP message informing the client about an
-// item being removed from the specified location.
+// CharItemsRemove is a GMCP message detailing an item being removed from the
+// specified location.
 type CharItemsRemove struct {
 	Location string   `json:"location"`
 	Item     CharItem `json:"item"`
@@ -288,8 +287,8 @@ func (msg *CharItemsRemove) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharItemsUpdate is a server-sent GMCP message informing the client about an
-// item being removed from the specified location.
+// CharItemsUpdate is a GMCP message detailing an item being removed from the
+// specified location.
 type CharItemsUpdate struct {
 	Location string   `json:"location"`
 	Item     CharItem `json:"item"`

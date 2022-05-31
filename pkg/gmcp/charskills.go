@@ -10,9 +10,7 @@ import (
 	"github.com/icza/gox/gox"
 )
 
-// @todo fixa doc comments "server-sent GMCP message…"
-
-// CharSkillsGet is a client-sent GMCP message to request skill information.
+// CharSkillsGet is a GMCP message to request skill information.
 type CharSkillsGet struct {
 	Group string `json:"group,omitempty"`
 	Name  string `json:"name,omitempty"`
@@ -41,15 +39,15 @@ func (msg *CharSkillsGet) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-type CharSkillsGroup struct {
+type charSkillsGroup struct {
 	Name     string `json:"name"`
 	Rank     string `json:"rank"`
 	Progress *int   `json:"-"`
 }
 
-// CharSkillsGroups is a server-sent GMCP message listing groups of skills
-// available to the character.
-type CharSkillsGroups []CharSkillsGroup
+// CharSkillsGroups is a GMCP message listing groups of skills available to
+// the character.
+type CharSkillsGroups []charSkillsGroup
 
 // ID is the prefix before the message's data.
 func (msg *CharSkillsGroups) ID() string {
@@ -59,7 +57,7 @@ func (msg *CharSkillsGroups) ID() string {
 // Marshal converts the message to a string.
 func (msg *CharSkillsGroups) Marshal() string {
 	type Proxy struct {
-		CharSkillsGroup
+		charSkillsGroup
 		Rank string `json:"rank"`
 	}
 
@@ -110,8 +108,8 @@ func (msg *CharSkillsGroups) Unmarshal(data []byte) error {
 	return nil
 }
 
-// CharSkillsList is a server-sent GMCP message listing skills within a group
-// available to the character.
+// CharSkillsList is a GMCP message listing skills within a group available to
+// the character.
 type CharSkillsList struct {
 	Group        string   `json:"group"`
 	List         []string `json:"list"`
@@ -146,8 +144,7 @@ func (msg *CharSkillsList) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharSkillsInfo is a server-sent GMCP message detailing information about a
-// single skill.
+// CharSkillsInfo is a GMCP message detailing information about a single skill.
 type CharSkillsInfo struct {
 	Group string `json:"group"`
 	Skill string `json:"skill"`

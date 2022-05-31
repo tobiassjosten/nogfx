@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// RoomInfo is a server-sent GMCP message containing information about the
-// room that the player is in.
+// RoomInfo is a GMCP message containing information about the room that the
+// player is in.
 type RoomInfo struct {
 	Number      int            `json:"num"`
 	Name        string         `json:"name"`
@@ -24,6 +24,7 @@ type RoomInfo struct {
 	Details     []string       `json:"details"`
 }
 
+// HasDetail checks whether the RoomInfo contains a specific detail.
 func (msg *RoomInfo) HasDetail(wanted string) bool {
 	for _, detail := range msg.Details {
 		if detail == wanted {
@@ -34,30 +35,37 @@ func (msg *RoomInfo) HasDetail(wanted string) bool {
 	return false
 }
 
+// IsBank checks whether the RoomInfo contains the 'bank' detail.
 func (msg *RoomInfo) IsBank() bool {
 	return msg.HasDetail("bank")
 }
 
+// IsIndoors checks whether the RoomInfo contains the 'indoors' detail.
 func (msg *RoomInfo) IsIndoors() bool {
 	return msg.HasDetail("indoors")
 }
 
+// IsOutdoors checks whether the RoomInfo contains the 'outdoors' detail.
 func (msg *RoomInfo) IsOutdoors() bool {
 	return msg.HasDetail("outdoors")
 }
 
+// IsSewer checks whether the RoomInfo contains the 'sewer' detail.
 func (msg *RoomInfo) IsSewer() bool {
 	return msg.HasDetail("sewer")
 }
 
+// IsShop checks whether the RoomInfo contains the 'shop' detail.
 func (msg *RoomInfo) IsShop() bool {
 	return msg.HasDetail("shop")
 }
 
+// IsSubdivision checks whether the RoomInfo contains the 'subdivision' detail.
 func (msg *RoomInfo) IsSubdivision() bool {
 	return msg.HasDetail("subdivision")
 }
 
+// IsWilderness checks whether the RoomInfo contains the 'wilderness' detail.
 func (msg *RoomInfo) IsWilderness() bool {
 	return msg.HasDetail("wilderness")
 }
@@ -167,8 +175,8 @@ type RoomPlayer struct {
 	Fullname string `json:"fullname"`
 }
 
-// RoomPlayers is a server-sent GMCP message containing basic information about
-// players in the room.
+// RoomPlayers is a GMCP message containing basic information about players in
+// the room.
 type RoomPlayers []RoomPlayer
 
 // ID is the prefix before the message's data.
@@ -186,8 +194,8 @@ func (msg *RoomPlayers) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// RoomAddPlayer is a server-sent GMCP message containing basic information about
-// players in the room.
+// RoomAddPlayer is a GMCP message containing basic information about players
+// in the room.
 type RoomAddPlayer RoomPlayer
 
 // ID is the prefix before the message's data.
@@ -205,7 +213,7 @@ func (msg *RoomAddPlayer) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// RoomRemovePlayer is a server-sent GMCP message containing basic information about
+// RoomRemovePlayer is a GMCP message containing basic information about
 // players in the room.
 type RoomRemovePlayer RoomPlayer
 
@@ -222,32 +230,4 @@ func (msg *RoomRemovePlayer) Marshal() string {
 // Unmarshal populates the message with data.
 func (msg *RoomRemovePlayer) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
-}
-
-// RoomWrongDir is a server-sent GMCP message giving feedback when the player
-// has tried a currently non-functional exit.
-type RoomWrongDir struct {
-	Direction string
-}
-
-// ID is the prefix before the message's data.
-func (msg *RoomWrongDir) ID() string {
-	return "Room.WrongDir"
-}
-
-// Marshal converts the message to a string.
-func (msg *RoomWrongDir) Marshal() string {
-	return fmt.Sprintf(`%s "%s"`, msg.ID(), msg.Direction)
-}
-
-// Unmarshal populates the message with data.
-func (msg *RoomWrongDir) Unmarshal(data []byte) error {
-	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
-
-	err := json.Unmarshal(data, &msg.Direction)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

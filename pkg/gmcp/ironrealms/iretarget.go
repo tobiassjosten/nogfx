@@ -7,8 +7,8 @@ import (
 	"strconv"
 )
 
-// IRETargetSet is both a a client- and server-sent GMCP message to either set
-// or verify the setting of the in-game target variable.
+// IRETargetSet is a GMCP message to either set or verify the setting of the
+// in-game target variable.
 type IRETargetSet struct {
 	Target string
 }
@@ -35,8 +35,8 @@ func (msg *IRETargetSet) Unmarshal(data []byte) error {
 	return nil
 }
 
-// IRETargetInfo is both a a client- and server-sent GMCP message with
-// additional information about the current active server side target.
+// IRETargetInfo is a GMCP message with additional information about the
+// current active server side target.
 type IRETargetInfo struct {
 	Identity    string `json:"id"`
 	Health      int    `json:"-"`

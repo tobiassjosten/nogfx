@@ -284,28 +284,6 @@ func TestRoomMessages(t *testing.T) {
 				"fullname": "Mason Durak",
 			}),
 		},
-
-		"Room.WrongDir empty": {
-			msg:         &gmcp.RoomWrongDir{},
-			data:        `Room.WrongDir ""`,
-			unmarshaled: &gmcp.RoomWrongDir{},
-			marshaled:   `Room.WrongDir ""`,
-		},
-
-		"Room.WrongDir hydrated": {
-			msg:  &gmcp.RoomWrongDir{},
-			data: `Room.WrongDir "n"`,
-			unmarshaled: &gmcp.RoomWrongDir{
-				Direction: "n",
-			},
-			marshaled: `Room.WrongDir "n"`,
-		},
-
-		"Room.WrongDir invalid JSON": {
-			msg:  &gmcp.RoomWrongDir{},
-			data: `Room.WrongDir asdf`,
-			err:  "invalid character 'a' looking for beginning of value",
-		},
 	}
 
 	for name, tc := range tcs {

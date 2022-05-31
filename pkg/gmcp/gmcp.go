@@ -48,10 +48,8 @@ var messages = map[string]func() Message{
 	(&CharSkillsList{}).ID():   msger(&CharSkillsList{}),
 
 	(&CommChannelEnable{}).ID():  msger(&CommChannelEnable{}),
-	(&CommChannelEnd{}).ID():     msger(&CommChannelEnd{}),
 	(&CommChannelList{}).ID():    msger(&CommChannelList{}),
 	(&CommChannelPlayers{}).ID(): msger(&CommChannelPlayers{}),
-	(&CommChannelStart{}).ID():   msger(&CommChannelStart{}),
 	(&CommChannelText{}).ID():    msger(&CommChannelText{}),
 
 	(&CoreGoodbye{}).ID():        msger(&CoreGoodbye{}),
@@ -66,7 +64,6 @@ var messages = map[string]func() Message{
 	(&RoomPlayers{}).ID():      msger(&RoomPlayers{}),
 	(&RoomAddPlayer{}).ID():    msger(&RoomAddPlayer{}),
 	(&RoomRemovePlayer{}).ID(): msger(&RoomRemovePlayer{}),
-	(&RoomWrongDir{}).ID():     msger(&RoomWrongDir{}),
 }
 
 // Parse converts a byte slice into a GMCP message.
@@ -108,11 +105,13 @@ func Unwrap(data []byte) []byte {
 	return data[len(gmcpPrefix) : len(data)-len(gmcpSuffix)]
 }
 
+// Marshal converts a Message to JSON data.
 func Marshal(msg Message) string {
 	data, _ := json.Marshal(msg)
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
+// Unmarshal hydrates a Message from JSON data.
 func Unmarshal(data []byte, msg Message) error {
 	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
 
@@ -124,6 +123,7 @@ func Unmarshal(data []byte, msg Message) error {
 	return nil
 }
 
+// SplitRank parses values like "Cityname (2)" into separate parts.
 func SplitRank(str string) (string, string) {
 	parts := strings.SplitN(str, "(", 2)
 
@@ -134,6 +134,7 @@ func SplitRank(str string) (string, string) {
 	return strings.TrimSpace(parts[0]), strings.Trim(parts[1], " (%)")
 }
 
+// SplitRankInt wraps SplitRank() and converts the rank part to an integer.
 func SplitRankInt(str string) (string, int) {
 	str, strRank := SplitRank(str)
 
@@ -145,6 +146,7 @@ func SplitRankInt(str string) (string, int) {
 	return str, rank
 }
 
+// SplitRankFloat wraps SplitRank() and converts the rank part to a float.
 func SplitRankFloat(str string) (string, float64) {
 	str, strRank := SplitRank(str)
 

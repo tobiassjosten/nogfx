@@ -49,7 +49,7 @@ func unmarshalCoreSupports(data []byte, msg Message) (map[string]int, error) {
 	return cs, err
 }
 
-// CoreSupportsSet is a client-sent GMCP message containing supported modules.
+// CoreSupportsSet is a GMCP message containing supported modules.
 type CoreSupportsSet map[string]int
 
 // ID is the prefix before the message's data.
@@ -70,7 +70,7 @@ func (msg *CoreSupportsSet) Unmarshal(data []byte) error {
 	return err
 }
 
-// CoreSupportsAdd is a client-sent GMCP message adding supported modules.
+// CoreSupportsAdd is a GMCP message adding supported modules.
 type CoreSupportsAdd map[string]int
 
 // ID is the prefix before the message's data.
@@ -91,7 +91,7 @@ func (msg *CoreSupportsAdd) Unmarshal(data []byte) error {
 	return err
 }
 
-// CoreSupportsRemove is a client-sent GMCP message removing supported modules.
+// CoreSupportsRemove is a GMCP message removing supported modules.
 type CoreSupportsRemove map[string]int
 
 // ID is the prefix before the message's data.

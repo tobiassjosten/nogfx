@@ -136,16 +136,6 @@ func TestParse(t *testing.T) {
 			msg:  &gmcp.CommChannelPlayers{},
 		},
 
-		"Comm.Channel.Start": {
-			data: `Comm.Channel.Start ""`,
-			msg:  &gmcp.CommChannelStart{},
-		},
-
-		"Comm.Channel.End": {
-			data: `Comm.Channel.End ""`,
-			msg:  &gmcp.CommChannelEnd{},
-		},
-
 		"Comm.Channel.Text": {
 			data: "Comm.Channel.Text {}",
 			msg:  &gmcp.CommChannelText{},
@@ -204,11 +194,6 @@ func TestParse(t *testing.T) {
 		"Room.RemovePlayer": {
 			data: "Room.RemovePlayer {}",
 			msg:  &gmcp.RoomRemovePlayer{},
-		},
-
-		"Room.WrongDir": {
-			data: `Room.WrongDir ""`,
-			msg:  &gmcp.RoomWrongDir{},
 		},
 
 		"non-existant": {

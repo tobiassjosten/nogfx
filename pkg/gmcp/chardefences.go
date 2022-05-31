@@ -6,8 +6,6 @@ import (
 	"fmt"
 )
 
-// @todo fixa doc comments "server-sent GMCP message…"
-
 // CharDefence is a defence protecting a character.
 type CharDefence struct {
 	Name        string `json:"name"`
@@ -15,8 +13,7 @@ type CharDefence struct {
 	Description string `json:"desc"`
 }
 
-// CharDefencesList is a server-sent GMCP message listing current character
-// afflictions
+// CharDefencesList is a GMCP message listing current character defenses.
 type CharDefencesList []CharDefence
 
 // ID is the prefix before the message's data.
@@ -34,8 +31,7 @@ func (msg *CharDefencesList) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharDefencesAdd is a server-sent GMCP message listing current character
-// afflictions
+// CharDefencesAdd is a GMCP message detailing an additonal defense.
 type CharDefencesAdd CharDefence
 
 // ID is the prefix before the message's data.
@@ -53,8 +49,7 @@ func (msg *CharDefencesAdd) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharDefencesRemove is a server-sent GMCP message listing current character
-// afflictions
+// CharDefencesRemove is a GMCP message detailing a lost defense.
 type CharDefencesRemove []CharDefence
 
 // ID is the prefix before the message's data.

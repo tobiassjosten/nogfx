@@ -40,28 +40,6 @@ func TestCommMessages(t *testing.T) {
 			err:  "invalid character 'a' looking for beginning of value",
 		},
 
-		"Comm.Channel.End empty": {
-			msg:         &gmcp.CommChannelEnd{},
-			data:        `Comm.Channel.End ""`,
-			unmarshaled: &gmcp.CommChannelEnd{},
-			marshaled:   `Comm.Channel.End ""`,
-		},
-
-		"Comm.Channel.End hydrated": {
-			msg:  &gmcp.CommChannelEnd{},
-			data: `Comm.Channel.End "asdf"`,
-			unmarshaled: &gmcp.CommChannelEnd{
-				Channel: "asdf",
-			},
-			marshaled: `Comm.Channel.End "asdf"`,
-		},
-
-		"Comm.Channel.End invalid JSON": {
-			msg:  &gmcp.CommChannelEnd{},
-			data: `Comm.Channel.End asdf`,
-			err:  "invalid character 'a' looking for beginning of value",
-		},
-
 		"Comm.Channel.List empty": {
 			msg:         &gmcp.CommChannelList{},
 			data:        "Comm.Channel.List []",
@@ -121,28 +99,6 @@ func TestCommMessages(t *testing.T) {
 					"channels": []string{"Some city"},
 				},
 			}),
-		},
-
-		"Comm.Channel.Start empty": {
-			msg:         &gmcp.CommChannelStart{},
-			data:        `Comm.Channel.Start ""`,
-			unmarshaled: &gmcp.CommChannelStart{},
-			marshaled:   `Comm.Channel.Start ""`,
-		},
-
-		"Comm.Channel.Start hydrated": {
-			msg:  &gmcp.CommChannelStart{},
-			data: `Comm.Channel.Start "asdf"`,
-			unmarshaled: &gmcp.CommChannelStart{
-				Channel: "asdf",
-			},
-			marshaled: `Comm.Channel.Start "asdf"`,
-		},
-
-		"Comm.Channel.Start invalid JSON": {
-			msg:  &gmcp.CommChannelStart{},
-			data: `Comm.Channel.Start asdf`,
-			err:  "invalid character 'a' looking for beginning of value",
 		},
 
 		"Comm.Channel.Text empty": {

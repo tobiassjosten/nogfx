@@ -6,8 +6,8 @@ import (
 	"fmt"
 )
 
-// CommChannelEnable is a client-sent GMCP message used to tell the game to
-// turn on a character channel without typing in a command line command
+// CommChannelEnable is a GMCP message used to tell the game to turn on a
+// character channel without typing in a command line command.
 type CommChannelEnable struct {
 	Channel string
 }
@@ -34,34 +34,6 @@ func (msg *CommChannelEnable) Unmarshal(data []byte) error {
 	return nil
 }
 
-// CommChannelEnd is a server-sent GMCP message informing the client that text
-// that follows is something said over a communication channel.
-type CommChannelEnd struct {
-	Channel string
-}
-
-// ID is the prefix before the message's data.
-func (msg *CommChannelEnd) ID() string {
-	return "Comm.Channel.End"
-}
-
-// Marshal converts the message to a string.
-func (msg *CommChannelEnd) Marshal() string {
-	return fmt.Sprintf(`%s "%s"`, msg.ID(), msg.Channel)
-}
-
-// Unmarshal populates the message with data.
-func (msg *CommChannelEnd) Unmarshal(data []byte) error {
-	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
-
-	err := json.Unmarshal(data, &msg.Channel)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // CommChannel contains information about an in-game channel.
 type CommChannel struct {
 	Name    string `json:"name"`
@@ -69,8 +41,8 @@ type CommChannel struct {
 	Command string `json:"command"`
 }
 
-// CommChannelList is a server-sent GMCP message listing communication
-// channels available to the player.
+// CommChannelList is a GMCP message listing communication channels available
+// to the player.
 type CommChannelList []CommChannel
 
 // ID is the prefix before the message's data.
@@ -94,9 +66,8 @@ type CommChannelPlayer struct {
 	Channels []string `json:"channels"`
 }
 
-// CommChannelPlayers is both a client-sent and server-sent GMCP message, to
-// either request data or lists players and which channels (if any) they share
-// with the player's character.
+// CommChannelPlayers is a GMCP message to either request data or lists
+// players and which channels (if any) they share with the player's character.
 type CommChannelPlayers []CommChannelPlayer
 
 // ID is the prefix before the message's data.
@@ -114,34 +85,8 @@ func (msg *CommChannelPlayers) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CommChannelStart is a server-sent GMCP message informing the client that text
-// that follows is something said over a communication channel.
-type CommChannelStart struct {
-	Channel string
-}
-
-// ID is the prefix before the message's data.
-func (msg *CommChannelStart) ID() string {
-	return "Comm.Channel.Start"
-}
-
-// Marshal converts the message to a string.
-func (msg *CommChannelStart) Marshal() string {
-	return fmt.Sprintf(`%s "%s"`, msg.ID(), msg.Channel)
-}
-
-// Unmarshal populates the message with data.
-func (msg *CommChannelStart) Unmarshal(data []byte) error {
-	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
-
-	err := json.Unmarshal(data, &msg.Channel)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
+// CommChannelText is a GMCP message with complete information about a
+// communication
 type CommChannelText struct {
 	Channel string `json:"channel"`
 	Talker  string `json:"talker"`

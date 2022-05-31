@@ -3,6 +3,7 @@ package achaea_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
@@ -26,7 +27,8 @@ func TestTargeting(t *testing.T) {
 
 			for _, message := range tc.messages {
 				data := []byte(message.Marshal())
-				world.ProcessCommand(gmcp.Wrap(data))
+				err := world.ProcessCommand(gmcp.Wrap(data))
+				require.Nil(t, err)
 			}
 		})
 	}

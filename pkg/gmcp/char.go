@@ -1,8 +1,6 @@
 package gmcp
 
-// @todo fixa doc comments "server-sent GMCP message…"
-
-// CharLogin is a client-sent GMCP message to log a character in.
+// CharLogin is a GMCP message to log a character in.
 type CharLogin struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -23,7 +21,7 @@ func (msg *CharLogin) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharName is a server-sent GMCP message containing basic information about
+// CharName is a GMCP message containing basic information about
 // the player's character. Only sent on login.
 type CharName struct {
 	Name     string `json:"name"`
@@ -45,7 +43,7 @@ func (msg *CharName) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharStatusVars is a server-sent GMCP message listing character variables.
+// CharStatusVars is a GMCP message listing character variables.
 type CharStatusVars map[string]string
 
 // ID is the prefix before the message's data.

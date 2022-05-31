@@ -6,8 +6,6 @@ import (
 	"fmt"
 )
 
-// @todo fixa doc comments "server-sent GMCP message…"
-
 // CharAffliction is an affliction ailing a character.
 type CharAffliction struct {
 	Name        string `json:"name"`
@@ -15,8 +13,7 @@ type CharAffliction struct {
 	Description string `json:"desc"`
 }
 
-// CharAfflictionsList is a server-sent GMCP message listing current character
-// afflictions
+// CharAfflictionsList is a GMCP message listing current afflictions.
 type CharAfflictionsList []CharAffliction
 
 // ID is the prefix before the message's data.
@@ -34,8 +31,7 @@ func (msg *CharAfflictionsList) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharAfflictionsAdd is a server-sent GMCP message listing current character
-// afflictions
+// CharAfflictionsAdd is a GMCP message detailing an additional affliction.
 type CharAfflictionsAdd CharAffliction
 
 // ID is the prefix before the message's data.
@@ -53,8 +49,7 @@ func (msg *CharAfflictionsAdd) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharAfflictionsRemove is a server-sent GMCP message listing current character
-// afflictions
+// CharAfflictionsRemove is a GMCP message detailing a cured affliction.
 type CharAfflictionsRemove []CharAffliction
 
 // ID is the prefix before the message's data.
