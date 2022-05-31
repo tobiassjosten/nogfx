@@ -239,3 +239,83 @@ func TestWrap(t *testing.T) {
 	assert.Nil(t, gmcp.Unwrap(append(gmcpPrefix, data...)))
 	assert.NotNil(t, gmcp.Unwrap(append(append(gmcpPrefix, data...), gmcpSuffix...)))
 }
+
+func TestSplitRank(t *testing.T) {
+	tcs := map[string]struct {
+		input string
+		item  string
+		rank  string
+		ranki int
+		rankf float64
+	}{
+		"string Something (rank)": {
+			input: "Something (rank)",
+			item:  "Something",
+			rank:  "rank",
+		},
+
+		"string Something(rank)": {
+			input: "Something(rank)",
+			item:  "Something",
+			rank:  "rank",
+		},
+
+		"int Something (1)": {
+			input: "Something (1)",
+			item:  "Something",
+			ranki: 1,
+		},
+
+		"int Something(1)": {
+			input: "Something(1)",
+			item:  "Something",
+			ranki: 1,
+		},
+
+		"int Something (1%)": {
+			input: "Something (1%)",
+			item:  "Something",
+			ranki: 1,
+		},
+
+		"float Something (1.2)": {
+			input: "Something (1.2)",
+			item:  "Something",
+			rankf: 1.2,
+		},
+
+		"float Something(1.2)": {
+			input: "Something(1.2)",
+			item:  "Something",
+			rankf: 1.2,
+		},
+
+		"float Something (1.2%)": {
+			input: "Something (1.2%)",
+			item:  "Something",
+			rankf: 1.2,
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			if tc.rank != "" {
+				item, rank := gmcp.SplitRank(tc.input)
+				assert.Equal(t, tc.item, item)
+				assert.Equal(t, tc.rank, rank)
+			}
+
+			if tc.ranki != 0 {
+				item, rank := gmcp.SplitRankInt(tc.input)
+				assert.Equal(t, tc.item, item)
+				assert.Equal(t, tc.ranki, rank)
+			}
+
+			if tc.rankf != 0 {
+				item, rank := gmcp.SplitRankFloat(tc.input)
+				assert.Equal(t, tc.item, item)
+				assert.Equal(t, tc.rankf, rank)
+			}
+		})
+	}
+}
