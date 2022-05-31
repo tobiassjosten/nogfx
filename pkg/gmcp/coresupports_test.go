@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -29,22 +28,22 @@ func TestCoreSupportsMessages(t *testing.T) {
 			msg: &gmcp.CoreSupportsSet{},
 			data: makeGMCP("Core.Supports.Set", []string{
 				"Char 1",
-				"Char.Skills 2",
-				"Char.Items 3",
+				"Char.Items 2",
+				"Char.Skills 3",
 				"Comm.Channel 4",
 				"Room 5",
 			}),
-			unmarshaled: &gmcp.CoreSupportsSet{gmcp.CoreSupports{
-				Char:        gox.NewInt(1),
-				CharSkills:  gox.NewInt(2),
-				CharItems:   gox.NewInt(3),
-				CommChannel: gox.NewInt(4),
-				Room:        gox.NewInt(5),
-			}},
+			unmarshaled: &gmcp.CoreSupportsSet{
+				"Char":         1,
+				"Char.Items":   2,
+				"Char.Skills":  3,
+				"Comm.Channel": 4,
+				"Room":         5,
+			},
 			marshaled: makeGMCP("Core.Supports.Set", []string{
 				"Char 1",
-				"Char.Skills 2",
-				"Char.Items 3",
+				"Char.Items 2",
+				"Char.Skills 3",
 				"Comm.Channel 4",
 				"Room 5",
 			}),
@@ -67,8 +66,12 @@ func TestCoreSupportsMessages(t *testing.T) {
 			data: makeGMCP("Core.Supports.Set", []string{
 				"Asdf 1",
 			}),
-			unmarshaled: &gmcp.CoreSupportsSet{},
-			marshaled:   "Core.Supports.Set []",
+			unmarshaled: &gmcp.CoreSupportsSet{
+				"Asdf": 1,
+			},
+			marshaled: makeGMCP("Core.Supports.Set", []string{
+				"Asdf 1",
+			}),
 		},
 
 		"Core.Supports.Set invalid number": {
@@ -90,22 +93,22 @@ func TestCoreSupportsMessages(t *testing.T) {
 			msg: &gmcp.CoreSupportsAdd{},
 			data: makeGMCP("Core.Supports.Add", []string{
 				"Char 1",
-				"Char.Skills 2",
-				"Char.Items 3",
+				"Char.Items 2",
+				"Char.Skills 3",
 				"Comm.Channel 4",
 				"Room 5",
 			}),
-			unmarshaled: &gmcp.CoreSupportsAdd{gmcp.CoreSupports{
-				Char:        gox.NewInt(1),
-				CharSkills:  gox.NewInt(2),
-				CharItems:   gox.NewInt(3),
-				CommChannel: gox.NewInt(4),
-				Room:        gox.NewInt(5),
-			}},
+			unmarshaled: &gmcp.CoreSupportsAdd{
+				"Char":         1,
+				"Char.Items":   2,
+				"Char.Skills":  3,
+				"Comm.Channel": 4,
+				"Room":         5,
+			},
 			marshaled: makeGMCP("Core.Supports.Add", []string{
 				"Char 1",
-				"Char.Skills 2",
-				"Char.Items 3",
+				"Char.Items 2",
+				"Char.Skills 3",
 				"Comm.Channel 4",
 				"Room 5",
 			}),
@@ -128,8 +131,12 @@ func TestCoreSupportsMessages(t *testing.T) {
 			data: makeGMCP("Core.Supports.Add", []string{
 				"Asdf 1",
 			}),
-			unmarshaled: &gmcp.CoreSupportsAdd{},
-			marshaled:   "Core.Supports.Add []",
+			unmarshaled: &gmcp.CoreSupportsAdd{
+				"Asdf": 1,
+			},
+			marshaled: makeGMCP("Core.Supports.Add", []string{
+				"Asdf 1",
+			}),
 		},
 
 		"Core.Supports.Add invalid number": {
@@ -151,22 +158,22 @@ func TestCoreSupportsMessages(t *testing.T) {
 			msg: &gmcp.CoreSupportsRemove{},
 			data: makeGMCP("Core.Supports.Remove", []string{
 				"Char",
-				"Char.Skills",
 				"Char.Items",
+				"Char.Skills",
 				"Comm.Channel",
 				"Room",
 			}),
-			unmarshaled: &gmcp.CoreSupportsRemove{gmcp.CoreSupports{
-				Char:        gox.NewInt(1),
-				CharSkills:  gox.NewInt(1),
-				CharItems:   gox.NewInt(1),
-				CommChannel: gox.NewInt(1),
-				Room:        gox.NewInt(1),
-			}},
+			unmarshaled: &gmcp.CoreSupportsRemove{
+				"Char":         1,
+				"Char.Items":   1,
+				"Char.Skills":  1,
+				"Comm.Channel": 1,
+				"Room":         1,
+			},
 			marshaled: makeGMCP("Core.Supports.Remove", []string{
 				"Char 1",
-				"Char.Skills 1",
 				"Char.Items 1",
+				"Char.Skills 1",
 				"Comm.Channel 1",
 				"Room 1",
 			}),
@@ -189,8 +196,12 @@ func TestCoreSupportsMessages(t *testing.T) {
 			data: makeGMCP("Core.Supports.Remove", []string{
 				"Asdf",
 			}),
-			unmarshaled: &gmcp.CoreSupportsRemove{},
-			marshaled:   "Core.Supports.Remove []",
+			unmarshaled: &gmcp.CoreSupportsRemove{
+				"Asdf": 1,
+			},
+			marshaled: makeGMCP("Core.Supports.Remove", []string{
+				"Asdf 1",
+			}),
 		},
 
 		"Core.Supports.Remove invalid number": {

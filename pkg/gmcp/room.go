@@ -103,9 +103,15 @@ func (msg *RoomInfo) Marshal() string {
 func (msg *RoomInfo) Unmarshal(data []byte) error {
 	data = bytes.TrimSpace(bytes.TrimPrefix(data, []byte(msg.ID())))
 
-	var proxy struct {
+	if msg == nil {
+		*msg = RoomInfo{}
+	}
+
+	proxy := struct {
 		*RoomInfo
 		PCoords string `json:"coords"`
+	}{
+		RoomInfo: msg,
 	}
 
 	err := json.Unmarshal(data, &proxy)
@@ -113,10 +119,7 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = RoomInfo{}
-	if proxy.RoomInfo != nil {
-		*msg = (RoomInfo)(*proxy.RoomInfo)
-	}
+	*msg = (RoomInfo)(*proxy.RoomInfo)
 
 	coords := strings.Split(proxy.PCoords, ",")
 	switch {

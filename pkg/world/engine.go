@@ -10,7 +10,6 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
-	"github.com/tobiassjosten/nogfx/pkg/world/imperian"
 )
 
 var worlds = map[string]func(pkg.Client, pkg.UI) pkg.World{
@@ -19,9 +18,6 @@ var worlds = map[string]func(pkg.Client, pkg.UI) pkg.World{
 
 	"achaea.com:23":  achaea.NewWorld,
 	"50.31.100.8:23": achaea.NewWorld,
-
-	"imperian.com:23":  imperian.NewWorld,
-	"67.202.121.44:23": imperian.NewWorld,
 
 	// @todo Extend this when we support more games. For now, we list these
 	// two so as to force more general, shared functionality.
@@ -172,7 +168,7 @@ func (engine *Engine) ProcessCommand(command []byte) error {
 		engine.ui.UnmaskInput()
 
 	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
-		err := engine.SendGMCP(gmcp.CoreHello{
+		err := engine.SendGMCP(&gmcp.CoreHello{
 			Client:  "nogfx",
 			Version: pkg.Version,
 		})
@@ -185,8 +181,8 @@ func (engine *Engine) ProcessCommand(command []byte) error {
 }
 
 // SendGMCP writes a GMCP message to the client.
-func (engine *Engine) SendGMCP(message gmcp.ClientMessage) error {
-	data := []byte(message.String())
+func (engine *Engine) SendGMCP(msg gmcp.Message) error {
+	data := []byte(msg.Marshal())
 	if _, err := engine.client.Write(gmcp.Wrap(data)); err != nil {
 		return err
 	}

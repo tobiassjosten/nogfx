@@ -22,16 +22,29 @@ func TestParse(t *testing.T) {
 		msg  gmcp.Message
 		err  string
 	}{
-		"Char.Status": {
-			data: "Char.Status {}",
-			msg: &ironrealms.CharStatus{
-				CharStatus: &gmcp.CharStatus{},
-			},
+		"IRE.Rift.Change": {
+			data: "IRE.Rift.Change {}",
+			msg:  &ironrealms.IRERiftChange{},
 		},
 
-		"Char.Vitals": {
-			data: "Char.Vitals {}",
-			msg:  &ironrealms.CharVitals{},
+		"IRE.Rift.List": {
+			data: "IRE.Rift.List []",
+			msg:  &ironrealms.IRERiftList{},
+		},
+
+		"IRE.Rift.Request": {
+			data: "IRE.Rift.Request",
+			msg:  &ironrealms.IRERiftRequest{},
+		},
+
+		"IRE.Target.Set": {
+			data: `IRE.Target.Set ""`,
+			msg:  &ironrealms.IRETargetSet{},
+		},
+
+		"IRE.Target.Info": {
+			data: "IRE.Target.Info {}",
+			msg:  &ironrealms.IRETargetInfo{},
 		},
 
 		"non-existant": {
@@ -40,8 +53,8 @@ func TestParse(t *testing.T) {
 		},
 
 		"invalid JSON": {
-			data: "Char.Status asdf",
-			err:  "couldn't unmarshal *ironrealms.CharStatus: invalid character 'a' looking for beginning of value",
+			data: "IRE.Rift.Change asdf",
+			err:  "couldn't unmarshal *ironrealms.IRERiftChange: invalid character 'a' looking for beginning of value",
 		},
 	}
 

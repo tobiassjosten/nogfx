@@ -31,19 +31,9 @@ func TestParse(t *testing.T) {
 			msg:  &gmcp.CharName{},
 		},
 
-		"Char.Status": {
-			data: "Char.Status {}",
-			msg:  &gmcp.CharStatus{},
-		},
-
 		"Char.StatusVars": {
 			data: "Char.StatusVars {}",
 			msg:  &gmcp.CharStatusVars{},
-		},
-
-		"Char.Vitals": {
-			data: "Char.Vitals {}",
-			msg:  &gmcp.CharVitals{},
 		},
 
 		"Char.Afflictions.List": {

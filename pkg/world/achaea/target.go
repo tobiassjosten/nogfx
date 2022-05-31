@@ -6,8 +6,9 @@ import (
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
+	igmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
 )
 
 // Target represents who or what is being targeted for skills and attacks. We
@@ -25,7 +26,7 @@ type Target struct {
 }
 
 // FromRoomInfo handles targeting when moving between rooms (areas, in effect).
-func (target *Target) FromRoomInfo(msg gmcp.RoomInfo) {
+func (target *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 	current := navigation.RoomFromGMCP(msg)
 	if current == nil || current.Area == nil {
 		return
@@ -66,7 +67,7 @@ func (target *Target) FromRoomInfo(msg gmcp.RoomInfo) {
 }
 
 // FromCharItemsList builds the list of NPCs in the room and retargets.
-func (target *Target) FromCharItemsList(msg gmcp.CharItemsList) {
+func (target *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 	if msg.Location != "room" {
 		return
 	}
@@ -85,7 +86,7 @@ func (target *Target) FromCharItemsList(msg gmcp.CharItemsList) {
 }
 
 // FromCharItemsAdd adds an NPC to the room list and retargets.
-func (target *Target) FromCharItemsAdd(msg gmcp.CharItemsAdd) {
+func (target *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
 	if msg.Location != "room" {
 		return
 	}
@@ -101,7 +102,7 @@ func (target *Target) FromCharItemsAdd(msg gmcp.CharItemsAdd) {
 }
 
 // FromCharItemsRemove removes an NPC to the room list and retargets.
-func (target *Target) FromCharItemsRemove(msg gmcp.CharItemsRemove) {
+func (target *Target) FromCharItemsRemove(msg *gmcp.CharItemsRemove) {
 	if msg.Location != "room" {
 		return
 	}
@@ -120,14 +121,14 @@ func (target *Target) FromCharItemsRemove(msg gmcp.CharItemsRemove) {
 }
 
 // FromCharStatus updates the current target.
-func (target *Target) FromCharStatus(msg agmcp.CharStatus) {
+func (target *Target) FromCharStatus(msg *agmcp.CharStatus) {
 	if msg.Target != nil {
 		target.Name = strings.ToLower(*msg.Target)
 	}
 }
 
 // FromIRETargetSet updates the player status of the current target.
-func (target *Target) FromIRETargetSet(msg gmcp.IRETargetSet) {
+func (target *Target) FromIRETargetSet(msg *igmcp.IRETargetSet) {
 	// This message works so inconsistenyly that we can only rely
 	// on it for knowing that non-numbers equalling a player.
 	if msg.Target != "" {
@@ -137,7 +138,7 @@ func (target *Target) FromIRETargetSet(msg gmcp.IRETargetSet) {
 }
 
 // FromIRETargetInfo updates the current NPC-target's health.
-func (target *Target) FromIRETargetInfo(msg gmcp.IRETargetInfo) {
+func (target *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
 	if msg.Health > 0 {
 		target.Health = msg.Health
 	}

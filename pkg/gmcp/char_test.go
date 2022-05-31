@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 
 	"github.com/stretchr/testify/assert"
@@ -68,86 +67,6 @@ func TestCharMessages(t *testing.T) {
 			}),
 		},
 
-		"Char.Status empty": {
-			msg:         &gmcp.CharStatus{},
-			data:        "Char.Status {}",
-			unmarshaled: &gmcp.CharStatus{},
-			marshaled:   "Char.Status {}",
-		},
-
-		"Char.Status hydrated": {
-			msg: &gmcp.CharStatus{},
-			data: makeGMCP("Char.Status", map[string]interface{}{
-				"name":     "Durak",
-				"fullname": "Mason Durak",
-				"race":     "dwarf",
-				"gender":   "male",
-				"level":    "69 (23%)",
-			}),
-			unmarshaled: &gmcp.CharStatus{
-				Name:     gox.NewString("Durak"),
-				Fullname: gox.NewString("Mason Durak"),
-				Race:     gox.NewString("dwarf"),
-				Gender:   gox.NewString("male"),
-				Level:    gox.NewFloat64(69.23),
-			},
-			marshaled: makeGMCP("Char.Status", map[string]interface{}{
-				"name":     "Durak",
-				"fullname": "Mason Durak",
-				"race":     "dwarf",
-				"gender":   "male",
-				"level":    "69 (23%)",
-			}),
-		},
-
-		"Char.Status fractal-progress level": {
-			msg: &gmcp.CharStatus{},
-			data: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "69 (23.45%)",
-			}),
-			unmarshaled: &gmcp.CharStatus{
-				Level: gox.NewFloat64(69.2345),
-			},
-			marshaled: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "69 (23.45%)",
-			}),
-		},
-
-		"Char.Status single-part level": {
-			msg: &gmcp.CharStatus{},
-			data: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "69",
-			}),
-			unmarshaled: &gmcp.CharStatus{
-				Level: gox.NewFloat64(69),
-			},
-			marshaled: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "69 (0%)",
-			}),
-		},
-
-		"Char.Status non-number level": {
-			msg: &gmcp.CharStatus{},
-			data: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "asdf",
-			}),
-			err: `failed parsing level: strconv.ParseFloat: parsing "asdf": invalid syntax`,
-		},
-
-		"Char.Status non-number level progress": {
-			msg: &gmcp.CharStatus{},
-			data: makeGMCP("Char.Status", map[string]interface{}{
-				"level": "69 (xy%)",
-			}),
-			err: `failed parsing level progress: strconv.ParseFloat: parsing "xy": invalid syntax`,
-		},
-
-		"Char.Status invalid JSON": {
-			msg:  &gmcp.CharStatus{},
-			data: "asdf",
-			err:  "invalid character 'a' looking for beginning of value",
-		},
-
 		"Char.StatusVars empty": {
 			msg:         &gmcp.CharStatusVars{},
 			data:        "Char.StatusVars {}",
@@ -160,50 +79,6 @@ func TestCharMessages(t *testing.T) {
 			data:        `Char.StatusVars {"this": "That"}`,
 			unmarshaled: &gmcp.CharStatusVars{"this": "That"},
 			marshaled:   `Char.StatusVars {"this": "That"}`,
-		},
-
-		"Char.Vitals empty": {
-			msg:         &gmcp.CharVitals{},
-			data:        `Char.Vitals {}`,
-			unmarshaled: &gmcp.CharVitals{},
-			marshaled: makeGMCP("Char.Vitals", map[string]interface{}{
-				"hp":        "0",
-				"maxhp":     "0",
-				"mp":        "0",
-				"maxmp":     "0",
-				"charstats": []string{},
-			}),
-		},
-
-		"Char.Vitals hydrated": {
-			msg: &gmcp.CharVitals{},
-			data: makeGMCP("Char.Vitals", map[string]interface{}{
-				"hp":        "1",
-				"maxhp":     "2",
-				"mp":        "3",
-				"maxmp":     "4",
-				"charstats": []string{"Asdf 1"},
-			}),
-			unmarshaled: &gmcp.CharVitals{
-				HP:    1,
-				MaxHP: 2,
-				MP:    3,
-				MaxMP: 4,
-				Stats: []string{"Asdf 1"},
-			},
-			marshaled: makeGMCP("Char.Vitals", map[string]interface{}{
-				"hp":        "1",
-				"maxhp":     "2",
-				"mp":        "3",
-				"maxmp":     "4",
-				"charstats": []string{"Asdf 1"},
-			}),
-		},
-
-		"Char.Vitals invalid JSON": {
-			msg:  &gmcp.CharVitals{},
-			data: "asdf",
-			err:  "invalid character 'a' looking for beginning of value",
 		},
 	}
 

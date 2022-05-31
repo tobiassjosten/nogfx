@@ -12,25 +12,6 @@ func msger(msg gmcp.Message) func() gmcp.Message {
 }
 
 var messages = map[string]func() gmcp.Message{
-	(&CharStatus{}).ID(): msger(&CharStatus{}),
-	(&CharVitals{}).ID(): msger(&CharVitals{}),
-
-	(&CoreSupportsSet{}).ID(): msger(&CoreSupportsSet{
-		CoreSupports: &CoreSupports{
-			CoreSupports: &gmcp.CoreSupports{},
-		},
-	}),
-	(&CoreSupportsAdd{}).ID(): msger(&CoreSupportsAdd{
-		CoreSupports: &CoreSupports{
-			CoreSupports: &gmcp.CoreSupports{},
-		},
-	}),
-	(&CoreSupportsRemove{}).ID(): msger(&CoreSupportsRemove{
-		CoreSupports: &CoreSupports{
-			CoreSupports: &gmcp.CoreSupports{},
-		},
-	}),
-
 	(&IRERiftChange{}).ID():  msger(&IRERiftChange{}),
 	(&IRERiftList{}).ID():    msger(&IRERiftList{}),
 	(&IRERiftRequest{}).ID(): msger(&IRERiftRequest{}),

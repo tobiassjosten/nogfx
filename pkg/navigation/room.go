@@ -36,7 +36,7 @@ type Room struct {
 }
 
 // RoomFromGMCP creates a Room from a GMCP Room.Info message.
-func RoomFromGMCP(msg gmcp.RoomInfo) *Room {
+func RoomFromGMCP(msg *gmcp.RoomInfo) *Room {
 	room, ok := rooms[msg.Number]
 	if ok && room.Known {
 		return room

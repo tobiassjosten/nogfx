@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 
 	"github.com/icza/gox/gox"
 )
@@ -17,21 +17,32 @@ import (
 // initial message sent contains all values but subsequent messages only carry
 // changes, with omitted properties assumed unchanged.
 type CharStatus struct {
-	*ironrealms.CharStatus
-	Age              *int    `json:"age,string,omitempty"`
-	BoundCredits     *int    `json:"boundcredits,string,omitempty"`
-	BoundMayanCrowns *int    `json:"boundmayancrowns,string,omitempty"`
-	ExplorerRank     *string `json:"explorerrank,omitempty"`
-	House            *string `json:"-"`
-	HouseRank        *int    `json:"-"`
-	Lessons          *int    `json:"lessons,string,omitempty"`
-	MayanCrowns      *int    `json:"mayancrowns,string,omitempty"`
-	Order            *string `json:"-"`
-	OrderRank        *int    `json:"-"`
-	Specialisation   *string `json:"specialisation,omitempty"`
-	Target           *string `json:"target,omitempty"`
-	UnboundCredits   *int    `json:"unboundcredits,string,omitempty"`
-	XPRank           *int    `json:"xprank,string,omitempty"`
+	Age              *int     `json:"age,string,omitempty"`
+	Bank             *int     `json:"bank,string,omitempty"`
+	BoundCredits     *int     `json:"boundcredits,string,omitempty"`
+	BoundMayanCrowns *int     `json:"boundmayancrowns,string,omitempty"`
+	City             *string  `json:"-"`
+	CityRank         *int     `json:"-"`
+	Class            *string  `json:"class,omitempty"`
+	ExplorerRank     *string  `json:"explorerrank,omitempty"`
+	Fullname         *string  `json:"fullname,omitempty"`
+	Gender           *string  `json:"gender,omitempty"`
+	Gold             *int     `json:"gold,string,omitempty"`
+	House            *string  `json:"-"`
+	HouseRank        *int     `json:"-"`
+	Lessons          *int     `json:"lessons,string,omitempty"`
+	Level            *float64 `json:"-"`
+	MayanCrowns      *int     `json:"mayancrowns,string,omitempty"`
+	Name             *string  `json:"name,omitempty"`
+	Order            *string  `json:"-"`
+	OrderRank        *int     `json:"-"`
+	Race             *string  `json:"race,omitempty"`
+	Specialisation   *string  `json:"specialisation,omitempty"`
+	Target           *string  `json:"target,omitempty"`
+	UnboundCredits   *int     `json:"unboundcredits,string,omitempty"`
+	UnreadMsgs       *int     `json:"unread_msgs,string,omitempty"`
+	UnreadNews       *int     `json:"unread_news,string,omitempty"`
+	XPRank           *int     `json:"xprank,string,omitempty"`
 }
 
 // ID is the prefix before the message's data.
@@ -39,7 +50,23 @@ func (msg *CharStatus) ID() string {
 	return "Char.Status"
 }
 
-func (msg *CharStatus) MarshalValue(value *string, rank *int) *string {
+func (msg *CharStatus) marshalLevel() *string {
+	if msg.Level == nil {
+		return nil
+	}
+
+	progress := fmt.Sprintf("%.4f", math.Mod(*msg.Level, 1)*100)
+	progress = strings.TrimRight(progress, ".0")
+	if progress == "" {
+		progress = "0"
+	}
+
+	return gox.NewString(
+		fmt.Sprintf("%d (%s%%)", int(*msg.Level), progress),
+	)
+}
+
+func (msg *CharStatus) marshalValue(value *string, rank *int) *string {
 	if value == nil {
 		return nil
 	}
@@ -69,10 +96,10 @@ func (msg *CharStatus) Marshal() string {
 		CharStatus: msg,
 	}
 
-	proxy.PCity = msg.MarshalCity()
-	proxy.PHouse = msg.MarshalValue(msg.House, msg.HouseRank)
-	proxy.PLevel = msg.MarshalLevel()
-	proxy.POrder = msg.MarshalValue(msg.Order, msg.OrderRank)
+	proxy.PCity = msg.marshalValue(msg.City, msg.CityRank)
+	proxy.PHouse = msg.marshalValue(msg.House, msg.HouseRank)
+	proxy.PLevel = msg.marshalLevel()
+	proxy.POrder = msg.marshalValue(msg.Order, msg.OrderRank)
 
 	data, _ := json.Marshal(proxy)
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
@@ -82,16 +109,18 @@ func (msg *CharStatus) Marshal() string {
 func (msg *CharStatus) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
 
+	if msg == nil {
+		*msg = CharStatus{}
+	}
+
 	proxy := struct {
 		*CharStatus
+		PCity  *string `json:"city"`
 		PHouse *string `json:"house"`
+		PLevel *string `json:"level"`
 		POrder *string `json:"order"`
 	}{
-		CharStatus: &CharStatus{
-			CharStatus: &ironrealms.CharStatus{
-				CharStatus: &gmcp.CharStatus{},
-			},
-		},
+		CharStatus: msg,
 	}
 
 	err := json.Unmarshal(data, &proxy)
@@ -99,14 +128,16 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = CharStatus{}
-	if proxy.CharStatus != nil {
-		*msg = (CharStatus)(*proxy.CharStatus)
-	}
+	*msg = (CharStatus)(*proxy.CharStatus)
 
-	err = msg.CharStatus.Unmarshal(data)
-	if err != nil {
-		return err
+	if proxy.PCity != nil {
+		if *proxy.PCity == "(None)" {
+			msg.City = gox.NewString("")
+		} else {
+			city, rank := gmcp.SplitRankInt(*proxy.PCity)
+			msg.City = gox.NewString(city)
+			msg.CityRank = gox.NewInt(rank)
+		}
 	}
 
 	if proxy.PHouse != nil {
@@ -117,6 +148,27 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 			msg.House = gox.NewString(house)
 			msg.HouseRank = gox.NewInt(rank)
 		}
+	}
+
+	if proxy.PLevel != nil {
+		parts := strings.SplitN(*proxy.PLevel, " ", 2)
+
+		level, err := strconv.ParseFloat(parts[0], 64)
+		if err != nil {
+			return fmt.Errorf("failed parsing level: %w", err)
+		}
+
+		if len(parts) == 2 {
+			progressStr := strings.Trim(parts[1], "(%)")
+			progress, err := strconv.ParseFloat(progressStr, 64)
+			if err != nil {
+				return fmt.Errorf("failed parsing level progress: %w", err)
+			}
+
+			level += progress / 100
+		}
+
+		msg.Level = gox.NewFloat64(level)
 	}
 
 	if proxy.POrder != nil {
@@ -142,11 +194,21 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 
 // CharVitals is a server-sent GMCP message containing character attributes.
 type CharVitals struct {
-	EP     int `json:"ep,string"`
-	MaxEP  int `json:"maxep,string"`
-	WP     int `json:"wp,string"`
-	MaxWP  int `json:"maxwp,string"`
-	Vote   bool
+	HP    int `json:"hp,string"`
+	MaxHP int `json:"maxhp,string"`
+	MP    int `json:"mp,string"`
+	MaxMP int `json:"maxmp,string"`
+	EP    int `json:"ep,string"`
+	MaxEP int `json:"maxep,string"`
+	WP    int `json:"wp,string"`
+	MaxWP int `json:"maxwp,string"`
+	NL    int `json:"nl,string"`
+
+	Bal bool `json:"-"`
+	Eq  bool `json:"-"`
+
+	Vote bool `json:"-"`
+
 	Prompt string `json:"string"`
 
 	Stats CharVitalsStats `json:"charstats"`
@@ -157,13 +219,58 @@ func (msg *CharVitals) ID() string {
 	return "Char.Vitals"
 }
 
+func (msg *CharVitals) marshalBoolStringInt(b bool) string {
+	if b {
+		return "1"
+	}
+	return "0"
+}
+
 // Marshal converts the message to a string.
 func (msg *CharVitals) Marshal() string {
-	return msg.ID()
+	proxy := struct {
+		*CharVitals
+		PBal string `json:"bal"`
+		PEq  string `json:"eq"`
+	}{
+		CharVitals: msg,
+	}
+
+	proxy.PBal = msg.marshalBoolStringInt(msg.Bal)
+	proxy.PEq = msg.marshalBoolStringInt(msg.Eq)
+
+	data, _ := json.Marshal(proxy)
+	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
 // Unmarshal populates the message with data.
 func (msg *CharVitals) Unmarshal(data []byte) error {
+	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
+
+	if msg == nil {
+		*msg = CharVitals{}
+	}
+
+	proxy := struct {
+		*CharVitals
+		PBal  string `json:"bal"`
+		PEq   string `json:"eq"`
+		PVote string `json:"vote"`
+	}{
+		CharVitals: msg,
+	}
+
+	err := json.Unmarshal(data, &proxy)
+	if err != nil {
+		return err
+	}
+
+	*msg = (CharVitals)(*proxy.CharVitals)
+
+	msg.Bal = proxy.PBal == "1"
+	msg.Eq = proxy.PEq == "1"
+	msg.Vote = proxy.PVote == "1"
+
 	return nil
 }
 
@@ -172,13 +279,13 @@ type CharVitalsStats struct {
 	Bleed int
 	Rage  int
 
-	Ferocity *int // Infernal.
-	Kai      *int // Monk.
+	Ferocity *int
+	Kai      *int
 	Karma    *int
-	Spec     *string // Infernal, Paladin, Runewarden.
-	Stance   *string // Bard, Blademaster, Monk.
+	Spec     *string
+	Stance   *string
 
-	// @todo Implement the one following (first checking keys in game).
+	// @todo Implement the following ones (first checking keys in game).
 	// Channels // Magi.
 	// CurrentMorph // Druid, Sentinel.
 	// Devotion // Paladin, Priest.
@@ -192,7 +299,33 @@ type CharVitalsStats struct {
 	// VoiceBalance // Bard.
 }
 
-// UnmarshalJSON hydrates CharVitalsStats from a list of unstructured strings.
+// MarshalJSON transforms the struct to JSON.
+func (as *CharVitalsStats) MarshalJSON() ([]byte, error) {
+	list := []string{
+		fmt.Sprintf("Bleed: %d", as.Bleed),
+		fmt.Sprintf("Rage: %d", as.Rage),
+	}
+
+	if as.Ferocity != nil {
+		list = append(list, fmt.Sprintf("Ferocity: %d", *as.Ferocity))
+	}
+	if as.Kai != nil {
+		list = append(list, fmt.Sprintf("Kai: %d%%", *as.Kai))
+	}
+	if as.Karma != nil {
+		list = append(list, fmt.Sprintf("Karma: %d%%", *as.Karma))
+	}
+	if as.Spec != nil {
+		list = append(list, fmt.Sprintf("Spec: %s", *as.Spec))
+	}
+	if as.Stance != nil {
+		list = append(list, fmt.Sprintf("Stance: %s", *as.Stance))
+	}
+
+	return json.Marshal(list)
+}
+
+// UnmarshalJSON hydrates the struct from JSON.
 func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 	var list []string
 

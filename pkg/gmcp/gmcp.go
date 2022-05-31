@@ -24,9 +24,7 @@ func msger(msg Message) func() Message {
 var messages = map[string]func() Message{
 	(&CharLogin{}).ID():      msger(&CharLogin{}),
 	(&CharName{}).ID():       msger(&CharName{}),
-	(&CharStatus{}).ID():     msger(&CharStatus{}),
 	(&CharStatusVars{}).ID(): msger(&CharStatusVars{}),
-	(&CharVitals{}).ID():     msger(&CharVitals{}),
 
 	(&CharAfflictionsList{}).ID():   msger(&CharAfflictionsList{}),
 	(&CharAfflictionsAdd{}).ID():    msger(&CharAfflictionsAdd{}),

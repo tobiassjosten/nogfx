@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
+	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,14 +24,12 @@ func TestParse(t *testing.T) {
 	}{
 		"Char.Status": {
 			data: "Char.Status {}",
-			msg: &ironrealms.CharStatus{
-				CharStatus: &gmcp.CharStatus{},
-			},
+			msg:  &agmcp.CharStatus{},
 		},
 
 		"Char.Vitals": {
 			data: "Char.Vitals {}",
-			msg:  &ironrealms.CharVitals{},
+			msg:  &agmcp.CharVitals{},
 		},
 
 		"non-existant": {
@@ -41,13 +39,13 @@ func TestParse(t *testing.T) {
 
 		"invalid JSON": {
 			data: "Char.Status asdf",
-			err:  "couldn't unmarshal *ironrealms.CharStatus: invalid character 'a' looking for beginning of value",
+			err:  "couldn't unmarshal *achaea.CharStatus: invalid character 'a' looking for beginning of value",
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			msg, err := ironrealms.Parse([]byte(tc.data))
+			msg, err := agmcp.Parse([]byte(tc.data))
 
 			if tc.err != "" {
 				if assert.NotNil(t, err) {
