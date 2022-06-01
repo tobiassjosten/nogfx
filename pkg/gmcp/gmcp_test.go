@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
@@ -244,77 +245,107 @@ func TestSplitRank(t *testing.T) {
 	tcs := map[string]struct {
 		input string
 		item  string
-		rank  string
-		ranki int
-		rankf float64
+		rank  *string
+		ranki *int
+		rankf *float64
 	}{
 		"string Something (rank)": {
 			input: "Something (rank)",
 			item:  "Something",
-			rank:  "rank",
+			rank:  gox.NewString("rank"),
 		},
 
 		"string Something(rank)": {
 			input: "Something(rank)",
 			item:  "Something",
-			rank:  "rank",
+			rank:  gox.NewString("rank"),
+		},
+
+		"string Something only": {
+			input: "Something",
+			item:  "Something",
+			rank:  gox.NewString(""),
 		},
 
 		"int Something (1)": {
 			input: "Something (1)",
 			item:  "Something",
-			ranki: 1,
+			ranki: gox.NewInt(1),
 		},
 
 		"int Something(1)": {
 			input: "Something(1)",
 			item:  "Something",
-			ranki: 1,
+			ranki: gox.NewInt(1),
 		},
 
 		"int Something (1%)": {
 			input: "Something (1%)",
 			item:  "Something",
-			ranki: 1,
+			ranki: gox.NewInt(1),
+		},
+
+		"int Something (x)": {
+			input: "Something (x)",
+			item:  "Something",
+			ranki: gox.NewInt(0),
+		},
+
+		"int Something only": {
+			input: "Something",
+			item:  "Something",
+			ranki: gox.NewInt(0),
 		},
 
 		"float Something (1.2)": {
 			input: "Something (1.2)",
 			item:  "Something",
-			rankf: 1.2,
+			rankf: gox.NewFloat64(1.2),
 		},
 
 		"float Something(1.2)": {
 			input: "Something(1.2)",
 			item:  "Something",
-			rankf: 1.2,
+			rankf: gox.NewFloat64(1.2),
 		},
 
 		"float Something (1.2%)": {
 			input: "Something (1.2%)",
 			item:  "Something",
-			rankf: 1.2,
+			rankf: gox.NewFloat64(1.2),
+		},
+
+		"float Something (x)": {
+			input: "Something (x)",
+			item:  "Something",
+			rankf: gox.NewFloat64(0),
+		},
+
+		"float Something only": {
+			input: "Something",
+			item:  "Something",
+			rankf: gox.NewFloat64(0),
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			if tc.rank != "" {
+			if tc.rank != nil {
 				item, rank := gmcp.SplitRank(tc.input)
 				assert.Equal(t, tc.item, item)
-				assert.Equal(t, tc.rank, rank)
+				assert.Equal(t, *tc.rank, rank)
 			}
 
-			if tc.ranki != 0 {
-				item, rank := gmcp.SplitRankInt(tc.input)
+			if tc.ranki != nil {
+				item, ranki := gmcp.SplitRankInt(tc.input)
 				assert.Equal(t, tc.item, item)
-				assert.Equal(t, tc.ranki, rank)
+				assert.Equal(t, *tc.ranki, ranki)
 			}
 
-			if tc.rankf != 0 {
-				item, rank := gmcp.SplitRankFloat(tc.input)
+			if tc.rankf != nil {
+				item, rankf := gmcp.SplitRankFloat(tc.input)
 				assert.Equal(t, tc.item, item)
-				assert.Equal(t, tc.rankf, rank)
+				assert.Equal(t, *tc.rankf, rankf)
 			}
 		})
 	}

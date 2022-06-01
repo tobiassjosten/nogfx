@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -132,8 +131,6 @@ func SplitRank(str string) (string, string) {
 		return str, ""
 	}
 
-	log.Println(parts)
-
 	return strings.TrimSpace(parts[0]), strings.Trim(parts[1], " (%)")
 }
 
@@ -143,7 +140,7 @@ func SplitRankInt(str string) (string, int) {
 
 	rank, err := strconv.Atoi(strRank)
 	if err != nil {
-		return "", 0
+		return str, 0
 	}
 
 	return str, rank
@@ -155,10 +152,8 @@ func SplitRankFloat(str string) (string, float64) {
 
 	rank, err := strconv.ParseFloat(strRank, 64)
 	if err != nil {
-		return "", 0
+		return str, 0
 	}
-
-	log.Println("RANK", str, strRank, rank)
 
 	return str, rank
 }
