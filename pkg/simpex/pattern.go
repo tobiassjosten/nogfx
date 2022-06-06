@@ -75,6 +75,10 @@ main:
 				return nil
 			}
 
+			// Discount remains of word to account for patterns like "lorem ^sum".
+			pedge := indexNonAlphanum(pattern[1:])
+			edge -= pedge
+
 			if capture != nil {
 				capture = append(capture, text[:edge]...)
 			}

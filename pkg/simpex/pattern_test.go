@@ -80,6 +80,26 @@ func TestMatch(t *testing.T) {
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{[]byte("ipsum")},
 		},
+		"word match prefix": {
+			pattern: []byte("Lorem ^sum dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"word match prefix capture": {
+			pattern: []byte("Lorem {^sum} dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("ipsum")},
+		},
+		"word match suffix": {
+			pattern: []byte("Lorem ip^ dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"word match suffix capture": {
+			pattern: []byte("Lorem {ip^} dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("ipsum")},
+		},
 		"word match escaped one": {
 			pattern: []byte("Lorem ^^ dolor sit amet."),
 			text:    []byte("Lorem ^ dolor sit amet."),
@@ -108,6 +128,46 @@ func TestMatch(t *testing.T) {
 		},
 		"phrase match capture two": {
 			pattern: []byte("Lorem ipsum dolor {*} lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match prefix one": {
+			pattern: []byte("Lorem ipsum dolor *et."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"phrase match prefix two": {
+			pattern: []byte("Lorem ipsum dolor *et lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{},
+		},
+		"phrase match capture prefix one": {
+			pattern: []byte("Lorem ipsum dolor {*et}."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match capture prefix two": {
+			pattern: []byte("Lorem ipsum dolor {*et} lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match suffix one": {
+			pattern: []byte("Lorem ipsum dolor si*."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"phrase match suffix two": {
+			pattern: []byte("Lorem ipsum dolor si* lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{},
+		},
+		"phrase match capture suffix one": {
+			pattern: []byte("Lorem ipsum dolor {si*}."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match capture suffix two": {
+			pattern: []byte("Lorem ipsum dolor {si*} lol."),
 			text:    []byte("Lorem ipsum dolor sit amet lol."),
 			matches: [][]byte{[]byte("sit amet")},
 		},
