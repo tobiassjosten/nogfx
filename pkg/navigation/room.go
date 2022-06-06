@@ -7,10 +7,18 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
+// @todo Encapsulate in a struct, so as to avoid polluting global space.
 var (
 	areas = map[int]*Area{}
 	rooms = map[int]*Room{}
 )
+
+// Reset clears the area and room caches. A temporary fix until we implement
+// proper encapsulation.
+func Reset() {
+	areas = map[int]*Area{}
+	rooms = map[int]*Room{}
+}
 
 // Area is a region covering a number of rooms.
 type Area struct {
@@ -65,7 +73,7 @@ func RoomFromGMCP(msg *gmcp.RoomInfo) *Room {
 	}
 
 	area, ok := areas[msg.AreaNumber]
-	if !ok {
+	if !ok && msg.AreaNumber != 0 {
 		area = &Area{
 			ID:   msg.AreaNumber,
 			Name: msg.AreaName,

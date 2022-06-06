@@ -145,6 +145,26 @@ func TestRoomMessages(t *testing.T) {
 			}),
 		},
 
+		"Room.Info only area number": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1",
+			}),
+			unmarshaled: &gmcp.RoomInfo{
+				AreaNumber: 1,
+			},
+			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+				"num":         0,
+				"name":        "",
+				"area":        "",
+				"environment": "",
+				"coords":      "1",
+				"map":         "",
+				"exits":       map[string]int{},
+				"details":     []string{},
+			}),
+		},
+
 		"Room.Info invalid JSON": {
 			msg:  &gmcp.RoomInfo{},
 			data: "Room.Info asdf",

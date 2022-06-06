@@ -88,10 +88,13 @@ func (msg *RoomInfo) Marshal() string {
 		PDetails: msg.Details,
 	}
 
-	if msg.AreaNumber != 0 && msg.X != 0 && msg.Y != 0 {
-		proxy.PCoords = fmt.Sprintf("%d,%d,%d", msg.AreaNumber, msg.X, msg.Y)
-		if msg.Building != 0 {
-			proxy.PCoords += fmt.Sprintf(",%d", msg.Building)
+	if msg.AreaNumber != 0 {
+		proxy.PCoords = strconv.Itoa(msg.AreaNumber)
+		if msg.X != 0 && msg.Y != 0 {
+			proxy.PCoords += fmt.Sprintf(",%d,%d", msg.X, msg.Y)
+			if msg.Building != 0 {
+				proxy.PCoords += fmt.Sprintf(",%d", msg.Building)
+			}
 		}
 	}
 
@@ -134,7 +137,7 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 	case proxy.PCoords == "":
 		break
 
-	case len(coords) == 4:
+	case len(coords) >= 4:
 		building, err := strconv.Atoi(coords[3])
 		if err != nil {
 			return fmt.Errorf("failed parsing building from coords: %w", err)
@@ -144,12 +147,6 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 		fallthrough
 
 	case len(coords) == 3:
-		areaNumber, err := strconv.Atoi(coords[0])
-		if err != nil {
-			return fmt.Errorf("failed parsing area number from coords: %w", err)
-		}
-		msg.AreaNumber = areaNumber
-
 		x, err := strconv.Atoi(coords[1])
 		if err != nil {
 			return fmt.Errorf("failed parsing x from coords: %w", err)
@@ -161,6 +158,15 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 			return fmt.Errorf("failed parsing y from coords: %w", err)
 		}
 		msg.Y = y
+
+		fallthrough
+
+	case len(coords) == 1:
+		areaNumber, err := strconv.Atoi(coords[0])
+		if err != nil {
+			return fmt.Errorf("failed parsing area number from coords: %w", err)
+		}
+		msg.AreaNumber = areaNumber
 
 	default:
 		return fmt.Errorf("failed parsing coords '%s'", coords)

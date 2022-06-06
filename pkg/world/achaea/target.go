@@ -17,12 +17,17 @@ import (
 type Target struct {
 	client pkg.Client
 
-	Name     string
-	Health   int
-	IsPlayer bool
+	Name   string
+	Health int
+
+	isPlayer bool
 
 	room     *navigation.Room
 	roomNPCs []string
+}
+
+func NewTarget(client pkg.Client) *Target {
+	return &Target{client: client}
 }
 
 // FromRoomInfo handles targeting when moving between rooms (areas, in effect).
@@ -35,7 +40,7 @@ func (target *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 	previous := target.room
 	target.room = current
 
-	if target.IsPlayer {
+	if target.isPlayer {
 		return
 	}
 
@@ -45,6 +50,7 @@ func (target *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 
 	cNPCs, pNPCs := areaNPCs(current), areaNPCs(previous)
 
+	// Check if we're targeting an area target from the previous room, …
 	changeable := target.Name == ""
 	for _, npc := range pNPCs {
 		if target.Name == npc {
@@ -75,7 +81,7 @@ func (target *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 	target.roomNPCs = []string{}
 	for _, item := range msg.Items {
 		for _, anpc := range target.areaNPCs() {
-			if strings.Index(item.Name, anpc) > 0 {
+			if strings.Index(item.Name, anpc) >= 0 {
 				target.roomNPCs = append(target.roomNPCs, anpc)
 				break
 			}
@@ -92,7 +98,7 @@ func (target *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
 	}
 
 	for _, anpc := range target.areaNPCs() {
-		if strings.Index(msg.Item.Name, anpc) > 0 {
+		if strings.Index(msg.Item.Name, anpc) >= 0 {
 			target.roomNPCs = append(target.roomNPCs, anpc)
 			break
 		}
@@ -133,7 +139,7 @@ func (target *Target) FromIRETargetSet(msg *igmcp.IRETargetSet) {
 	// on it for knowing that non-numbers equalling a player.
 	if msg.Target != "" {
 		_, err := strconv.Atoi(msg.Target)
-		target.IsPlayer = err != nil
+		target.isPlayer = err != nil
 	}
 }
 
@@ -145,7 +151,7 @@ func (target *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
 }
 
 func (target *Target) retarget() {
-	if target.IsPlayer {
+	if target.isPlayer {
 		return
 	}
 
