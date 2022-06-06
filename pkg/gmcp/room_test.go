@@ -1,160 +1,344 @@
 package gmcp_test
 
 import (
-	"bytes"
-	"fmt"
-	"log"
-	"os"
+	"strings"
 	"testing"
-
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
-func TestRoomServerMessages(t *testing.T) {
-	tcs := []struct {
-		command []byte
-		message gmcp.ServerMessage
-		err     string
-		log     string
+func TestRoomInfoDetails(t *testing.T) {
+	msg := &gmcp.RoomInfo{}
+
+	tcs := map[string]struct {
+		details []string
+		falsers []func() bool
+		truther func() bool
 	}{
-		{
-			command: []byte("Room.Info"),
-			err:     "failed hydrating gmcp.RoomInfo: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Room.Info {"details": [ "asdf" ] }`),
-			log:     "unknown Room.Info detail 'asdf'\n",
-			message: gmcp.RoomInfo{},
-		},
-		{
-			command: []byte(`Room.Info {"coords": "123"}`),
-			err:     `failed hydrating gmcp.RoomInfo: failed parsing coords '[123]'`,
-		},
-		{
-			command: []byte(`Room.Info {"coords": "a,5,4,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo: failed parsing area number from coords '[a 5 4 3]': strconv.Atoi: parsing "a": invalid syntax`,
-		},
-		{
-			command: []byte(`Room.Info {"coords": "45,b,4,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo: failed parsing x from coords '[45 b 4 3]': strconv.Atoi: parsing "b": invalid syntax`,
-		},
-		{
-			command: []byte(`Room.Info {"coords": "45,5,c,3"}`),
-			err:     `failed hydrating gmcp.RoomInfo: failed parsing y from coords '[45 5 c 3]': strconv.Atoi: parsing "c": invalid syntax`,
-		},
-		{
-			command: []byte(`Room.Info {"coords": "45,5,4,d"}`),
-			err:     `failed hydrating gmcp.RoomInfo: failed parsing building from coords '[45 5 4 d]': strconv.Atoi: parsing "d": invalid syntax`,
-		},
-		{
-			command: []byte(`Room.Info {"coords": "45,5,4"}`),
-			message: gmcp.RoomInfo{
-				AreaNumber: 45,
-				X:          5,
-				Y:          4,
+		"base": {
+			details: []string{},
+			falsers: []func() bool{
+				msg.IsBank,
+				msg.IsIndoors,
+				msg.IsOutdoors,
+				msg.IsSewer,
+				msg.IsShop,
+				msg.IsSubdivision,
+				msg.IsWilderness,
 			},
-		},
-		{
-			command: []byte(`Room.Info {"num": 12345, "name": "On a hill", "area": "Barren hills", "environment": "Hills", "coords": "45,5,4,3", "map": "www.example.com/map.php?45,5,4,3", "exits": { "n": 12344, "se": 12336 }, "details": [ "shop", "bank" ] }`),
-			message: gmcp.RoomInfo{
-				Number:      12345,
-				Name:        "On a hill",
-				AreaName:    "Barren hills",
-				AreaNumber:  45,
-				Environment: "Hills",
-				X:           5,
-				Y:           4,
-				Building:    3,
-				Map:         "www.example.com/map.php?45,5,4,3",
-				Exits: map[string]int{
-					"n":  12344,
-					"se": 12336,
-				},
-				Details: gmcp.RoomDetails{
-					Shop: true,
-					Bank: true,
-				},
-			},
+			truther: func() bool { return true },
 		},
 
-		{
-			command: []byte("Room.Players"),
-			err:     "failed hydrating gmcp.RoomPlayers: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Room.Players [{ "name": "Tecton", "fullname": "Tecton the Terraformer" }]`),
-			message: gmcp.RoomPlayers{{
-				Name:     "Tecton",
-				Fullname: "Tecton the Terraformer",
-			}},
+		"bank": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
 		},
 
-		{
-			command: []byte("Room.AddPlayer"),
-			err:     "failed hydrating gmcp.RoomAddPlayer: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Room.AddPlayer { "name": "Tecton", "fullname": "Tecton the Terraformer" }`),
-			message: gmcp.RoomAddPlayer{
-				Name:     "Tecton",
-				Fullname: "Tecton the Terraformer",
-			},
+		"indoors": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
 		},
 
-		{
-			command: []byte("Room.RemovePlayer"),
-			err:     "failed hydrating gmcp.RoomRemovePlayer: unexpected end of JSON input",
-		},
-		{
-			command: []byte(`Room.RemovePlayer "Tecton"`),
-			message: gmcp.RoomRemovePlayer{
-				Name: "Tecton",
-			},
+		"outdoors": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
 		},
 
-		{
-			command: []byte("Room.WrongDir"),
-			err:     "failed hydrating gmcp.RoomWrongDir: unexpected end of JSON input",
+		"sewer": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
 		},
-		{
-			command: []byte(`Room.WrongDir "ne"`),
-			message: gmcp.RoomWrongDir("ne"),
+
+		"shop": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
+		},
+
+		"subdivision": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
+		},
+
+		"wilderness": {
+			details: []string{"bank"},
+			truther: msg.IsBank,
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-			require := require.New(t)
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			msg.Details = tc.details
+			for _, falser := range tc.falsers {
+				assert.False(t, falser())
+			}
+			assert.True(t, tc.truther())
+		})
+	}
+}
 
-			var buf bytes.Buffer
-			log.SetOutput(&buf)
-			logFlags := log.Flags()
-			log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-			defer func() {
-				log.SetOutput(os.Stderr)
-				log.SetFlags(logFlags)
-			}()
+func TestRoomMessages(t *testing.T) {
+	tcs := map[string]struct {
+		msg         gmcp.Message
+		data        string
+		unmarshaled gmcp.Message
+		marshaled   string
+		err         string
+	}{
+		"Room.Info empty": {
+			msg:         &gmcp.RoomInfo{},
+			data:        "Room.Info {}",
+			unmarshaled: &gmcp.RoomInfo{},
+			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+				"num":         0,
+				"name":        "",
+				"area":        "",
+				"environment": "",
+				"coords":      "",
+				"map":         "",
+				"exits":       map[string]int{},
+				"details":     []string{},
+			}),
+		},
 
-			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
+		"Room.Info hydrated": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"num":         1234,
+				"name":        "A room",
+				"area":        "An area",
+				"environment": "urban",
+				"coords":      "1,2,3,4",
+				"map":         "www.example.com/map?1,2,3,4",
+				"exits": map[string]int{
+					"n": 4321,
+				},
+				"details": []string{"shop", "bank"},
+			}),
+			unmarshaled: &gmcp.RoomInfo{
+				Number:      1234,
+				Name:        "A room",
+				AreaName:    "An area",
+				AreaNumber:  1,
+				Environment: "urban",
+				X:           2,
+				Y:           3,
+				Building:    4,
+				Map:         "www.example.com/map?1,2,3,4",
+				Exits: map[string]int{
+					"n": 4321,
+				},
+				Details: []string{"shop", "bank"},
+			},
+			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+				"num":         1234,
+				"name":        "A room",
+				"area":        "An area",
+				"environment": "urban",
+				"coords":      "1,2,3,4",
+				"map":         "www.example.com/map?1,2,3,4",
+				"exits": map[string]int{
+					"n": 4321,
+				},
+				"details": []string{"shop", "bank"},
+			}),
+		},
+
+		"Room.Info only area number": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1",
+			}),
+			unmarshaled: &gmcp.RoomInfo{
+				AreaNumber: 1,
+			},
+			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+				"num":         0,
+				"name":        "",
+				"area":        "",
+				"environment": "",
+				"coords":      "1",
+				"map":         "",
+				"exits":       map[string]int{},
+				"details":     []string{},
+			}),
+		},
+
+		"Room.Info invalid JSON": {
+			msg:  &gmcp.RoomInfo{},
+			data: "Room.Info asdf",
+			err:  "invalid character 'a' looking for beginning of value",
+		},
+
+		"Room.Info no building": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1,2,3",
+			}),
+			unmarshaled: &gmcp.RoomInfo{
+				AreaNumber: 1,
+				X:          2,
+				Y:          3,
+				Building:   0,
+			},
+		},
+
+		"Room.Info invalid building": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1,2,3,b",
+			}),
+			err: `failed parsing building from coords: strconv.Atoi: parsing "b": invalid syntax`,
+		},
+
+		"Room.Info invalid area": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "a,2,3,4",
+			}),
+			err: `failed parsing area number from coords: strconv.Atoi: parsing "a": invalid syntax`,
+		},
+
+		"Room.Info invalid x": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1,x,3,4",
+			}),
+			err: `failed parsing x from coords: strconv.Atoi: parsing "x": invalid syntax`,
+		},
+
+		"Room.Info invalid y": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1,2,y,4",
+			}),
+			err: `failed parsing y from coords: strconv.Atoi: parsing "y": invalid syntax`,
+		},
+
+		"Room.Info invalid coords": {
+			msg: &gmcp.RoomInfo{},
+			data: makeGMCP("Room.Info", map[string]interface{}{
+				"coords": "1,2",
+			}),
+			err: "failed parsing coords '[1 2]'",
+		},
+
+		"Room.Players empty": {
+			msg:         &gmcp.RoomPlayers{},
+			data:        "Room.Players []",
+			unmarshaled: &gmcp.RoomPlayers{},
+			marshaled:   "Room.Players []",
+		},
+
+		"Room.Players hydrated": {
+			msg: &gmcp.RoomPlayers{},
+			data: makeGMCP("Room.Players", []map[string]interface{}{
+				{
+					"name":     "Durak",
+					"fullname": "Mason Durak",
+				},
+			}),
+			unmarshaled: &gmcp.RoomPlayers{
+				{
+					Name:     "Durak",
+					Fullname: "Mason Durak",
+				},
+			},
+			marshaled: makeGMCP("Room.Players", []map[string]interface{}{
+				{
+					"name":     "Durak",
+					"fullname": "Mason Durak",
+				},
+			}),
+		},
+
+		"Room.AddPlayer empty": {
+			msg:         &gmcp.RoomAddPlayer{},
+			data:        "Room.AddPlayer {}",
+			unmarshaled: &gmcp.RoomAddPlayer{},
+			marshaled: makeGMCP("Room.AddPlayer", map[string]interface{}{
+				"name":     "",
+				"fullname": "",
+			}),
+		},
+
+		"Room.AddPlayer hydrated": {
+			msg: &gmcp.RoomAddPlayer{},
+			data: makeGMCP("Room.AddPlayer", map[string]interface{}{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+			}),
+			unmarshaled: &gmcp.RoomAddPlayer{
+				Name:     "Durak",
+				Fullname: "Mason Durak",
+			},
+			marshaled: makeGMCP("Room.AddPlayer", map[string]interface{}{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+			}),
+		},
+
+		"Room.RemovePlayer empty": {
+			msg:         &gmcp.RoomRemovePlayer{},
+			data:        "Room.RemovePlayer {}",
+			unmarshaled: &gmcp.RoomRemovePlayer{},
+			marshaled: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+				"name":     "",
+				"fullname": "",
+			}),
+		},
+
+		"Room.RemovePlayer hydrated": {
+			msg: &gmcp.RoomRemovePlayer{},
+			data: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+			}),
+			unmarshaled: &gmcp.RoomRemovePlayer{
+				Name:     "Durak",
+				Fullname: "Mason Durak",
+			},
+			marshaled: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+			}),
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			err := tc.msg.Unmarshal([]byte(tc.data))
 
 			if tc.err != "" {
-				require.NotNil(err, fmt.Sprintf(
-					"wanted: %s", tc.err,
-				))
-				assert.Equal(tc.err, err.Error())
+				require.NotNil(t, err)
+				assert.Equal(t, tc.err, err.Error())
+				return
+			} else if err != nil {
+				require.Equal(t, "", err.Error())
+			}
+
+			require.Equal(t, tc.unmarshaled, tc.msg, "unmarshaling hydrates message")
+
+			if tc.marshaled == "" {
 				return
 			}
 
-			if tc.log != "" {
-				assert.Equal(tc.log, buf.String())
+			marshaled := tc.msg.Marshal()
+			data := strings.TrimSpace(strings.TrimPrefix(marshaled, tc.msg.ID()))
+			tcdata := strings.TrimSpace(strings.TrimPrefix(tc.marshaled, tc.msg.ID()))
+
+			assert.NotEqual(t, marshaled, data, "marshaled data has ID prefix")
+			assert.NotEqual(t, tc.marshaled, tcdata, "marshaled data has ID prefix")
+
+			if tcdata == "" {
+				assert.Equal(t, tcdata, data)
+				return
 			}
 
-			require.Nil(err)
-			assert.Equal(tc.message, message)
+			assert.JSONEq(t, tcdata, data, "marshaling maintains data integrity")
+
+			require.Equal(t, tc.unmarshaled, tc.msg, "marshaling doesn't mutate")
 		})
 	}
 }

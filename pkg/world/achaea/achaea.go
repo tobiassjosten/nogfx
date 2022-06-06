@@ -6,14 +6,13 @@ import (
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
+	igmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
 	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
 	"github.com/tobiassjosten/nogfx/pkg/world/module"
-
-	"github.com/icza/gox/gox"
 )
 
 // World is an Achaea-specific implementation of the pkg.World interface.
@@ -27,6 +26,7 @@ type World struct {
 
 	Character *Character
 	Room      *navigation.Room
+	Target    *Target
 }
 
 // NewWorld creates a new Achaea-specific pkg.World.
@@ -45,6 +45,7 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 		modules: modules,
 
 		Character: &Character{},
+		Target:    &Target{client: client},
 	}
 }
 
@@ -126,22 +127,19 @@ func (world *World) ProcessOutput(output []byte) [][]byte {
 // ProcessCommand processes telnet commands.
 func (world *World) ProcessCommand(command []byte) error {
 	if data := gmcp.Unwrap(command); data != nil {
-		return world.ProcessGMCP(data)
+		return world.processGMCP(data)
 	}
 
 	switch {
 	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
-		err := world.SendGMCP(agmcp.CoreSupportsSet{
-			CoreSupports: agmcp.CoreSupports{
-				CoreSupports: gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(1),
-					CharItems:   gox.NewInt(1),
-					CommChannel: gox.NewInt(1),
-					Room:        gox.NewInt(1),
-				},
-				IRERift: gox.NewInt(1),
-			},
+		err := world.SendGMCP(&gmcp.CoreSupportsSet{
+			"Char":         1,
+			"Char.Items":   1,
+			"Char.Skills":  1,
+			"Comm.Channel": 1,
+			"Room":         1,
+			"IRE.Rift":     1,
+			"IRE.Target":   1,
 		})
 		if err != nil {
 			return fmt.Errorf("failed GMCP: %w", err)
@@ -151,45 +149,50 @@ func (world *World) ProcessCommand(command []byte) error {
 	return nil
 }
 
-// ServerMessages maps GMCP messages to associated structs.
-var ServerMessages = map[string]gmcp.ServerMessage{
-	"Char.Status": agmcp.CharStatus{},
-	"Char.Vitals": agmcp.CharVitals{},
-}
-
-// ProcessGMCP processes GMCP messages.
-func (world *World) ProcessGMCP(data []byte) error {
-	message, err := gmcp.Parse(data, ServerMessages)
+func (world *World) processGMCP(data []byte) error {
+	message, err := agmcp.Parse(data)
 	if err != nil {
 		return fmt.Errorf("failed parsing GMCP: %w", err)
 	}
 
 	switch msg := message.(type) {
-	case gmcp.CharName:
+	case *gmcp.CharItemsList:
+		world.Target.FromCharItemsList(msg)
+
+	case *gmcp.CharItemsAdd:
+		world.Target.FromCharItemsAdd(msg)
+
+	case *gmcp.CharItemsRemove:
+		world.Target.FromCharItemsRemove(msg)
+
+	case *gmcp.CharName:
 		world.Character.FromCharName(msg)
 
-		if err := world.SendGMCP(gmcp.CharItemsInv{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
+		msgs := []gmcp.Message{
+			&gmcp.CharItemsInv{},
+			&gmcp.CommChannelPlayers{},
+			&igmcp.IRERiftRequest{},
+		}
+		for _, msg := range msgs {
+			data := gmcp.Wrap([]byte(msg.ID()))
+			if _, err := world.client.Write(data); err != nil {
+				return fmt.Errorf("failed GMCP: %w", err)
+			}
 		}
 
-		if err := world.SendGMCP(gmcp.CommChannelPlayers{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
-		}
-
-		if err := world.SendGMCP(gmcp.IRERiftRequest{}); err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
-		}
-
-	case agmcp.CharStatus:
+	case *agmcp.CharStatus:
 		world.Character.FromCharStatus(msg)
+		world.Target.FromCharStatus(msg)
 
-	case agmcp.CharVitals:
+	case *agmcp.CharVitals:
 		world.Character.FromCharVitals(msg)
 		if err := world.UpdateVitals(); err != nil {
 			return err
 		}
 
-	case gmcp.RoomInfo:
+	case *gmcp.RoomInfo:
+		world.Target.FromRoomInfo(msg)
+
 		if world.Room != nil {
 			world.Room.HasPlayer = false
 		}
@@ -200,15 +203,21 @@ func (world *World) ProcessGMCP(data []byte) error {
 
 		// @todo Implement this to download the official map.
 		// case gmcp.ClientMap:
+
+	case *igmcp.IRETargetSet:
+		world.Target.FromIRETargetSet(msg)
+
+	case *igmcp.IRETargetInfo:
+		world.Target.FromIRETargetInfo(msg)
 	}
 
 	return nil
 }
 
 // SendGMCP writes a GMCP message to the client.
-func (world *World) SendGMCP(message gmcp.ClientMessage) error {
-	data := []byte(message.String())
-	if _, err := world.client.Write(gmcp.Wrap(data)); err != nil {
+func (world *World) SendGMCP(msg gmcp.Message) error {
+	data := gmcp.Wrap([]byte(msg.Marshal()))
+	if _, err := world.client.Write(data); err != nil {
 		return err
 	}
 

@@ -2,7 +2,7 @@ package achaea
 
 import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
+	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 )
 
 // Character is the currently logged in character.
@@ -38,13 +38,13 @@ type Character struct {
 }
 
 // FromCharName updates the character from a Char.Name GMCP message.
-func (c *Character) FromCharName(msg gmcp.CharName) {
+func (c *Character) FromCharName(msg *gmcp.CharName) {
 	c.Name = msg.Name
 	c.Title = msg.Fullname
 }
 
 // FromCharStatus updates the character from a Char.Status GMCP message.
-func (c *Character) FromCharStatus(msg agmcp.CharStatus) {
+func (c *Character) FromCharStatus(msg *agmcp.CharStatus) {
 	if msg.Name != nil {
 		c.Name = *msg.Name
 	}
@@ -60,7 +60,7 @@ func (c *Character) FromCharStatus(msg agmcp.CharStatus) {
 }
 
 // FromCharVitals updates the character from a Char.Vitals GMCP message.
-func (c *Character) FromCharVitals(msg agmcp.CharVitals) {
+func (c *Character) FromCharVitals(msg *agmcp.CharVitals) {
 	c.XP = msg.NL
 
 	c.Balance = msg.Bal

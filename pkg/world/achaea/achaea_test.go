@@ -120,7 +120,7 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
 			sent: wrapGMCP([]string{
-				`Core.Supports.Set ["Char 1","Char.Skills 1","Char.Items 1","Comm.Channel 1","Room 1","IRE.Rift 1"]`,
+				`Core.Supports.Set ["Char 1","Char.Items 1","Char.Skills 1","Comm.Channel 1","IRE.Rift 1","IRE.Target 1","Room 1"]`,
 			}),
 		},
 		{

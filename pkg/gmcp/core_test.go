@@ -1,123 +1,119 @@
 package gmcp_test
 
 import (
-	"fmt"
+	"strings"
 	"testing"
-
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
-func TestCoreClientMessages(t *testing.T) {
-	tcs := []struct {
-		message gmcp.ClientMessage
-		output  string
+func TestCoreMessages(t *testing.T) {
+	tcs := map[string]struct {
+		msg         gmcp.Message
+		data        string
+		unmarshaled gmcp.Message
+		marshaled   string
+		err         string
 	}{
-		{
-			message: gmcp.CoreHello{
+		"Core.Goodbye": {
+			msg:         &gmcp.CoreGoodbye{},
+			data:        "Core.Goodbye",
+			unmarshaled: &gmcp.CoreGoodbye{},
+			marshaled:   "Core.Goodbye",
+		},
+
+		"Core.Hello empty": {
+			msg:         &gmcp.CoreHello{},
+			data:        "Core.Hello {}",
+			unmarshaled: &gmcp.CoreHello{},
+			marshaled: makeGMCP("Core.Hello", map[string]interface{}{
+				"client":  "",
+				"version": "",
+			}),
+		},
+
+		"Core.Hello hydrated": {
+			msg: &gmcp.CoreHello{},
+			data: makeGMCP("Core.Hello", map[string]interface{}{
+				"client":  "nogfx",
+				"version": "1.0.0",
+			}),
+			unmarshaled: &gmcp.CoreHello{
 				Client:  "nogfx",
-				Version: "1.2.3",
+				Version: "1.0.0",
 			},
-			output: `Core.Hello {"client":"nogfx","version":"1.2.3"}`,
+			marshaled: makeGMCP("Core.Hello", map[string]interface{}{
+				"client":  "nogfx",
+				"version": "1.0.0",
+			}),
 		},
-		{
-			message: gmcp.CoreKeepAlive{},
-			output:  "Core.KeepAlive",
+
+		"Core.KeepAlive": {
+			msg:         &gmcp.CoreKeepAlive{},
+			data:        "Core.KeepAlive",
+			unmarshaled: &gmcp.CoreKeepAlive{},
+			marshaled:   "Core.KeepAlive",
 		},
-		{
-			message: gmcp.CorePing{},
-			output:  "Core.Ping",
+
+		"Core.Ping empty": {
+			msg:         &gmcp.CorePing{},
+			data:        "Core.Ping",
+			unmarshaled: &gmcp.CorePing{},
+			marshaled:   "Core.Ping",
 		},
-		{
-			message: gmcp.CorePing{Latency: gox.NewInt(120)},
-			output:  "Core.Ping 120",
-		},
-		{
-			message: gmcp.CoreSupportsSet{},
-			output:  "Core.Supports.Set []",
-		},
-		{
-			message: gmcp.CoreSupportsSet{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-				},
+
+		"Core.Ping latency": {
+			msg:  &gmcp.CorePing{},
+			data: "Core.Ping 1234",
+			unmarshaled: &gmcp.CorePing{
+				Latency: gox.NewInt(1234),
 			},
-			output: `Core.Supports.Set ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
+			marshaled: "Core.Ping 1234",
 		},
-		{
-			message: gmcp.CoreSupportsAdd{},
-			output:  "Core.Supports.Add []",
-		},
-		{
-			message: gmcp.CoreSupportsAdd{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-				},
-			},
-			output: `Core.Supports.Add ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
-		},
-		{
-			message: gmcp.CoreSupportsRemove{},
-			output:  "Core.Supports.Remove []",
-		},
-		{
-			message: gmcp.CoreSupportsRemove{
-				gmcp.CoreSupports{
-					Char:        gox.NewInt(1),
-					CharSkills:  gox.NewInt(2),
-					CharItems:   gox.NewInt(3),
-					CommChannel: gox.NewInt(4),
-					Room:        gox.NewInt(5),
-				},
-			},
-			output: `Core.Supports.Remove ["Char 1","Char.Skills 2","Char.Items 3","Comm.Channel 4","Room 5"]`,
+
+		"Core.Ping invalid JSON": {
+			msg:  &gmcp.CorePing{},
+			data: "Core.Ping asdf",
+			err:  "invalid character 'a' looking for beginning of value",
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			err := tc.msg.Unmarshal([]byte(tc.data))
 
-			assert.Equal(tc.output, tc.message.String())
-		})
-	}
-}
+			if tc.err != "" {
+				require.NotNil(t, err)
+				assert.Equal(t, tc.err, err.Error())
+				return
+			} else if err != nil {
+				require.Equal(t, "", err.Error())
+			}
 
-func TestCoreServerMessages(t *testing.T) {
-	tcs := []struct {
-		command []byte
-		message gmcp.ServerMessage
-	}{
-		{
-			command: []byte("Core.Goodbye"),
-			message: gmcp.CoreGoodbye{},
-		},
-		{
-			command: []byte("Core.Ping"),
-			message: gmcp.CorePing{},
-		},
-	}
+			require.Equal(t, tc.unmarshaled, tc.msg, "unmarshaling hydrates message")
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-			require := require.New(t)
+			if tc.marshaled == "" {
+				return
+			}
 
-			message, err := gmcp.Parse(tc.command, gmcp.ServerMessages)
+			marshaled := tc.msg.Marshal()
+			data := strings.TrimSpace(strings.TrimPrefix(marshaled, tc.msg.ID()))
+			tcdata := strings.TrimSpace(strings.TrimPrefix(tc.marshaled, tc.msg.ID()))
 
-			require.Nil(err)
-			assert.Equal(tc.message, message)
+			assert.NotEqual(t, marshaled, data, "marshaled data has ID prefix")
+			assert.NotEqual(t, tc.marshaled, tcdata, "marshaled data has ID prefix")
+
+			if tcdata == "" {
+				assert.Equal(t, tcdata, data)
+				return
+			}
+
+			assert.JSONEq(t, tcdata, data, "marshaling maintains data integrity")
+
+			require.Equal(t, tc.unmarshaled, tc.msg, "marshaling doesn't mutate")
 		})
 	}
 }

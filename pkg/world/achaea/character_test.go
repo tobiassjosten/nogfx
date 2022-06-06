@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
-	"github.com/tobiassjosten/nogfx/pkg/world/achaea/agmcp"
 
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
@@ -15,12 +15,12 @@ import (
 func TestFromGMCP(t *testing.T) {
 	tcs := []struct {
 		in      *achaea.Character
-		message gmcp.ServerMessage
+		message gmcp.Message
 		out     *achaea.Character
 	}{
 		{
 			in: &achaea.Character{},
-			message: gmcp.CharName{
+			message: &gmcp.CharName{
 				Name:     "Durak",
 				Fullname: "Mason Durak",
 			},
@@ -32,13 +32,11 @@ func TestFromGMCP(t *testing.T) {
 
 		{
 			in: &achaea.Character{},
-			message: agmcp.CharStatus{
-				CharStatus: gmcp.CharStatus{
-					Name:     gox.NewString("Durak"),
-					Fullname: gox.NewString("Mason Durak"),
-					Level:    gox.NewFloat64(68),
-				},
-				Class: gox.NewString("Monk"),
+			message: &agmcp.CharStatus{
+				Class:    gox.NewString("Monk"),
+				Fullname: gox.NewString("Mason Durak"),
+				Level:    gox.NewFloat64(68),
+				Name:     gox.NewString("Durak"),
 			},
 			out: &achaea.Character{
 				Name:  "Durak",
@@ -50,7 +48,7 @@ func TestFromGMCP(t *testing.T) {
 
 		{
 			in: &achaea.Character{},
-			message: agmcp.CharVitals{
+			message: &agmcp.CharVitals{
 				HP:    123,
 				MaxHP: 124,
 				MP:    234,
@@ -102,15 +100,15 @@ func TestFromGMCP(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			if msg, ok := tc.message.(gmcp.CharName); ok {
+			if msg, ok := tc.message.(*gmcp.CharName); ok {
 				tc.in.FromCharName(msg)
 			}
 
-			if msg, ok := tc.message.(agmcp.CharStatus); ok {
+			if msg, ok := tc.message.(*agmcp.CharStatus); ok {
 				tc.in.FromCharStatus(msg)
 			}
 
-			if msg, ok := tc.message.(agmcp.CharVitals); ok {
+			if msg, ok := tc.message.(*agmcp.CharVitals); ok {
 				tc.in.FromCharVitals(msg)
 			}
 
