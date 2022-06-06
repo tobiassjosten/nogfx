@@ -26,6 +26,7 @@ type Target struct {
 	roomNPCs []string
 }
 
+// NewTarget creates a new target object with the given client.
 func NewTarget(client pkg.Client) *Target {
 	return &Target{client: client}
 }
