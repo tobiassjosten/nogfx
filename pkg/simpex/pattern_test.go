@@ -80,6 +80,26 @@ func TestMatch(t *testing.T) {
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{[]byte("ipsum")},
 		},
+		"word match prefix": {
+			pattern: []byte("Lorem ^sum dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"word match prefix capture": {
+			pattern: []byte("Lorem {^sum} dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("ipsum")},
+		},
+		"word match suffix": {
+			pattern: []byte("Lorem ip^ dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"word match suffix capture": {
+			pattern: []byte("Lorem {ip^} dolor sit amet."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("ipsum")},
+		},
 		"word match escaped one": {
 			pattern: []byte("Lorem ^^ dolor sit amet."),
 			text:    []byte("Lorem ^ dolor sit amet."),
@@ -108,6 +128,46 @@ func TestMatch(t *testing.T) {
 		},
 		"phrase match capture two": {
 			pattern: []byte("Lorem ipsum dolor {*} lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match prefix one": {
+			pattern: []byte("Lorem ipsum dolor *et."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"phrase match prefix two": {
+			pattern: []byte("Lorem ipsum dolor *et lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{},
+		},
+		"phrase match capture prefix one": {
+			pattern: []byte("Lorem ipsum dolor {*et}."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match capture prefix two": {
+			pattern: []byte("Lorem ipsum dolor {*et} lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match suffix one": {
+			pattern: []byte("Lorem ipsum dolor si*."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{},
+		},
+		"phrase match suffix two": {
+			pattern: []byte("Lorem ipsum dolor si* lol."),
+			text:    []byte("Lorem ipsum dolor sit amet lol."),
+			matches: [][]byte{},
+		},
+		"phrase match capture suffix one": {
+			pattern: []byte("Lorem ipsum dolor {si*}."),
+			text:    []byte("Lorem ipsum dolor sit amet."),
+			matches: [][]byte{[]byte("sit amet")},
+		},
+		"phrase match capture suffix two": {
+			pattern: []byte("Lorem ipsum dolor {si*} lol."),
 			text:    []byte("Lorem ipsum dolor sit amet lol."),
 			matches: [][]byte{[]byte("sit amet")},
 		},
@@ -187,4 +247,42 @@ func TestMatch(t *testing.T) {
 			))
 		})
 	}
+}
+
+var (
+	benchresult [][]byte
+	benchmarks  = map[string][][]byte{
+		"exact match": [][]byte{
+			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"character match": [][]byte{
+			[]byte("Lorem ipsum do?or sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"word match": [][]byte{
+			[]byte("Lorem ^ dolor sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"phrase match": [][]byte{
+			[]byte("Lorem ipsum dolor * amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"all specials": [][]byte{
+			[]byte("{Lorem} {^} do{?}or {*}."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+	}
+)
+
+func BenchmarkMatch(b *testing.B) {
+	var r [][]byte
+	for name, benchmark := range benchmarks {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r = simpex.Match(benchmark[0], benchmark[1])
+			}
+		})
+	}
+	benchresult = r
 }
