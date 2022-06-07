@@ -136,7 +136,7 @@ func Match(pattern []byte, text []byte) [][]byte {
 				continue
 			}
 
-			p = text[0]
+			pattern[0] = text[0]
 			tick()
 
 		default:
