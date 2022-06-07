@@ -20,15 +20,13 @@ func Match(pattern []byte, text []byte) [][]byte {
 		text = text[1:]
 	}
 
-	// @todo Determine performance gains in mutating indices instead of the
-	// patter/text slices themselves. Refactor if difference is big.
-
-main:
 	for len(pattern) > 0 && len(text) > 0 {
-		switch pattern[0] {
+		p := pattern[0]
+
+		switch p {
 		case '{':
-			if indexNot(pattern, pattern[0])%2 == 0 {
-				if pattern[0] != text[0] {
+			if bytes.IndexFunc(pattern, isnot(p))%2 == 0 {
+				if p != text[0] {
 					return nil
 				}
 
@@ -40,11 +38,9 @@ main:
 			capture = []byte{}
 			pattern = pattern[1:]
 
-			continue main
-
 		case '}':
-			if len(pattern) > 1 && pattern[0] == pattern[1] {
-				if pattern[0] != text[0] {
+			if len(pattern) > 1 && p == pattern[1] {
+				if p != text[0] {
 					return nil
 				}
 
@@ -57,11 +53,9 @@ main:
 			capture = nil
 			pattern = pattern[1:]
 
-			continue main
-
 		case '^':
-			if len(pattern) > 1 && pattern[0] == pattern[1] {
-				if pattern[0] != text[0] {
+			if len(pattern) > 1 && p == pattern[1] {
+				if p != text[0] {
 					return nil
 				}
 
@@ -70,14 +64,12 @@ main:
 				continue
 			}
 
-			edge := indexNonAlphanum(text)
+			edge := bytes.IndexFunc(text, isnotalphanum)
 			if edge < 1 {
 				return nil
 			}
 
-			// Discount remains of word to account for patterns like "lorem ^sum".
-			pedge := indexNonAlphanum(pattern[1:])
-			edge -= pedge
+			edge -= bytes.IndexFunc(pattern[1:], isnotalphanum)
 
 			if capture != nil {
 				capture = append(capture, text[:edge]...)
@@ -86,11 +78,9 @@ main:
 			pattern = pattern[1:]
 			text = text[edge:]
 
-			continue main
-
 		case '*':
-			if len(pattern) > 1 && pattern[0] == pattern[1] {
-				if pattern[0] != text[0] {
+			if len(pattern) > 1 && p == pattern[1] {
+				if p != text[0] {
 					return nil
 				}
 
@@ -104,25 +94,19 @@ main:
 					return nil
 				}
 
-				pattern = pattern[len(pattern):]
-				text = text[len(text):]
-
-				break main
+				return captures
 			}
 
 			if capture != nil && len(pattern) == 2 && pattern[1] == '}' {
 				capture = append(capture, text...)
 				captures = append(captures, capture)
 
-				pattern = pattern[len(pattern):]
-				text = text[len(text):]
-
-				break main
+				return captures
 			}
 
-			start := indexNonSpecial(pattern)
+			start := bytes.IndexFunc(pattern, isnotspecial)
 
-			end := indexSpecial(pattern[start:]) - 1
+			end := bytes.IndexFunc(pattern[start:], isspecial) - 1
 			if end < 0 {
 				end = len(pattern[start:]) - 1
 			}
@@ -142,8 +126,8 @@ main:
 			text = text[edge:]
 
 		case '?':
-			if len(pattern) > 1 && pattern[0] == pattern[1] {
-				if pattern[0] != text[0] {
+			if len(pattern) > 1 && p == pattern[1] {
+				if p != text[0] {
 					return nil
 				}
 
@@ -152,12 +136,11 @@ main:
 				continue
 			}
 
-			pattern[0] = text[0]
-
+			p = text[0]
 			tick()
 
 		default:
-			if pattern[0] != text[0] {
+			if p != text[0] {
 				return nil
 			}
 
@@ -172,66 +155,27 @@ main:
 	return captures
 }
 
-func isAlphanum(b byte) bool {
-	return (b >= '0' && b <= '9') ||
-		(b >= 'A' && b <= 'Z') ||
-		(b >= 'a' && b <= 'z')
+func isalphanum(r rune) bool {
+	return (r >= '0' && r <= '9') ||
+		(r >= 'A' && r <= 'Z') ||
+		(r >= 'a' && r <= 'z')
 }
 
-func indexNonAlphanum(text []byte) int {
-	for i, b := range text {
-		if !isAlphanum(b) {
-			return i
-		}
-	}
-
-	return -1
+func isnotalphanum(r rune) bool {
+	return !isalphanum(r)
 }
 
-func indexSpecial(text []byte) int {
-	if len(text) == 0 {
-		return -1
-	}
-
-main:
-	for i := 0; i < len(text); {
-		switch text[i] {
-		case '{', '}', '?', '^', '*':
-			if in := indexNot(text[i:], text[i]); in%2 == 0 {
-				i += in
-				continue main
-			}
-			return i
-		}
-		i++
-	}
-
-	return -1
+func isspecial(r rune) bool {
+	return r == '{' || r == '}' || r == '?' || r == '^' || r == '*'
 }
 
-func indexNonSpecial(text []byte) int {
-	var previous byte
-	for i, b := range text {
-		switch b {
-		case '{', '}', '?', '^', '*':
-			if previous == b {
-				return i
-			}
-			previous = b
-		default:
-			return i
-		}
-	}
-
-	return -1
+func isnotspecial(r rune) bool {
+	return !isspecial(r)
 }
 
-func indexNot(text []byte, c byte) int {
-	for i, b := range text {
-		if b != c {
-			return i
-		}
+func isnot(b byte) func(r rune) bool {
+	r := rune(b)
+	return func(rr rune) bool {
+		return r != rr
 	}
-
-	return -1
 }

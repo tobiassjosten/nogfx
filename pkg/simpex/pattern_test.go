@@ -248,3 +248,41 @@ func TestMatch(t *testing.T) {
 		})
 	}
 }
+
+var (
+	benchresult [][]byte
+	benchmarks  = map[string][][]byte{
+		"exact match": [][]byte{
+			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"character match": [][]byte{
+			[]byte("Lorem ipsum do?or sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"word match": [][]byte{
+			[]byte("Lorem ^ dolor sit amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"phrase match": [][]byte{
+			[]byte("Lorem ipsum dolor * amet."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+		"all specials": [][]byte{
+			[]byte("{Lorem} {^} do{?}or {*}."),
+			[]byte("Lorem ipsum dolor sit amet."),
+		},
+	}
+)
+
+func BenchmarkMatch(b *testing.B) {
+	var r [][]byte
+	for name, benchmark := range benchmarks {
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				r = simpex.Match(benchmark[0], benchmark[1])
+			}
+		})
+	}
+	benchresult = r
+}
