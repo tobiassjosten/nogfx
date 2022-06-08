@@ -1,0 +1,31 @@
+---
+name: TODOs to issues
+
+on: # yamllint disable-line rule:truthy
+  push:
+    # branches: [main]
+
+permissions:
+  issues: write
+  repository-projects: read
+  contents: read
+
+jobs:
+  todoissues:
+    name: Synchronize issues
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Convert TODOs
+        uses: derjuulsn/todo-issue@main
+        with:
+          autoAssign: false
+          keywords: ['@todo', 'todo']
+          caseSensitive: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
