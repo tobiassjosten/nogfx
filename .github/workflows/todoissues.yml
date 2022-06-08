@@ -4,6 +4,12 @@ name: TODOs to issues
 on: # yamllint disable-line rule:truthy
   push:
     # branches: [main]
+  workflow_dispatch:
+    inputs:
+      importAll:
+        default: 'false'
+        required: false
+        type: boolean
 
 permissions:
   issues: write
