@@ -1,0 +1,37 @@
+---
+name: TODOs to issues
+
+on:  # yamllint disable-line rule:truthy
+  push:
+  workflow_dispatch:
+    inputs:
+      importAll:
+        default: 'false'
+        required: false
+        type: boolean
+        description: Enable to import all TODOs.
+
+permissions:
+  issues: write
+  repository-projects: read
+  contents: read
+
+jobs:
+  todoissues:
+    name: Synchronize issues
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Convert TODOs
+        uses: derjuulsn/todo-issue@main
+        with:
+          autoAssign: false
+          keywords: '@todo'
+          caseSensitive: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
