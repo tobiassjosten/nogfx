@@ -25,7 +25,7 @@ jobs:
         uses: derjuulsn/todo-issue@main
         with:
           autoAssign: false
-          keywords: ['@todo', 'todo']
+          keywords: '@todo'
           caseSensitive: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
