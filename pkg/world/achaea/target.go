@@ -82,7 +82,7 @@ func (target *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 	target.roomNPCs = []string{}
 	for _, item := range msg.Items {
 		for _, anpc := range target.areaNPCs() {
-			if strings.Index(item.Name, anpc) >= 0 {
+			if strings.Contains(item.Name, anpc) {
 				target.roomNPCs = append(target.roomNPCs, anpc)
 				break
 			}
@@ -99,7 +99,7 @@ func (target *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
 	}
 
 	for _, anpc := range target.areaNPCs() {
-		if strings.Index(msg.Item.Name, anpc) >= 0 {
+		if strings.Contains(msg.Item.Name, anpc) {
 			target.roomNPCs = append(target.roomNPCs, anpc)
 			break
 		}
@@ -115,7 +115,7 @@ func (target *Target) FromCharItemsRemove(msg *gmcp.CharItemsRemove) {
 	}
 
 	for i, rnpc := range target.roomNPCs {
-		if strings.Index(msg.Item.Name, rnpc) >= 0 {
+		if strings.Contains(msg.Item.Name, rnpc) {
 			target.roomNPCs = append(
 				target.roomNPCs[:i],
 				target.roomNPCs[i+1:]...,

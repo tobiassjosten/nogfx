@@ -10,7 +10,6 @@ import (
 	igmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
-	"github.com/tobiassjosten/nogfx/pkg/tui"
 	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
 	"github.com/tobiassjosten/nogfx/pkg/world/module"
 )
@@ -186,9 +185,7 @@ func (world *World) processGMCP(data []byte) error {
 
 	case *agmcp.CharVitals:
 		world.Character.FromCharVitals(msg)
-		if err := world.UpdateVitals(); err != nil {
-			return err
-		}
+		world.ui.SetCharacter(world.Character.PkgCharacter())
 
 	case *gmcp.RoomInfo:
 		world.Target.FromRoomInfo(msg)
@@ -219,43 +216,6 @@ func (world *World) SendGMCP(msg gmcp.Message) error {
 	data := gmcp.Wrap([]byte(msg.Marshal()))
 	if _, err := world.client.Write(data); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-var (
-	vorder = []string{"health", "mana", "endurance", "willpower"}
-	vitals = map[string]*tui.Vital{
-		"health":    tui.NewHealthVital(),
-		"mana":      tui.NewManaVital(),
-		"endurance": tui.NewEnduranceVital(),
-		"willpower": tui.NewWillpowerVital(),
-	}
-)
-
-// UpdateVitals creates sends new current and max values to UI's VitalPanes.
-func (world *World) UpdateVitals() error {
-	for len(vorder) > 0 {
-		err := world.ui.AddVital(vorder[0], vitals[vorder[0]])
-		if err != nil {
-			return fmt.Errorf("failed adding vital: %w", err)
-		}
-		vorder = vorder[1:]
-	}
-
-	values := map[string][]int{
-		"health":    {world.Character.Health, world.Character.MaxHealth},
-		"mana":      {world.Character.Mana, world.Character.MaxMana},
-		"endurance": {world.Character.Endurance, world.Character.MaxEndurance},
-		"willpower": {world.Character.Willpower, world.Character.MaxWillpower},
-	}
-
-	for name, value := range values {
-		err := world.ui.UpdateVital(name, value[0], value[1])
-		if err != nil {
-			return fmt.Errorf("failed updating vital: %w", err)
-		}
 	}
 
 	return nil

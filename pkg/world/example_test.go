@@ -3,6 +3,7 @@ package world_test
 import (
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/world"
@@ -18,19 +19,14 @@ func TestExampleWorld(t *testing.T) {
 	outputs := make(chan []byte, 1000)
 
 	ui := &mock.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) error {
-			return nil
-		},
 		OutputsFunc: func() chan<- []byte {
 			return outputs
 		},
 		PrintFunc: func(data []byte) {
 			printed = append(printed, data)
 		},
-		SetRoomFunc: func(_ *navigation.Room) {},
-		UpdateVitalFunc: func(_ string, _, _ int) error {
-			return nil
-		},
+		SetRoomFunc:      func(_ *navigation.Room) {},
+		SetCharacterFunc: func(_ pkg.Character) {},
 	}
 
 	world := world.NewExampleWorld(client, ui)

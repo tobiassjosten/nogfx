@@ -84,7 +84,7 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) Row {
 	parsing := false
 	ansi := []rune{}
 
-	for _, r := range []rune(string(bs)) {
+	for _, r := range string(bs) {
 		if r == '\033' {
 			escaped = true
 			continue

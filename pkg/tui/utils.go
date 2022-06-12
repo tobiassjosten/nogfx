@@ -1,6 +1,8 @@
 package tui
 
-import "math"
+import (
+	"math"
+)
 
 func max(a, b int) int {
 	if b > a {

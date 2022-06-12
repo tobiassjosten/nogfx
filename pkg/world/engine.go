@@ -58,7 +58,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 	for {
 		select {
-		case _ = <-ctx.Done():
+		case <-ctx.Done():
 			return nil
 
 		case err := <-serverErrs:
@@ -67,7 +67,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 		case err := <-uiErrs:
 			return err
 
-		case _ = <-serverDone:
+		case <-serverDone:
 			engine.ui.Outputs() <- []byte("server disconnected")
 
 		case output := <-serverOutput:

@@ -179,11 +179,7 @@ func TestCommandsReply(t *testing.T) {
 				},
 			}
 
-			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) error {
-					return nil
-				},
-			}
+			ui := &mock.UIMock{}
 
 			world := NewWorld(client, ui)
 
@@ -264,12 +260,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 			}
 
 			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) error {
-					return nil
-				},
-				UpdateVitalFunc: func(_ string, _, _ int) error {
-					return nil
-				},
+				SetCharacterFunc: func(_ pkg.Character) {},
 			}
 
 			aworld := NewWorld(client, ui).(*World)
@@ -286,34 +277,33 @@ func TestCommandsMutateWorld(t *testing.T) {
 
 func TestCommandsMutateVitals(t *testing.T) {
 	tcs := []struct {
-		command []byte
-		vitals  map[string][][]int
+		command   []byte
+		character pkg.Character
 	}{
-		// @todo Add Char.Name once that pane exists.
 		{
 			command: wrapGMCP([]string{`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3905 M:3845/3846 E:15020/15021 W:12980/12981 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`}),
-			vitals: map[string][][]int{
-				"health":    [][]int{{3904, 3905}},
-				"mana":      [][]int{{3845, 3846}},
-				"endurance": [][]int{{15020, 15021}},
-				"willpower": [][]int{{12980, 12981}},
+			character: pkg.Character{
+				Vitals: map[string]pkg.CharacterVital{
+					"health":    {Value: 3904, Max: 3905},
+					"mana":      {Value: 3845, Max: 3846},
+					"endurance": {Value: 15020, Max: 15021},
+					"willpower": {Value: 12980, Max: 12981},
+					"bleed":     {Value: 1, Max: 3905},
+					"rage":      {Value: 2, Max: 2},
+					"ferocity":  {Value: 3, Max: 100},
+					"kai":       {Value: 4, Max: 100},
+					"karma":     {Value: 5, Max: 100},
+				},
 			},
 		},
 	}
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			vitals := map[string][][]int{}
+			var character pkg.Character
 			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) error {
-					return nil
-				},
-				UpdateVitalFunc: func(name string, value, max int) error {
-					if _, ok := vitals[name]; !ok {
-						vitals[name] = [][]int{}
-					}
-					vitals[name] = append(vitals[name], []int{value, max})
-					return nil
+				SetCharacterFunc: func(char pkg.Character) {
+					character = char
 				},
 			}
 
@@ -322,7 +312,7 @@ func TestCommandsMutateVitals(t *testing.T) {
 			err := world.ProcessCommand(tc.command)
 			require.Nil(t, err)
 
-			assert.Equal(t, vitals, tc.vitals)
+			assert.Equal(t, tc.character, character)
 		})
 	}
 }

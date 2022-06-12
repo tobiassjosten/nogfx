@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
 
@@ -18,8 +19,7 @@ type TUI struct {
 	outputs chan []byte
 	output  *Output
 
-	vitals map[string]*Vital
-	vorder []string
+	character pkg.Character
 
 	room    *navigation.Room
 	running bool
@@ -39,8 +39,6 @@ func NewTUI(screen tcell.Screen) *TUI {
 
 		outputs: make(chan []byte),
 		output:  &Output{},
-
-		vitals: map[string]*Vital{},
 	}
 
 	screen.SetStyle(outputStyle)
@@ -57,6 +55,12 @@ func (tui *TUI) Inputs() <-chan []byte {
 // Outputs exposes the incoming channel for server output.
 func (tui *TUI) Outputs() chan<- []byte {
 	return tui.outputs
+}
+
+// SetCharacter updates the current character and causes a repaint.
+func (tui *TUI) SetCharacter(character pkg.Character) {
+	tui.character = character
+	tui.Draw()
 }
 
 // SetRoom updates the current room and causes a repaint.
