@@ -47,19 +47,19 @@ var (
 				Foreground(tcell.ColorBlack)
 
 	energyFullStyle = tcell.StyleDefault.
-			Background(tcell.ColorRed).
+			Background(tcell.ColorYellow).
 			Foreground(tcell.ColorBlack)
 
 	energyEmptyStyle = tcell.StyleDefault.
-				Background(tcell.ColorRosyBrown).
+				Background(tcell.Color100).
 				Foreground(tcell.ColorBlack)
 
 	unknownFullStyle = tcell.StyleDefault.
-				Background(tcell.ColorYellow).
+				Background(tcell.Color250).
 				Foreground(tcell.ColorBlack)
 
 	unknownEmptyStyle = tcell.StyleDefault.
-				Background(tcell.Color100).
+				Background(tcell.Color240).
 				Foreground(tcell.ColorBlack)
 )
 
