@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
@@ -23,7 +24,7 @@ func (mod FuncModule) ProcessOutput(data []byte) [][]byte {
 	return mod(data)
 }
 
-func wrapGMCP(msgs []string) []byte {
+func wrapGMCP(msgs ...string) []byte {
 	var bs []byte
 	for _, msg := range msgs {
 		bs = append(bs, telnet.IAC, telnet.SB, telnet.GMCP)
@@ -119,9 +120,9 @@ func TestCommandsReply(t *testing.T) {
 	}{
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
-			sent: wrapGMCP([]string{
+			sent: wrapGMCP(
 				`Core.Supports.Set ["Char 1","Char.Items 1","Char.Skills 1","Comm.Channel 1","IRE.Rift 1","IRE.Target 1","Room 1"]`,
-			}),
+			),
 		},
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
@@ -130,32 +131,32 @@ func TestCommandsReply(t *testing.T) {
 		},
 
 		{
-			command: wrapGMCP([]string{`Asdf.Qwer`}),
+			command: wrapGMCP(`Asdf.Qwer`),
 			err:     "failed parsing GMCP: unknown message 'Asdf.Qwer'",
 		},
 
 		{
-			command: wrapGMCP([]string{
+			command: wrapGMCP(
 				`Char.Name {"name":"Durak","fullname":"Mason Durak"}`,
-			}),
-			sent: wrapGMCP([]string{
+			),
+			sent: wrapGMCP(
 				`Char.Items.Inv`,
 				`Comm.Channel.Players`,
 				`IRE.Rift.Request`,
-			}),
+			),
 		},
 		{
-			command: wrapGMCP([]string{`Char.Name {}`}),
+			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{true},
 			err:     "failed GMCP: ooops",
 		},
 		{
-			command: wrapGMCP([]string{`Char.Name {}`}),
+			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, true},
 			err:     "failed GMCP: ooops",
 		},
 		{
-			command: wrapGMCP([]string{`Char.Name {}`}),
+			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, false, true},
 			err:     "failed GMCP: ooops",
 		},
@@ -202,21 +203,28 @@ func TestCommandsReply(t *testing.T) {
 func TestCommandsMutateWorld(t *testing.T) {
 	tcs := []struct {
 		command   []byte
+		messages  []gmcp.Message
 		character *Character
+		target    *pkg.Target
 	}{
 		{
-			command: wrapGMCP([]string{
-				`Char.Name {"name":"Durak","fullname":"Mason Durak"}`,
-			}),
+			messages: []gmcp.Message{
+				&gmcp.CharName{
+					Name:     "Durak",
+					Fullname: "Mason Durak",
+				},
+			},
 			character: &Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
 			},
 		},
+
 		{
-			command: wrapGMCP([]string{
+			// @todo Replace with []gmcp.Message.
+			command: wrapGMCP(
 				`Char.Status {"name":"Durak","fullname":"Mason Durak","class":"Monk","level":"68 (19%)"}`,
-			}),
+			),
 			character: &Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
@@ -224,8 +232,10 @@ func TestCommandsMutateWorld(t *testing.T) {
 				Level: 68,
 			},
 		},
+
 		{
-			command: wrapGMCP([]string{`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "bal": "1", "eq": "1", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`}),
+			// @todo Replace with []gmcp.Message.
+			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "bal": "1", "eq": "1", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
 			character: &Character{
 				Balance:     true,
 				Equilibrium: true,
@@ -261,15 +271,27 @@ func TestCommandsMutateWorld(t *testing.T) {
 
 			ui := &mock.UIMock{
 				SetCharacterFunc: func(_ pkg.Character) {},
+				SetTargetFunc:    func(_ *pkg.Target) {},
 			}
 
 			aworld := NewWorld(client, ui).(*World)
 
-			err := aworld.ProcessCommand(tc.command)
-			require.Nil(t, err)
+			if len(tc.command) > 0 {
+				err := aworld.ProcessCommand(tc.command)
+				require.Nil(t, err)
+			}
+
+			for _, message := range tc.messages {
+				err := aworld.ProcessCommand(wrapGMCP(message.Marshal()))
+				require.Nil(t, err)
+			}
 
 			if tc.character != nil {
 				assert.Equal(t, tc.character, aworld.Character)
+			}
+
+			if tc.target != nil {
+				assert.Equal(t, *tc.target, aworld.Target.PkgTarget())
 			}
 		})
 	}
@@ -281,7 +303,7 @@ func TestCommandsMutateVitals(t *testing.T) {
 		character pkg.Character
 	}{
 		{
-			command: wrapGMCP([]string{`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3905 M:3845/3846 E:15020/15021 W:12980/12981 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`}),
+			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3905 M:3845/3846 E:15020/15021 W:12980/12981 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
 			character: pkg.Character{
 				Vitals: map[string]pkg.CharacterVital{
 					"health":    {Value: 3904, Max: 3905},

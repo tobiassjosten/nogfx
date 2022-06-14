@@ -44,7 +44,7 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 		modules: modules,
 
 		Character: &Character{},
-		Target:    &Target{client: client},
+		Target:    NewTarget(client),
 	}
 }
 
@@ -157,12 +157,15 @@ func (world *World) processGMCP(data []byte) error {
 	switch msg := message.(type) {
 	case *gmcp.CharItemsList:
 		world.Target.FromCharItemsList(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 	case *gmcp.CharItemsAdd:
 		world.Target.FromCharItemsAdd(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 	case *gmcp.CharItemsRemove:
 		world.Target.FromCharItemsRemove(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 	case *gmcp.CharName:
 		world.Character.FromCharName(msg)
@@ -181,7 +184,10 @@ func (world *World) processGMCP(data []byte) error {
 
 	case *agmcp.CharStatus:
 		world.Character.FromCharStatus(msg)
+		world.ui.SetCharacter(world.Character.PkgCharacter())
+
 		world.Target.FromCharStatus(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 	case *agmcp.CharVitals:
 		world.Character.FromCharVitals(msg)
@@ -189,6 +195,7 @@ func (world *World) processGMCP(data []byte) error {
 
 	case *gmcp.RoomInfo:
 		world.Target.FromRoomInfo(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 		if world.Room != nil {
 			world.Room.HasPlayer = false
@@ -203,9 +210,11 @@ func (world *World) processGMCP(data []byte) error {
 
 	case *igmcp.IRETargetSet:
 		world.Target.FromIRETargetSet(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 
 	case *igmcp.IRETargetInfo:
 		world.Target.FromIRETargetInfo(msg)
+		world.ui.SetTarget(world.Target.PkgTarget())
 	}
 
 	return nil

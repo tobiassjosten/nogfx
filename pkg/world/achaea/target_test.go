@@ -14,20 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
-	case *gmcp.CharItemsList:
-		world.Target.FromCharItemsList(msg)
-
-	case *gmcp.CharItemsAdd:
-		world.Target.FromCharItemsAdd(msg)
-
-	case *gmcp.CharItemsRemove:
-		world.Target.FromCharItemsRemove(msg)
-
-	case *gmcp.RoomInfo:
-		world.Target.FromRoomInfo(msg)
-*/
-
 func TestWorldTargeting(t *testing.T) {
 	tcs := map[string]struct {
 		messages []gmcp.Message
@@ -57,54 +43,7 @@ func TestWorldTargeting(t *testing.T) {
 			health: 1234,
 		},
 
-		"entering unknown area": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{},
-			},
-		},
-
-		"entering unsupported area": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{AreaNumber: 1},
-			},
-		},
-
-		"entering genji targetless": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{AreaNumber: 137},
-			},
-			sent: []string{"settarget shaman"},
-		},
-
-		"entering genji pvping": {
-			messages: []gmcp.Message{
-				&igmcp.IRETargetSet{Target: "durak"},
-				&gmcp.RoomInfo{AreaNumber: 137},
-			},
-		},
-
-		"traversing genji": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&gmcp.RoomInfo{Number: 2, AreaNumber: 137},
-			},
-			sent: []string{"settarget shaman"},
-		},
-
-		"exiting genji": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&agmcp.CharStatus{Target: gox.NewString("shaman")},
-				&gmcp.RoomInfo{Number: 2, AreaNumber: 1},
-				&agmcp.CharStatus{Target: gox.NewString("")},
-			},
-			sent: []string{
-				"settarget shaman",
-				"settarget none",
-			},
-		},
-
-		"secondary target found primary": {
+		"entering genji manticore present": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
 				&gmcp.CharItemsList{
@@ -114,65 +53,181 @@ func TestWorldTargeting(t *testing.T) {
 					},
 				},
 			},
-			sent: []string{
-				"settarget shaman",
-				"settarget manticore",
-			},
+			sent: []string{"settarget manticore"},
 		},
 
-		"secondary target found secondarily": {
+		"entering genji manticore shaman present": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&agmcp.CharStatus{Target: gox.NewString("shaman")},
 				&gmcp.CharItemsList{
 					Location: "room",
 					Items: []gmcp.CharItem{
+						{Name: "a ferocious manticore"},
 						{Name: "an atavian shaman"},
-						{Name: "manticore"},
 					},
 				},
 			},
-			name: "shaman",
 			sent: []string{"settarget shaman"},
 		},
 
-		"secondary target entered": {
+		"entering genji manticore present pvping": {
 			messages: []gmcp.Message{
+				&igmcp.IRETargetSet{Target: "someone"},
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&agmcp.CharStatus{Target: gox.NewString("shaman")},
-				&gmcp.CharItemsAdd{
-					Location: "room",
-					Item:     gmcp.CharItem{Name: "manticore"},
-				},
-			},
-			name: "shaman",
-			sent: []string{
-				"settarget shaman",
-				"settarget manticore",
-			},
-		},
-
-		"secondary target become primary": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&agmcp.CharStatus{Target: gox.NewString("shaman")},
 				&gmcp.CharItemsList{
 					Location: "room",
 					Items: []gmcp.CharItem{
-						{Name: "shaman"},
-						{Name: "manticore"},
+						{Name: "a ferocious manticore"},
+						{Name: "an atavian shaman"},
+					},
+				},
+			},
+		},
+
+		"entering genji manticore enters": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsAdd{
+					Location: "room",
+					Item: gmcp.CharItem{
+						Name: "a ferocious manticore",
+					},
+				},
+			},
+			sent: []string{"settarget manticore"},
+		},
+
+		"entering genji manticore shaman enter": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsAdd{
+					Location: "room",
+					Item: gmcp.CharItem{
+						Name: "a ferocious manticore",
+					},
+				},
+				&gmcp.CharItemsAdd{
+					Location: "room",
+					Item: gmcp.CharItem{
+						Name: "an atavian shaman",
+					},
+				},
+			},
+			sent: []string{
+				"settarget manticore",
+				"settarget shaman",
+			},
+		},
+
+		"entering genji manticore enters pvping": {
+			messages: []gmcp.Message{
+				&igmcp.IRETargetSet{Target: "someone"},
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsAdd{
+					Location: "room",
+					Item: gmcp.CharItem{
+						Name: "a ferocious manticore",
+					},
+				},
+			},
+		},
+
+		"entering genji manticore shaman present shaman leaves": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsList{
+					Location: "room",
+					Items: []gmcp.CharItem{
+						{Name: "a ferocious manticore"},
+						{Name: "an atavian shaman"},
 					},
 				},
 				&gmcp.CharItemsRemove{
 					Location: "room",
-					Item:     gmcp.CharItem{Name: "shaman"},
+					Item: gmcp.CharItem{
+						Name: "an atavian shaman",
+					},
 				},
-				&agmcp.CharStatus{Target: gox.NewString("manticore")},
 			},
-			name: "manticore",
 			sent: []string{
 				"settarget shaman",
 				"settarget manticore",
+			},
+		},
+
+		"entering genji manticore present in unknown": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsList{
+					Location: "unknown",
+					Items: []gmcp.CharItem{
+						{Name: "a ferocious manticore"},
+					},
+				},
+			},
+		},
+
+		"entering genji manticore enters/leaves in unknown": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsAdd{
+					Location: "unknown",
+					Item: gmcp.CharItem{
+						Name: "a ferocious manticore",
+					},
+				},
+				&gmcp.CharItemsRemove{
+					Location: "unknown",
+					Item: gmcp.CharItem{
+						Name: "a ferocious manticore",
+					},
+				},
+			},
+		},
+
+		"entering genji manticore present leaving genji": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsList{
+					Location: "room",
+					Items: []gmcp.CharItem{
+						{Name: "a ferocious manticore"},
+					},
+				},
+				&agmcp.CharStatus{Target: gox.NewString("manticore")},
+				&gmcp.RoomInfo{Number: 2, AreaNumber: 731},
+				&agmcp.CharStatus{Target: gox.NewString("")},
+			},
+			sent: []string{
+				"settarget manticore",
+				"settarget none",
+			},
+		},
+
+		"entering invalid": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{},
+			},
+		},
+
+		"entering genji manaual target shaman leaving genji": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&agmcp.CharStatus{Target: gox.NewString("shaman")},
+				&gmcp.RoomInfo{Number: 2, AreaNumber: 731},
+				&agmcp.CharStatus{Target: gox.NewString("")},
+			},
+			sent: []string{
+				"settarget none",
+			},
+		},
+
+		"entering genji manaual target unknown leaving genji": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&agmcp.CharStatus{Target: gox.NewString("unknown")},
+				&gmcp.RoomInfo{Number: 2, AreaNumber: 731},
+				&agmcp.CharStatus{Target: gox.NewString("")},
 			},
 		},
 	}

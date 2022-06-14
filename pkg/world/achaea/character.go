@@ -49,20 +49,6 @@ func (c *Character) PkgCharacter() pkg.Character {
 		},
 	}
 
-	if c.Bleed > 0 {
-		pc.Vitals["bleed"] = pkg.CharacterVital{
-			Value: c.Bleed,
-			Max:   c.MaxHealth,
-		}
-	}
-
-	if c.Rage > 0 {
-		pc.Vitals["rage"] = pkg.CharacterVital{
-			Value: c.Rage,
-			Max:   c.Rage,
-		}
-	}
-
 	// @todo Implement a way to differentiate between having 0 of the below
 	// resources and not having it at all.
 

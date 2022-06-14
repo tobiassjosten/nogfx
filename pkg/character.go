@@ -8,9 +8,3 @@ type CharacterVital struct {
 type Character struct {
 	Vitals map[string]CharacterVital
 }
-
-type Target struct {
-	Name       string
-	Health     int
-	Candidates []string
-}

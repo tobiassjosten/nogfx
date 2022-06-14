@@ -20,8 +20,9 @@ type TUI struct {
 	output  *Output
 
 	character pkg.Character
+	room      *navigation.Room
+	target    *pkg.Target
 
-	room    *navigation.Room
 	running bool
 }
 
@@ -66,6 +67,12 @@ func (tui *TUI) SetCharacter(character pkg.Character) {
 // SetRoom updates the current room and causes a repaint.
 func (tui *TUI) SetRoom(room *navigation.Room) {
 	tui.room = room
+	tui.Draw()
+}
+
+// SetTarget updates the current target and causes a repaint.
+func (tui *TUI) SetTarget(target *pkg.Target) {
+	tui.target = target
 	tui.Draw()
 }
 

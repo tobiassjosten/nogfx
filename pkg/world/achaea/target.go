@@ -11,175 +11,104 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 )
 
-// Target represents who or what is being targeted for skills and attacks. We
-// typically display only the General target to the player but use the Specific
-// target internally for executing skills against.
+// Target represents who or what is being targeted for skills and attacks.
 type Target struct {
-	client pkg.Client
-
-	Name   string
-	Health int
-
+	*pkg.Target
+	client   pkg.Client
 	isPlayer bool
-
-	room     *navigation.Room
-	roomNPCs []string
 }
 
 // NewTarget creates a new target object with the given client.
 func NewTarget(client pkg.Client) *Target {
-	return &Target{client: client}
+	target := &Target{client: client}
+	target.Target = pkg.NewTarget(target.Set)
+	return target
+}
+
+// PkgTarget converts our game-specific Target to the general pkg struct.
+func (tgt *Target) PkgTarget() *pkg.Target {
+	return tgt.Target
+}
+
+// Set executes the actual target change.
+func (tgt *Target) Set(name string, _ *pkg.Target) {
+	if tgt.isPlayer {
+		return
+	}
+
+	if name == "" {
+		tgt.client.Send([]byte("settarget none"))
+		return
+	}
+
+	tgt.client.Send([]byte("settarget " + name))
 }
 
 // FromRoomInfo handles targeting when moving between rooms (areas, in effect).
-func (target *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
-	current := navigation.RoomFromGMCP(msg)
-	if current == nil || current.Area == nil {
-		return
-	}
-
-	previous := target.room
-	target.room = current
-
-	if target.isPlayer {
-		return
-	}
-
-	if previous != nil && previous.Area != nil && previous.Area.ID == current.Area.ID {
-		return
-	}
-
-	cNPCs, pNPCs := areaNPCs(current), areaNPCs(previous)
-
-	// Check if we're targeting an area target from the previous room, …
-	changeable := target.Name == ""
-	for _, npc := range pNPCs {
-		if target.Name == npc {
-			changeable = true
-			break
-		}
-	}
-
-	if len(cNPCs) == 0 {
-		if changeable && target.Name != "" {
-			target.client.Send([]byte("settarget none"))
-		}
-		return
-	}
-
-	if changeable && target.Name != cNPCs[0] {
-		target.client.Send([]byte("settarget " + cNPCs[0]))
-		return
-	}
+func (tgt *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
+	room := navigation.RoomFromGMCP(msg)
+	npcs := tgt.npcs(room)
+	tgt.Target.SetCandidates(npcs)
 }
 
 // FromCharItemsList builds the list of NPCs in the room and retargets.
-func (target *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
+func (tgt *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 	if msg.Location != "room" {
 		return
 	}
 
-	target.roomNPCs = []string{}
+	present := []string{}
 	for _, item := range msg.Items {
-		for _, anpc := range target.areaNPCs() {
-			if strings.Contains(item.Name, anpc) {
-				target.roomNPCs = append(target.roomNPCs, anpc)
-				break
-			}
-		}
+		present = append(present, item.Name)
 	}
-
-	target.retarget()
+	tgt.Target.SetPresent(present)
 }
 
 // FromCharItemsAdd adds an NPC to the room list and retargets.
-func (target *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
+func (tgt *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
 	if msg.Location != "room" {
 		return
 	}
 
-	for _, anpc := range target.areaNPCs() {
-		if strings.Contains(msg.Item.Name, anpc) {
-			target.roomNPCs = append(target.roomNPCs, anpc)
-			break
-		}
-	}
-
-	target.retarget()
+	tgt.Target.AddPresent(msg.Item.Name)
 }
 
 // FromCharItemsRemove removes an NPC to the room list and retargets.
-func (target *Target) FromCharItemsRemove(msg *gmcp.CharItemsRemove) {
+func (tgt *Target) FromCharItemsRemove(msg *gmcp.CharItemsRemove) {
 	if msg.Location != "room" {
 		return
 	}
 
-	for i, rnpc := range target.roomNPCs {
-		if strings.Contains(msg.Item.Name, rnpc) {
-			target.roomNPCs = append(
-				target.roomNPCs[:i],
-				target.roomNPCs[i+1:]...,
-			)
-			break
-		}
-	}
-
-	target.retarget()
+	tgt.Target.RemovePresent(msg.Item.Name)
 }
 
 // FromCharStatus updates the current target.
-func (target *Target) FromCharStatus(msg *agmcp.CharStatus) {
+func (tgt *Target) FromCharStatus(msg *agmcp.CharStatus) {
 	if msg.Target != nil {
-		target.Name = strings.ToLower(*msg.Target)
+		tgt.Name = strings.ToLower(*msg.Target)
 	}
 }
 
 // FromIRETargetSet updates the player status of the current target.
-func (target *Target) FromIRETargetSet(msg *igmcp.IRETargetSet) {
+func (tgt *Target) FromIRETargetSet(msg *igmcp.IRETargetSet) {
 	// This message works so inconsistenyly that we can only rely
-	// on it for knowing that non-numbers equalling a player.
+	// on it for knowing that non-numbers equals a player.
 	if msg.Target != "" {
 		_, err := strconv.Atoi(msg.Target)
-		target.isPlayer = err != nil
+		tgt.isPlayer = err != nil
+	}
+
+	if msg.Target == "" || tgt.isPlayer {
+		tgt.Health = -1
 	}
 }
 
 // FromIRETargetInfo updates the current NPC-target's health.
-func (target *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
-	if msg.Health > 0 {
-		target.Health = msg.Health
-	}
+func (tgt *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
+	tgt.Health = msg.Health
 }
 
-func (target *Target) retarget() {
-	if target.isPlayer {
-		return
-	}
-
-	newTarget := target.roomTarget()
-
-	if newTarget != "" && newTarget != target.Name {
-		target.client.Send([]byte("settarget " + newTarget))
-	}
-}
-
-func (target *Target) roomTarget() string {
-	for _, anpc := range target.areaNPCs() {
-		for _, rnpc := range target.roomNPCs {
-			if anpc == rnpc {
-				return anpc
-			}
-		}
-	}
-
-	return ""
-}
-
-func (target *Target) areaNPCs() []string {
-	return areaNPCs(target.room)
-}
-
-func areaNPCs(room *navigation.Room) []string {
+func (tgt *Target) npcs(room *navigation.Room) []string {
 	if room == nil || room.Area == nil {
 		return []string{}
 	}
