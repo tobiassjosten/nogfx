@@ -1,17 +1,18 @@
 package tui
 
 import (
-	"github.com/gdamore/tcell/v2"
-)
+	"bytes"
 
-const (
-	outputMinWidth = 80
-	outputMaxWidth = 120
+	"github.com/gdamore/tcell/v2"
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 // Print shows a message to the user.
 func (tui *TUI) Print(output []byte) {
+	// @todo Make it set its own color (or ^[37m) before resetting back to
+	// the previous last seen style.
 	tui.output.Append(output)
+	tui.setCache(paneOutput, nil)
 	tui.Draw()
 }
 
@@ -20,11 +21,31 @@ type Output struct {
 	buffer Rows
 	offset int
 	pwidth int
+	style  tcell.Style
+	ga     bool
 }
 
 // Append adds a new paragraph to the Output.
 func (output *Output) Append(data []byte) {
-	row := NewRowFromBytes(data, output.lastStyle())
+	// Go Ahead marks are saved for later processing.
+	if bytes.Equal(data, []byte{telnet.GA}) {
+		output.ga = true
+		return
+	}
+
+	row, style := NewRowFromBytes(data, output.style)
+	output.style = style
+
+	// If the previous output was a Go Ahead mark AND this output is empty
+	// (after processing colors) then we skip it. Some games add an extra
+	// newline to compensate for players' own echoed commands.
+	if output.ga {
+		output.ga = false
+		if len(row) == 0 {
+			return
+		}
+	}
+
 	output.buffer = output.buffer.prepend(row)
 
 	if output.offset > 0 && output.pwidth > 0 {
@@ -37,25 +58,24 @@ func (output *Output) Append(data []byte) {
 	}
 }
 
-func (output *Output) lastStyle() tcell.Style {
-	for _, row := range output.buffer {
-		if len(row) == 0 {
-			continue
-		}
-		return row[len(row)-1].Style
-	}
-
-	return tcell.Style{}
-}
-
 // RenderOutput renders the current Output.
 func (tui *TUI) RenderOutput(width, height int) Rows {
-	return RenderOutput(tui.output, width, height)
+	if rows, ok := tui.getCache(paneOutput); ok {
+		return rows
+	}
+
+	rows := RenderOutput(tui.output, width, height)
+
+	tui.setCache(paneOutput, rows)
+
+	return rows
 }
 
 // RenderOutput renders the given Output.
 func RenderOutput(output *Output, width, height int) Rows {
 	rows := Rows{}
+
+	padding := NewCell(' ')
 
 	if width == 0 || height == 0 {
 		return rows
@@ -73,7 +93,7 @@ func RenderOutput(output *Output, width, height int) Rows {
 	height += output.offset
 
 	for _, row := range output.buffer {
-		paragraph := row.Wrap(width)
+		paragraph := row.Wrap(width, padding)
 
 		// Rows are ordered with the most recent one first, so we
 		// prepend older paragraphs to the rows.
@@ -92,7 +112,9 @@ func RenderOutput(output *Output, width, height int) Rows {
 
 	// For simpler cases we just return the full buffer.
 	if height <= 2 || length <= height || output.offset == 0 {
-		return rows[max(0, length-height):]
+		rows = rows[max(0, length-height):]
+		rows = append(NewRows(width, height-length, padding), rows...)
+		return rows
 	}
 
 	// Cap offset to the last row in the buffer.
@@ -101,17 +123,7 @@ func RenderOutput(output *Output, width, height int) Rows {
 	hheight := length - height - output.offset
 	history := rows[hheight : hheight+height/2]
 
-	// Color history scrollback split background.
-	hstyle := (tcell.Style{}).Background(tcell.Color236)
-	for y, row := range history {
-		for x := range row {
-			history[y][x].Background(tcell.Color236)
-		}
-		for i := len(row); i < width; i++ {
-			history[y] = append(history[y], NewCell(' ', hstyle))
-		}
-	}
-
+	// @todo Mark this divider better, with colors and flair.
 	divider := NewRow(width, NewCell(tcell.RuneHLine))
 
 	rows = rows[length-(height-height/2)+1:]

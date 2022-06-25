@@ -41,6 +41,9 @@ var _ pkg.UI = &UIMock{}
 // 			SetRoomFunc: func(room *navigation.Room)  {
 // 				panic("mock out the SetRoom method")
 // 			},
+// 			SetTargetFunc: func(target *pkg.Target)  {
+// 				panic("mock out the SetTarget method")
+// 			},
 // 			UnmaskInputFunc: func()  {
 // 				panic("mock out the UnmaskInput method")
 // 			},
@@ -71,6 +74,9 @@ type UIMock struct {
 
 	// SetRoomFunc mocks the SetRoom method.
 	SetRoomFunc func(room *navigation.Room)
+
+	// SetTargetFunc mocks the SetTarget method.
+	SetTargetFunc func(target *pkg.Target)
 
 	// UnmaskInputFunc mocks the UnmaskInput method.
 	UnmaskInputFunc func()
@@ -106,6 +112,11 @@ type UIMock struct {
 			// Room is the room argument value.
 			Room *navigation.Room
 		}
+		// SetTarget holds details about calls to the SetTarget method.
+		SetTarget []struct {
+			// Target is the target argument value.
+			Target *pkg.Target
+		}
 		// UnmaskInput holds details about calls to the UnmaskInput method.
 		UnmaskInput []struct {
 		}
@@ -117,6 +128,7 @@ type UIMock struct {
 	lockRun          sync.RWMutex
 	lockSetCharacter sync.RWMutex
 	lockSetRoom      sync.RWMutex
+	lockSetTarget    sync.RWMutex
 	lockUnmaskInput  sync.RWMutex
 }
 
@@ -319,6 +331,37 @@ func (mock *UIMock) SetRoomCalls() []struct {
 	mock.lockSetRoom.RLock()
 	calls = mock.calls.SetRoom
 	mock.lockSetRoom.RUnlock()
+	return calls
+}
+
+// SetTarget calls SetTargetFunc.
+func (mock *UIMock) SetTarget(target *pkg.Target) {
+	if mock.SetTargetFunc == nil {
+		panic("UIMock.SetTargetFunc: method is nil but UI.SetTarget was just called")
+	}
+	callInfo := struct {
+		Target *pkg.Target
+	}{
+		Target: target,
+	}
+	mock.lockSetTarget.Lock()
+	mock.calls.SetTarget = append(mock.calls.SetTarget, callInfo)
+	mock.lockSetTarget.Unlock()
+	mock.SetTargetFunc(target)
+}
+
+// SetTargetCalls gets all the calls that were made to SetTarget.
+// Check the length with:
+//     len(mockedUI.SetTargetCalls())
+func (mock *UIMock) SetTargetCalls() []struct {
+	Target *pkg.Target
+} {
+	var calls []struct {
+		Target *pkg.Target
+	}
+	mock.lockSetTarget.RLock()
+	calls = mock.calls.SetTarget
+	mock.lockSetTarget.RUnlock()
 	return calls
 }
 

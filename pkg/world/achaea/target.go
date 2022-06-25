@@ -16,6 +16,7 @@ type Target struct {
 	*pkg.Target
 	client   pkg.Client
 	isPlayer bool
+	area     *navigation.Area
 }
 
 // NewTarget creates a new target object with the given client.
@@ -47,7 +48,15 @@ func (tgt *Target) Set(name string, _ *pkg.Target) {
 // FromRoomInfo handles targeting when moving between rooms (areas, in effect).
 func (tgt *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 	room := navigation.RoomFromGMCP(msg)
-	npcs := tgt.npcs(room)
+	if room == nil || room.Area == nil {
+		return
+	}
+
+	if tgt.area != nil && room.Area.ID == tgt.area.ID {
+		return
+	}
+
+	npcs := tgt.npcs()[room.Area.ID]
 	tgt.Target.SetCandidates(npcs)
 }
 
@@ -66,7 +75,7 @@ func (tgt *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 
 // FromCharItemsAdd adds an NPC to the room list and retargets.
 func (tgt *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
-	if msg.Location != "room" {
+	if msg.Location != "room" || !msg.Item.Attributes.Monster {
 		return
 	}
 
@@ -75,11 +84,21 @@ func (tgt *Target) FromCharItemsAdd(msg *gmcp.CharItemsAdd) {
 
 // FromCharItemsRemove removes an NPC to the room list and retargets.
 func (tgt *Target) FromCharItemsRemove(msg *gmcp.CharItemsRemove) {
-	if msg.Location != "room" {
+	if msg.Location != "room" || !msg.Item.Attributes.Monster {
 		return
 	}
 
-	tgt.Target.RemovePresent(msg.Item.Name)
+	name := msg.Item.Name
+
+	// When a NPC dies its name goes from "x" to "the corpse of x" without
+	// triggering a Char.Items.Update, so we handle that here.
+	// @todo When we don't kill and autograb the corpse, it won't leave the
+	// room and thus remain an eligible  target. Fix this.
+	if msg.Item.Attributes.Dead {
+		name = strings.TrimPrefix(name, "the corpse of ")
+	}
+
+	tgt.Target.RemovePresent(name)
 }
 
 // FromCharStatus updates the current target.
@@ -108,17 +127,20 @@ func (tgt *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
 	tgt.Health = msg.Health
 }
 
-func (tgt *Target) npcs(room *navigation.Room) []string {
-	if room == nil || room.Area == nil {
-		return []string{}
-	}
-
+func (tgt *Target) npcs() map[int][]string {
 	// An important property of these lists is their order of importance,
 	// where the most dangerous NPC is first and the rest in falling order.
-	switch room.Area.ID {
-	case 137:
-		return []string{"shaman", "warrior", "manticore", "villager"}
-	}
+	return map[int][]string{
+		// The Keep of Belladona.
+		134: []string{
+			// Aggressive:
+			"grothgar", "crocodile", "guardian", "hound",
+			"minotaur",
+			// Passive:
+			"courtier", "imp", "leech", "toad",
+		},
 
-	return []string{}
+		// The Village of Genji.
+		137: []string{"shaman", "warrior", "manticore", "villager"},
+	}
 }

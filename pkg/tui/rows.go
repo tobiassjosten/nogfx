@@ -72,7 +72,7 @@ func NewRowFromRunes(rs []rune, styles ...tcell.Style) Row {
 
 // NewRowFromBytes traveses a raw text with ANSI control sequences and
 // transforms that into styled Cells.
-func NewRowFromBytes(bs []byte, styles ...tcell.Style) Row {
+func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 	row := Row{}
 
 	if len(styles) == 0 {
@@ -121,16 +121,12 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) Row {
 		row = row.append(NewCell(r, style))
 	}
 
-	return row
+	return row, style
 }
 
 // Append adds a new Cell to the end of the Row.
 func (row Row) append(cells ...Cell) Row {
 	return append(row, cells...)
-}
-
-func (row Row) copy() Row {
-	return append(Row{}, row...)
 }
 
 // revIndexSpace finds the first space in the last block of spaces, or -1 if
@@ -177,18 +173,22 @@ func (row Row) revIndexNospace() int {
 }
 
 // Wrap breaks the Row into Rows to fit the given width.
-func (row Row) Wrap(width int) Rows {
-	if len(row) == 0 || len(row) <= width {
+func (row Row) Wrap(width int, padding ...Cell) Rows {
+	lrow := len(row)
+	if lrow == 0 || lrow <= width {
+		if len(padding) > 0 {
+			row = row.Pad(width, padding[0])
+		}
 		return Rows{row}
 	}
 
 	rows := Rows{}
 
 wordwrap:
-	for i := 0; i < len(row); {
+	for i := 0; i < lrow; {
 		// If the remains fits the width, we're done.
 		if len(row[i:]) <= width {
-			rows = append(rows, row[i:].copy())
+			rows = append(rows, row[i:])
 			break wordwrap
 		}
 
@@ -203,20 +203,20 @@ wordwrap:
 		// exists in the beginning of the row, which we preseve. So we
 		// can't wrap it but take the lot.
 		case riSpace < 0 || riNospace < 0 || riSpace == 0:
-			rows = append(rows, row[i:i+ii].copy())
+			rows = append(rows, row[i:i+ii])
 
 		// It ends with spaces. So we wrap at the preceding non-space
 		// and skip the following spaces.
 		case riSpace > riNospace:
-			rows = append(rows, row[i:i+riSpace].copy())
+			rows = append(rows, row[i:i+riSpace])
 
 		// It ends with non-spaces and it succeeded by a space. So we
 		// can conveniently take the whole row and then skip the spaces.
 		case row[i+ii].Content == ' ':
-			rows = append(rows, row[i:i+ii].copy())
+			rows = append(rows, row[i:i+ii])
 
 		case riNospace > riSpace:
-			rows = append(rows, row[i:i+riSpace].copy())
+			rows = append(rows, row[i:i+riSpace])
 			ii = riNospace
 		}
 
@@ -228,7 +228,21 @@ wordwrap:
 		}
 	}
 
+	if len(padding) > 0 {
+		for i, row := range rows {
+			rows[i] = row.Pad(width, padding[0])
+		}
+	}
+
 	return rows
+}
+
+func (row Row) Pad(width int, padding Cell) Row {
+	newrow := append(Row{}, row...)
+	for i := len(newrow); i < width; i++ {
+		newrow = append(newrow, padding)
+	}
+	return newrow
 }
 
 // Rows is a slice of Row and represents an area to be printed to the screen.

@@ -11,7 +11,6 @@ import (
 func TestTarget(t *testing.T) {
 	tcs := map[string]struct {
 		startName     string
-		startHealth   int
 		candidates    []string
 		present       []string
 		enters        []string
@@ -19,7 +18,6 @@ func TestTarget(t *testing.T) {
 		newcandidates []string
 		sets          []string
 		name          string
-		health        int
 	}{
 		"one present": {
 			candidates: []string{"one", "two"},
@@ -174,7 +172,6 @@ func TestTarget(t *testing.T) {
 
 			assert.Equal(t, tc.sets, sets)
 			assert.Equal(t, tc.name, tgt.Name)
-			assert.Equal(t, tc.health, tgt.Health)
 		})
 	}
 }

@@ -62,7 +62,7 @@ func TestCharItemsMessages(t *testing.T) {
 				"location": "room",
 				"items": []map[string]interface{}{
 					{
-						"id":     1234,
+						"id":     "1234",
 						"name":   "an item",
 						"attrib": "wWlLgcrfemdtx",
 						"icon":   "item",
@@ -98,7 +98,7 @@ func TestCharItemsMessages(t *testing.T) {
 				"location": "room",
 				"items": []map[string]interface{}{
 					{
-						"id":     1234,
+						"id":     "1234",
 						"name":   "an item",
 						"attrib": "cdefglLmrtwWx",
 						"icon":   "item",
@@ -113,7 +113,7 @@ func TestCharItemsMessages(t *testing.T) {
 				"location": "room",
 				"items": []map[string]interface{}{
 					{
-						"id":     1234,
+						"id":     "1234",
 						"name":   "an item",
 						"attrib": "z",
 						"icon":   "item",
@@ -130,7 +130,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Add", map[string]interface{}{
 				"location": "",
 				"item": map[string]interface{}{
-					"id":     0,
+					"id":     "0",
 					"name":   "",
 					"attrib": "",
 					"icon":   "",
@@ -143,7 +143,7 @@ func TestCharItemsMessages(t *testing.T) {
 			data: makeGMCP("Char.Items.Add", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
 					"icon":   "item",
@@ -175,7 +175,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Add", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",
 					"icon":   "item",
@@ -190,7 +190,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Remove", map[string]interface{}{
 				"location": "",
 				"item": map[string]interface{}{
-					"id":     0,
+					"id":     "0",
 					"name":   "",
 					"attrib": "",
 					"icon":   "",
@@ -203,7 +203,7 @@ func TestCharItemsMessages(t *testing.T) {
 			data: makeGMCP("Char.Items.Remove", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
 					"icon":   "item",
@@ -235,7 +235,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Remove", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",
 					"icon":   "item",
@@ -250,7 +250,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Update", map[string]interface{}{
 				"location": "",
 				"item": map[string]interface{}{
-					"id":     0,
+					"id":     "0",
 					"name":   "",
 					"attrib": "",
 					"icon":   "",
@@ -263,7 +263,7 @@ func TestCharItemsMessages(t *testing.T) {
 			data: makeGMCP("Char.Items.Update", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
 					"icon":   "item",
@@ -295,7 +295,7 @@ func TestCharItemsMessages(t *testing.T) {
 			marshaled: makeGMCP("Char.Items.Update", map[string]interface{}{
 				"location": "room",
 				"item": map[string]interface{}{
-					"id":     1234,
+					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",
 					"icon":   "item",

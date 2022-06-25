@@ -60,11 +60,23 @@ var (
 				Background(tcell.Color100).
 				Foreground(tcell.ColorBlack),
 		},
+		"target": {
+			tcell.StyleDefault.
+				Background(tcell.ColorRed).
+				Foreground(tcell.ColorBlack),
+			tcell.StyleDefault.
+				Background(tcell.ColorDarkRed).
+				Foreground(tcell.ColorBlack),
+		},
 	}
 )
 
 // RenderVitals renders the current Vitals.
 func (tui *TUI) RenderVitals(width int) Rows {
+	if rows, ok := tui.getCache(paneVitals); ok {
+		return rows
+	}
+
 	if len(tui.character.Vitals) == 0 {
 		return Rows{}
 	}
@@ -94,6 +106,8 @@ func (tui *TUI) RenderVitals(width int) Rows {
 		}
 	}
 
+	gapStyle := (tcell.Style{}).Background(tcell.Color235)
+
 	row := Row{}
 	for i, name := range vorder {
 		styles, ok := vitalStyles[name]
@@ -101,7 +115,7 @@ func (tui *TUI) RenderVitals(width int) Rows {
 			styles = vitalStyles[""]
 		}
 
-		row = row.append(NewRow(min(1, i), NewCell(' '))...)
+		row = row.append(NewRow(min(1, i), NewCell(' ', gapStyle))...)
 		row = row.append(RenderVital(
 			tui.character.Vitals[name],
 			(width-len(row))/(len(vorder)-i),
@@ -109,7 +123,11 @@ func (tui *TUI) RenderVitals(width int) Rows {
 		)...)
 	}
 
-	return Rows{row}
+	rows := Rows{row}
+
+	tui.setCache(paneVitals, rows)
+
+	return rows
 }
 
 // RenderVital renders the given Vital.

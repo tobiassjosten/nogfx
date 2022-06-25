@@ -28,112 +28,97 @@ func TestRenderInput(t *testing.T) {
 		masked   bool
 		unmasked bool
 		width    int
+		height   int
 		rows     []string
 		style    tcell.Style
 	}{
 		"empty": {
-			input: &Input{},
-			width: 1,
-			rows:  nil,
-		},
-
-		"not inputting": {
-			input: &Input{
-				buffer: []rune{'a'},
-			},
-			width: 1,
-			rows:  nil,
+			input:  &Input{},
+			width:  1,
+			height: 1,
+			rows:   []string{" "},
 		},
 
 		"simple inputting": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
-			width: 1,
-			rows:  []string{"a"},
-		},
-
-		"empty inputting": {
-			input: &Input{
-				buffer:    []rune{},
-				inputting: true,
-			},
-			width: 1,
-			rows:  []string{" "},
+			width:  1,
+			height: 1,
+			rows:   []string{"a"},
 		},
 
 		"cramped inputting": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
-			width: 0,
-			rows:  nil,
+			width:  0,
+			height: 1,
+			rows:   nil,
 		},
 
 		"masked": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
 			masked: true,
 			width:  1,
+			height: 1,
 			rows:   []string{"*"},
 		},
 
 		"unmasked": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
 			masked:   true,
 			unmasked: true,
 			width:    1,
+			height:   1,
 			rows:     []string{"a"},
 		},
 
 		"padding": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
-			width: 2,
-			rows:  []string{"a "},
+			width:  2,
+			height: 1,
+			rows:   []string{"a "},
 		},
 
 		"word wrap": {
 			input: &Input{
-				buffer:    []rune{'a', ' ', 's', 'd', 'f'},
-				inputting: true,
+				buffer: []rune{'a', ' ', 's', 'd', 'f'},
 			},
-			width: 2,
-			rows:  []string{"a ", "sd", "f "},
+			width:  2,
+			height: 1,
+			rows:   []string{"a ", "sd", "f "},
 		},
 
 		"not inputted": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
+				buffer: []rune{'a'},
 			},
-			width: 1,
-			rows:  []string{"a"},
+			width:  1,
+			height: 1,
+			rows:   []string{"a"},
 			style: (tcell.Style{}).
 				Foreground(tcell.ColorWhite).
-				Background(tcell.ColorGray),
+				Background(tcell.Color235),
 		},
 
 		"inputted": {
 			input: &Input{
-				buffer:    []rune{'a'},
-				inputting: true,
-				inputted:  true,
+				buffer:   []rune{'a'},
+				inputted: true,
 			},
-			width: 1,
-			rows:  []string{"a"},
+			width:  1,
+			height: 1,
+			rows:   []string{"a"},
 			style: (tcell.Style{}).
 				Foreground(tcell.ColorWhite).
-				Background(tcell.ColorGray).
+				Background(tcell.Color235).
 				Attributes(tcell.AttrDim),
 		},
 	}
@@ -162,7 +147,7 @@ func TestRenderInput(t *testing.T) {
 				tui.input.cursor = tc.input.cursor
 			}
 
-			rows := tui.RenderInput(tc.width)
+			rows := tui.RenderInput(tc.width, tc.height)
 			assert.Equal(t, tc.rows, rowsToStrings(rows))
 
 			if tc.style != (tcell.Style{}) {

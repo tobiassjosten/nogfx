@@ -37,7 +37,7 @@ func TestRenderOutput(t *testing.T) {
 		"empty": {
 			width:  1,
 			height: 1,
-			rows:   nil,
+			rows:   []string{" "},
 		},
 
 		"simple output": {
@@ -65,21 +65,21 @@ func TestRenderOutput(t *testing.T) {
 			buffer: "a",
 			width:  2,
 			height: 1,
-			rows:   []string{"a"},
+			rows:   []string{"a "},
 		},
 
 		"word wrap simple": {
 			buffer: "a sdf",
 			width:  2,
 			height: 3,
-			rows:   []string{"a", "sd", "f"},
+			rows:   []string{"a ", "sd", "f "},
 		},
 
 		"word wrap overflow": {
 			buffer: "a sdf",
 			width:  2,
 			height: 2,
-			rows:   []string{"sd", "f"},
+			rows:   []string{"sd", "f "},
 		},
 
 		"history scrollback even": {
@@ -87,7 +87,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 3,
 			offset: 1,
-			rows:   []string{"a ", "──", "h"},
+			rows:   []string{"a ", "──", "h "},
 		},
 
 		"history scrollback odd": {
@@ -95,7 +95,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 4,
 			offset: 1,
-			rows:   []string{"a ", "sd", "──", "k"},
+			rows:   []string{"a ", "sd", "──", "k "},
 		},
 
 		"resize kill history scrollback": {
@@ -104,7 +104,7 @@ func TestRenderOutput(t *testing.T) {
 			height: 3,
 			pwidth: 1,
 			offset: 1,
-			rows:   []string{"sd", "fg", "h"},
+			rows:   []string{"sd", "fg", "h "},
 		},
 
 		"maintain history scrollback": {
@@ -113,7 +113,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 4,
 			offset: 1,
-			rows:   []string{"a ", "sd", "──", "xy"},
+			rows:   []string{"a ", "sd", "──", "xy"},
 		},
 
 		"print message": {

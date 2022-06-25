@@ -24,15 +24,13 @@ func TestWorldTargeting(t *testing.T) {
 		"initial state": {
 			messages: []gmcp.Message{},
 			name:     "",
-			health:   0,
 		},
 
 		"target verified": {
 			messages: []gmcp.Message{
 				&agmcp.CharStatus{Target: gox.NewString("AsDf")},
 			},
-			name:   "asdf",
-			health: 0,
+			name: "asdf",
 		},
 
 		"target health": {
@@ -91,6 +89,9 @@ func TestWorldTargeting(t *testing.T) {
 					Location: "room",
 					Item: gmcp.CharItem{
 						Name: "a ferocious manticore",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+						},
 					},
 				},
 			},
@@ -104,12 +105,18 @@ func TestWorldTargeting(t *testing.T) {
 					Location: "room",
 					Item: gmcp.CharItem{
 						Name: "a ferocious manticore",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+						},
 					},
 				},
 				&gmcp.CharItemsAdd{
 					Location: "room",
 					Item: gmcp.CharItem{
 						Name: "an atavian shaman",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+						},
 					},
 				},
 			},
@@ -127,6 +134,9 @@ func TestWorldTargeting(t *testing.T) {
 					Location: "room",
 					Item: gmcp.CharItem{
 						Name: "a ferocious manticore",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+						},
 					},
 				},
 			},
@@ -146,11 +156,44 @@ func TestWorldTargeting(t *testing.T) {
 					Location: "room",
 					Item: gmcp.CharItem{
 						Name: "an atavian shaman",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+						},
 					},
 				},
 			},
 			sent: []string{
 				"settarget shaman",
+				"settarget manticore",
+			},
+		},
+
+		"entering genji manticore present manticore dies": {
+			messages: []gmcp.Message{
+				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
+				&gmcp.CharItemsList{
+					Location: "room",
+					Items: []gmcp.CharItem{
+						{
+							Name: "a ferocious manticore",
+							Attributes: gmcp.CharItemAttributes{
+								Monster: true,
+							},
+						},
+					},
+				},
+				&gmcp.CharItemsRemove{
+					Location: "room",
+					Item: gmcp.CharItem{
+						Name: "the corpse of a ferocious manticore",
+						Attributes: gmcp.CharItemAttributes{
+							Monster: true,
+							Dead:    true,
+						},
+					},
+				},
+			},
+			sent: []string{
 				"settarget manticore",
 			},
 		},
@@ -235,6 +278,11 @@ func TestWorldTargeting(t *testing.T) {
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
 			navigation.Reset()
+
+			// Default health is different from empty int value.
+			if tc.health == 0 {
+				tc.health = -1
+			}
 
 			var sent []string
 			client := &mock.ClientMock{

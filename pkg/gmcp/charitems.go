@@ -77,7 +77,7 @@ func (msg *CharItemsRoom) Unmarshal(_ []byte) error {
 // CharItem is an item within a player's inventory, the current room, or any
 // other container.
 type CharItem struct {
-	ID         int                `json:"id"`
+	ID         int                `json:"id,string"`
 	Name       string             `json:"name"`
 	Attributes CharItemAttributes `json:"attrib"`
 	Icon       string             `json:"icon"`

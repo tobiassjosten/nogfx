@@ -12,7 +12,7 @@ type Target struct {
 	Name   string
 	Health int
 
-	set TargetSetter
+	setter TargetSetter
 
 	// A list of possible targets, e.g. "manticore".
 	candidates []string
@@ -21,8 +21,11 @@ type Target struct {
 	present []string
 }
 
-func NewTarget(set TargetSetter) *Target {
-	return &Target{set: set}
+func NewTarget(setter TargetSetter) *Target {
+	return &Target{
+		Health: -1,
+		setter: setter,
+	}
 }
 
 func (tgt *Target) Set(name string) {
@@ -30,16 +33,18 @@ func (tgt *Target) Set(name string) {
 		return
 	}
 
-	tgt.set(name, tgt)
+	tgt.setter(name, tgt)
 }
 
 func (tgt *Target) SetCandidates(names []string) {
 	oldCandidates := tgt.candidates
 	tgt.candidates = names
 
-	// Don't proceed with autotargeting if there's a current target which
-	// isn't one of the previous candidates. I.e. a non-autotarget.
-	if tgt.Name != "" && !slices.Contains(oldCandidates, tgt.Name) {
+	isOldCandidate := slices.Contains(oldCandidates, tgt.Name)
+	isNewCandidate := slices.Contains(tgt.candidates, tgt.Name)
+
+	if isOldCandidate && !isNewCandidate {
+		tgt.Set("")
 		return
 	}
 
@@ -59,24 +64,47 @@ func (tgt *Target) AddPresent(name string) {
 func (tgt *Target) RemovePresent(name string) {
 	if i := slices.Index(tgt.present, name); i >= 0 {
 		tgt.present = append(tgt.present[:i], tgt.present[i+1:]...)
+		tgt.retarget()
 	}
-	tgt.retarget()
+}
+
+func (tgt *Target) Queue() int {
+	queue := 0
+	for _, present := range tgt.present {
+		if tgt.Name != "" && strings.Contains(present, tgt.Name) {
+			queue++
+			continue
+		}
+
+		for _, candidate := range tgt.candidates {
+			if strings.Contains(present, candidate) {
+				queue++
+				break
+			}
+		}
+	}
+
+	return queue
 }
 
 func (tgt *Target) retarget() {
-	var shouldTarget string
+	if tgt.Name != "" && !slices.Contains(tgt.candidates, tgt.Name) {
+		return
+	}
+
+	var newTarget string
 
 outer:
 	for _, candidate := range tgt.candidates {
 		for _, present := range tgt.present {
 			if strings.Contains(present, candidate) {
-				shouldTarget = candidate
+				newTarget = candidate
 				break outer
 			}
 		}
 	}
 
-	if (shouldTarget != "" || len(tgt.candidates) == 0) && shouldTarget != tgt.Name {
-		tgt.Set(shouldTarget)
+	if newTarget != "" && newTarget != tgt.Name {
+		tgt.Set(newTarget)
 	}
 }

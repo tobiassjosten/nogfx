@@ -71,15 +71,14 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.ui.Outputs() <- []byte("server disconnected")
 
 		case output := <-serverOutput:
-			if output[len(output)-1] == telnet.GA {
+			ga := false
+			if len(output) > 0 && output[len(output)-1] == telnet.GA {
+				ga = true
 				// @todo Trigger special event to work through output buffer.
 				output = output[:len(output)-1]
 			}
 
 			output = bytes.TrimRight(output, "\r\n")
-			if len(output) == 0 {
-				continue
-			}
 
 			outputs := engine.world.ProcessOutput(output)
 			if len(outputs) == 0 {
@@ -88,6 +87,9 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 			for _, output := range outputs {
 				engine.ui.Outputs() <- output
+			}
+			if ga {
+				engine.ui.Outputs() <- []byte{telnet.GA}
 			}
 
 		case input := <-engine.ui.Inputs():
@@ -101,9 +103,6 @@ func (engine *Engine) Run(pctx context.Context) error {
 					return fmt.Errorf("failed sending: %w", err)
 				}
 			}
-
-			// @todo Send to engine.ui as well, for the player to
-			// see what they have sent (excluding automated commands).
 
 		case command, ok := <-engine.client.Commands():
 			if !ok {

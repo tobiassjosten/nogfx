@@ -69,6 +69,11 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 		if b != IAC && len(command) == 0 {
 			buffer[count] = b
 			count++
+
+			if b == '\n' {
+				return count, nil
+			}
+
 			continue
 		}
 

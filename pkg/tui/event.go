@@ -12,8 +12,7 @@ const (
 
 func (tui *TUI) eventHandlers() map[int]func(rune) bool {
 	return map[int]func(rune) bool{
-		int(tcell.KeyRune) + int(' ') + normalMode: tui.handleSpaceNormal,
-		int(tcell.KeyRune) + normalMode:            tui.handleRuneNormal,
+		int(tcell.KeyRune) + normalMode: tui.handleRuneNormal,
 
 		int(tcell.KeyRune) + inputtedMode: tui.handleRuneInputted,
 
@@ -60,24 +59,17 @@ func (tui *TUI) HandleEvent(event *tcell.EventKey) bool {
 	if event.Modifiers()&tcell.ModAlt > 0 {
 		addAlt(int(tcell.ModAlt))
 	}
-	if tui.input.inputting {
-		if tui.input.inputted {
-			if event.Modifiers()&tcell.ModAlt > 0 {
-				addAlt(inputtedMode + int(tcell.ModAlt))
-			}
-			addAlt(inputtedMode)
-		}
-
+	if tui.input.inputted {
 		if event.Modifiers()&tcell.ModAlt > 0 {
-			addAlt(inputMode + int(tcell.ModAlt))
+			addAlt(inputtedMode + int(tcell.ModAlt))
 		}
-		addAlt(inputMode)
-	} else {
-		if event.Modifiers()&tcell.ModAlt > 0 {
-			addAlt(normalMode + int(tcell.ModAlt))
-		}
-		addAlt(normalMode)
+		addAlt(inputtedMode)
 	}
+
+	if event.Modifiers()&tcell.ModAlt > 0 {
+		addAlt(inputMode + int(tcell.ModAlt))
+	}
+	addAlt(inputMode)
 
 	// Move the three basic alternatives last, since they're the least
 	// specific ones and only served as templates for addAlt().
@@ -97,11 +89,6 @@ func (tui *TUI) HandleEvent(event *tcell.EventKey) bool {
 	return false
 }
 
-func (tui *TUI) handleSpaceNormal(_ rune) bool {
-	tui.input.inputting = true
-	return true
-}
-
 func (tui *TUI) handleRuneInputted(r rune) bool {
 	_ = tui.handleBackspaceInputted(r)
 	_ = tui.handleRuneInput(r)
@@ -109,6 +96,7 @@ func (tui *TUI) handleRuneInputted(r rune) bool {
 }
 
 func (tui *TUI) handleBackspaceInputted(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.buffer = []rune{}
 	tui.input.cursor = 0
 	tui.input.inputted = false
@@ -116,6 +104,7 @@ func (tui *TUI) handleBackspaceInputted(_ rune) bool {
 }
 
 func (tui *TUI) handleBackspaceInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	cursor := int(max(0, tui.input.cursor-1))
 	tui.input.buffer = append(
 		tui.input.buffer[:cursor],
@@ -126,6 +115,7 @@ func (tui *TUI) handleBackspaceInput(_ rune) bool {
 }
 
 func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	delete := false
 	for i := tui.input.cursor - 1; i > 0; i-- {
 		if delete && tui.input.buffer[i] == ' ' {
@@ -146,12 +136,14 @@ func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
 }
 
 func (tui *TUI) handleCmdBackspaceInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.buffer = tui.input.buffer[tui.input.cursor:]
 	tui.input.cursor = 0
 	return true
 }
 
 func (tui *TUI) handleRuneInput(r rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.buffer = append(tui.input.buffer[:tui.input.cursor], append(
 		[]rune{r}, tui.input.buffer[tui.input.cursor:]...,
 	)...)
@@ -160,6 +152,7 @@ func (tui *TUI) handleRuneInput(r rune) bool {
 }
 
 func (tui *TUI) handleEnterInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	input := tui.input.buffer
 	tui.input.inputted = true
 	if tui.input.masked {
@@ -174,24 +167,28 @@ func (tui *TUI) handleEnterInput(_ rune) bool {
 }
 
 func (tui *TUI) handleEscInput(_ rune) bool {
-	tui.input.inputting = false
+	tui.setCache(paneInput, nil)
+	tui.setCache(paneOutput, nil)
+	tui.output.offset = 0
 	return true
 }
 
 func (tui *TUI) handleCtrlCInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.buffer = []rune{}
 	tui.input.cursor = 0
-	tui.input.inputting = false
 	return true
 }
 
 func (tui *TUI) handleLeftInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.inputted = false
 	tui.input.cursor = int(max(0, tui.input.cursor-1))
 	return true
 }
 
 func (tui *TUI) handleRightInput(_ rune) bool {
+	tui.setCache(paneInput, nil)
 	tui.input.inputted = false
 	tui.input.cursor = int(min(len(tui.input.buffer), tui.input.cursor+1))
 	return true
@@ -240,16 +237,19 @@ func (tui *TUI) handleRuneNormal(r rune) bool {
 }
 
 func (tui *TUI) handleUpInput(_ rune) bool {
+	tui.setCache(paneOutput, nil)
 	tui.output.offset++
 	return true
 }
 
 func (tui *TUI) handleAltUpInput(_ rune) bool {
+	tui.setCache(paneOutput, nil)
 	tui.output.offset += 5
 	return true
 }
 
 func (tui *TUI) handleDownInput(_ rune) bool {
+	tui.setCache(paneOutput, nil)
 	tui.output.offset--
 	if tui.output.offset < 0 {
 		tui.output.offset = 0
@@ -258,6 +258,7 @@ func (tui *TUI) handleDownInput(_ rune) bool {
 }
 
 func (tui *TUI) handleAltDownInput(_ rune) bool {
+	tui.setCache(paneOutput, nil)
 	tui.output.offset -= 5
 	if tui.output.offset < 0 {
 		tui.output.offset = 0

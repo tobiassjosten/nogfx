@@ -310,8 +310,6 @@ func TestCommandsMutateVitals(t *testing.T) {
 					"mana":      {Value: 3845, Max: 3846},
 					"endurance": {Value: 15020, Max: 15021},
 					"willpower": {Value: 12980, Max: 12981},
-					"bleed":     {Value: 1, Max: 3905},
-					"rage":      {Value: 2, Max: 2},
 					"ferocity":  {Value: 3, Max: 100},
 					"kai":       {Value: 4, Max: 100},
 					"karma":     {Value: 5, Max: 100},

@@ -125,6 +125,14 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 		},
 	})
 
+	tgt := pkg.NewTarget(func(name string, tgt *pkg.Target) {
+		tgt.Name = name
+	})
+	tgt.Health = 37
+	tgt.SetCandidates([]string{"someone", "two"})
+	tgt.SetPresent([]string{"someone", "two", "three"})
+	ui.SetTarget(tgt)
+
 	return &ExampleWorld{
 		ui: ui,
 	}

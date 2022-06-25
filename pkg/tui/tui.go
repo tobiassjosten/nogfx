@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/tobiassjosten/nogfx/pkg"
@@ -13,8 +14,14 @@ import (
 type TUI struct {
 	screen tcell.Screen
 
+	layout *Layout
+
+	cacheMutex sync.Mutex
+	panesCache map[string]Rows
+
 	inputs chan []byte
 	input  *Input
+	cursor []int
 
 	outputs chan []byte
 	output  *Output
@@ -35,12 +42,15 @@ func NewTUI(screen tcell.Screen) *TUI {
 	tui := &TUI{
 		screen: screen,
 
+		panesCache: map[string]Rows{},
+
 		inputs: make(chan []byte),
 		input:  &Input{},
 
 		outputs: make(chan []byte),
 		output:  &Output{},
 	}
+	tui.layout = &Layout{tui}
 
 	screen.SetStyle(outputStyle)
 	screen.SetCursorStyle(tcell.CursorStyleBlinkingBlock)
@@ -58,21 +68,52 @@ func (tui *TUI) Outputs() chan<- []byte {
 	return tui.outputs
 }
 
+func (tui *TUI) setCache(name string, rows Rows) {
+	tui.cacheMutex.Lock()
+	defer tui.cacheMutex.Unlock()
+
+	if rows == nil {
+		delete(tui.panesCache, name)
+		return
+	}
+
+	tui.panesCache[name] = rows
+}
+
+func (tui *TUI) clearCache() {
+	tui.cacheMutex.Lock()
+	defer tui.cacheMutex.Unlock()
+
+	tui.panesCache = map[string]Rows{}
+}
+
+func (tui *TUI) getCache(name string) (Rows, bool) {
+	tui.cacheMutex.Lock()
+	defer tui.cacheMutex.Unlock()
+
+	rows, ok := tui.panesCache[name]
+
+	return rows, ok
+}
+
 // SetCharacter updates the current character and causes a repaint.
 func (tui *TUI) SetCharacter(character pkg.Character) {
 	tui.character = character
+	tui.setCache(paneVitals, nil)
 	tui.Draw()
 }
 
 // SetRoom updates the current room and causes a repaint.
 func (tui *TUI) SetRoom(room *navigation.Room) {
 	tui.room = room
+	tui.setCache(paneMap, nil)
 	tui.Draw()
 }
 
 // SetTarget updates the current target and causes a repaint.
 func (tui *TUI) SetTarget(target *pkg.Target) {
 	tui.target = target
+	tui.setCache(paneTarget, nil)
 	tui.Draw()
 }
 
@@ -97,6 +138,7 @@ func (tui *TUI) Run(pctx context.Context) error {
 
 			switch ev := event.(type) {
 			case *tcell.EventResize:
+				tui.clearCache()
 				tui.Draw()
 				tui.screen.Sync()
 
@@ -119,6 +161,7 @@ func (tui *TUI) Run(pctx context.Context) error {
 		select {
 		case output := <-tui.outputs:
 			tui.output.Append(output)
+			tui.setCache(paneOutput, nil)
 			tui.Draw()
 
 		case <-ctx.Done():
@@ -134,49 +177,15 @@ func (tui *TUI) Draw() {
 		return
 	}
 
-	// @todo Cache renditions so as to not redraw everything every time.
-
-	width, height := tui.screen.Size()
-
-	mainWidth, borderWidth := width, 2
-	mainMinWidth := outputMinWidth + borderWidth
-
-	minimapWidth, minimapHeight := 0, height
-
-	// If we can fit a minimap, let's calculate how much space we can
-	// afford it. Main panes get at least 80 and at most 120 but in between
-	// share the excess with the minimap, before giving it all the rest.
-	if width >= mainMinWidth+minimapMinWidth && height >= minimapMinHeight {
-		mainWidth = min(
-			outputMaxWidth,
-			outputMinWidth+(width-mainMinWidth-minimapMinWidth)/2,
-		)
-		minimapWidth = width - mainWidth - borderWidth
+	for _, p := range tui.layout.panes() {
+		tui.paint(p.x, p.y, p.rows)
 	}
 
-	tui.screen.Clear()
-
-	input := tui.RenderInput(mainWidth)
-	tui.paint(0, height-len(input), input)
-
-	if len(input) > 0 {
-		tui.screen.ShowCursor(tui.input.cursor, height-len(input))
-	} else {
+	if tui.cursor == nil {
 		tui.screen.HideCursor()
+	} else {
+		tui.screen.ShowCursor(tui.cursor[0], tui.cursor[1])
 	}
-
-	// Only give vitals space if there's leftovers from the input.
-	vitals := tui.RenderVitals(mainWidth)
-	vitals = vitals[0:max(0, min(len(vitals), height-len(input)-1))]
-	tui.paint(0, height-len(input)-len(vitals), vitals)
-
-	output := tui.RenderOutput(mainWidth, height-len(input)-len(vitals))
-	tui.paint(0, height-len(output)-len(input)-len(vitals), output)
-
-	tui.paint(
-		mainWidth+borderWidth, height-minimapHeight,
-		RenderMap(tui.room, minimapWidth, minimapHeight),
-	)
 
 	tui.screen.Show()
 }

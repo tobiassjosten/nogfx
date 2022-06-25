@@ -27,6 +27,7 @@ func TestExampleWorld(t *testing.T) {
 		},
 		SetRoomFunc:      func(_ *navigation.Room) {},
 		SetCharacterFunc: func(_ pkg.Character) {},
+		SetTargetFunc:    func(_ *pkg.Target) {},
 	}
 
 	world := world.NewExampleWorld(client, ui)
