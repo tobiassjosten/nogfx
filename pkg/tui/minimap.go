@@ -19,6 +19,7 @@ type maproom struct {
 	y    int
 }
 
+// RenderMap renders a map from the current room.
 func (tui *TUI) RenderMap(width, height int) Rows {
 	if rows, ok := tui.getCache(paneMap); ok {
 		return rows

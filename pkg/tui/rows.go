@@ -237,6 +237,7 @@ wordwrap:
 	return rows
 }
 
+// Pad adds cells to make the row a certain length.
 func (row Row) Pad(width int, padding Cell) Row {
 	newrow := append(Row{}, row...)
 	for i := len(newrow); i < width; i++ {

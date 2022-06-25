@@ -7,6 +7,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg"
 )
 
+// RenderTarget renders a vital for the current target.
 func (tui *TUI) RenderTarget(width int) Rows {
 	if rows, ok := tui.getCache(paneTarget); ok {
 		return rows

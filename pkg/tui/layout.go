@@ -55,6 +55,8 @@ func newpane(rows Rows, x, y int) pane {
 	return pane{rows, x, y, len(rows[0]), len(rows)}
 }
 
+// Layout orchestrates all the panes, to determine which one goes where with
+// what dimensions.
 type Layout struct {
 	tui *TUI
 }
