@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +34,7 @@ func TestRenderOutput(t *testing.T) {
 		height int
 		pwidth int
 		offset int
+		cache  Rows
 		rows   []string
 	}{
 		"empty": {
@@ -123,6 +126,11 @@ func TestRenderOutput(t *testing.T) {
 			height: 3,
 			rows:   []string{"as", "df", "xy"},
 		},
+
+		"cache rendition": {
+			cache: Rows{Row{NewCell('a'), NewCell('s')}},
+			rows:  []string{"as"},
+		},
 	}
 
 	for name, tc := range tcs {
@@ -151,6 +159,10 @@ func TestRenderOutput(t *testing.T) {
 
 			for _, print := range tc.prints {
 				tui.Print(print)
+			}
+
+			if tc.cache != nil {
+				tui.setCache(paneOutput, tc.cache)
 			}
 
 			rows := tui.RenderOutput(tc.width, tc.height)
@@ -185,15 +197,35 @@ func TestOutputAppend(t *testing.T) {
 
 		"maintain color": {
 			datas: [][]byte{
-				[]byte(""),
 				[]byte("\033[32;44my"),
 				[]byte("z"),
 			},
 			buffer: Rows{
 				Row{NewCell('z', redStyle)},
 				Row{NewCell('y', redStyle)},
-				Row{}, // sometimes, somehow, we get empties
 			},
+		},
+
+		"ga swallows first newline": {
+			datas: [][]byte{
+				[]byte("as"),
+				[]byte{telnet.GA},
+				[]byte(""),
+				[]byte("df"),
+				[]byte(""),
+				[]byte("zx"),
+			},
+			buffer: Rows{
+				Row{NewCell('z'), NewCell('x')},
+				Row{},
+				Row{NewCell('d'), NewCell('f')},
+				Row{NewCell('a'), NewCell('s')},
+			},
+		},
+
+		"caps at 5000 rows": {
+			datas:  bytes.Fields(bytes.Repeat([]byte("x "), 5001)),
+			buffer: NewRows(1, 5000, NewCell('x')),
 		},
 	}
 
