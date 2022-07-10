@@ -106,15 +106,20 @@ func (l *Layout) inputPane() pane {
 	main := l.pane(paneMain)
 	target := l.pane(paneTarget)
 
-	// Split half with output, rounding down to yield presedence.
-	maxHeight := main.height / 2
+	vitalsHeight := 0
+	if main.height >= 5 {
+		vitalsHeight = 1
+	}
 
-	rows := l.tui.RenderInput(main.width, maxHeight)
+	// Split half remaining with output, rounding down to yield presedence.
+	maxHeight := (main.height - target.height - vitalsHeight) / 2
+
+	rows, cx, cy := l.tui.RenderInput(main.width, maxHeight)
 
 	x := main.x
 	y := main.y + main.height - len(rows) - target.height
 
-	l.tui.cursor = cursorPosition(rows, l.tui.input.cursor, x, y)
+	l.tui.cursorpos = []int{x + cx, y + cy}
 
 	return newpane(rows, x, y)
 }

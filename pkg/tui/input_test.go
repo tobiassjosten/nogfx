@@ -9,100 +9,119 @@ import (
 )
 
 func TestRenderInput(t *testing.T) {
-	rowToString := func(row Row) (str string) {
-		for _, c := range row {
-			str += string(c.Content)
-		}
-		return
-	}
-
-	rowsToStrings := func(rows Rows) (strs []string) {
-		for _, row := range rows {
-			strs = append(strs, rowToString(row))
-		}
-		return
-	}
-
 	tcs := map[string]struct {
-		input    *Input
-		masked   bool
-		unmasked bool
-		width    int
-		height   int
-		rows     []string
-		style    tcell.Style
+		input     *Input
+		width     int
+		height    int
+		rows      []string
+		cursorpos []int
+		style     tcell.Style
 	}{
 		"empty": {
-			input:  &Input{},
-			width:  1,
-			height: 1,
-			rows:   []string{" "},
+			input:     &Input{},
+			width:     1,
+			height:    1,
+			rows:      []string{" "},
+			cursorpos: []int{0, 0},
 		},
 
 		"simple inputting": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune{'a'},
+				cursoroff: 1,
 			},
-			width:  1,
-			height: 1,
-			rows:   []string{"a"},
+			width:     2,
+			height:    1,
+			rows:      []string{"a "},
+			cursorpos: []int{1, 0},
 		},
 
-		"cramped inputting": {
+		"cursor back one": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune{'a'},
+				cursoroff: 0,
 			},
-			width:  0,
-			height: 1,
-			rows:   nil,
+			width:     2,
+			height:    1,
+			rows:      []string{"a "},
+			cursorpos: []int{0, 0},
 		},
 
-		"masked": {
+		"cursor back two": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune("asdf"),
+				cursoroff: 2,
 			},
-			masked: true,
-			width:  1,
-			height: 1,
-			rows:   []string{"*"},
+			width:     5,
+			height:    1,
+			rows:      []string{"asdf "},
+			cursorpos: []int{2, 0},
 		},
 
-		"unmasked": {
+		"no width": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune{'a'},
+				cursoroff: 1,
 			},
-			masked:   true,
-			unmasked: true,
-			width:    1,
-			height:   1,
-			rows:     []string{"a"},
+			width:     0,
+			height:    1,
+			rows:      nil,
+			cursorpos: []int{0, 0},
+		},
+
+		"no height": {
+			input: &Input{
+				buffer:    []rune{'a'},
+				cursoroff: 1,
+			},
+			width:     1,
+			height:    0,
+			rows:      nil,
+			cursorpos: []int{0, 0},
 		},
 
 		"padding": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune{'a'},
+				cursoroff: 1,
 			},
-			width:  2,
-			height: 1,
-			rows:   []string{"a "},
+			width:     2,
+			height:    1,
+			rows:      []string{"a "},
+			cursorpos: []int{1, 0},
 		},
 
 		"word wrap": {
 			input: &Input{
-				buffer: []rune{'a', ' ', 's', 'd', 'f'},
+				buffer:    []rune{'a', ' ', 's', 'd', 'f'},
+				cursoroff: 5,
 			},
-			width:  2,
-			height: 1,
-			rows:   []string{"a ", "sd", "f "},
+			width:     2,
+			height:    3,
+			rows:      []string{"a ", "sd", "f "},
+			cursorpos: []int{1, 2},
+		},
+
+		"line wrap": {
+			input: &Input{
+				buffer:    []rune{'a'},
+				cursoroff: 1,
+			},
+			width:     1,
+			height:    2,
+			rows:      []string{"a", " "},
+			cursorpos: []int{0, 1},
 		},
 
 		"not inputted": {
 			input: &Input{
-				buffer: []rune{'a'},
+				buffer:    []rune{'a'},
+				cursoroff: 1,
 			},
-			width:  1,
-			height: 1,
-			rows:   []string{"a"},
+			width:     2,
+			height:    1,
+			rows:      []string{"a "},
+			cursorpos: []int{1, 0},
 			style: (tcell.Style{}).
 				Foreground(tcell.ColorWhite).
 				Background(tcell.Color235),
@@ -110,12 +129,14 @@ func TestRenderInput(t *testing.T) {
 
 		"inputted": {
 			input: &Input{
-				buffer:   []rune{'a'},
-				inputted: true,
+				buffer:    []rune{'a'},
+				cursoroff: 1,
+				inputted:  true,
 			},
-			width:  1,
-			height: 1,
-			rows:   []string{"a"},
+			width:     2,
+			height:    1,
+			rows:      []string{"a "},
+			cursorpos: []int{1, 0},
 			style: (tcell.Style{}).
 				Foreground(tcell.ColorWhite).
 				Background(tcell.Color235).
@@ -131,28 +152,53 @@ func TestRenderInput(t *testing.T) {
 				SetStyleFunc:       func(_ tcell.Style) {},
 			})
 
-			// Dereference so we can repopulate after MaskInput().
-			input := *tc.input
-			tui.input = &input
+			tui.input = tc.input
 
-			if tc.masked {
-				tui.MaskInput()
-				tui.input.buffer = tc.input.buffer
-				tui.input.cursor = tc.input.cursor
+			rows, cx, cy := tui.RenderInput(tc.width, tc.height)
+
+			assert.Equal(t, tc.rows, rows.strings())
+			if tc.cursorpos != nil {
+				assert.Equal(t, tc.cursorpos, []int{cx, cy})
 			}
-
-			if tc.unmasked {
-				tui.UnmaskInput()
-				tui.input.buffer = tc.input.buffer
-				tui.input.cursor = tc.input.cursor
-			}
-
-			rows := tui.RenderInput(tc.width, tc.height)
-			assert.Equal(t, tc.rows, rowsToStrings(rows))
 
 			if tc.style != (tcell.Style{}) {
 				assert.Equal(t, tc.style, rows[len(rows)-1][0].Style)
 			}
 		})
 	}
+}
+
+func TestMasking(t *testing.T) {
+	width, height := 5, 1
+	tui := NewTUI(&mock.ScreenMock{
+		HideCursorFunc:     func() {},
+		SetCursorStyleFunc: func(_ tcell.CursorStyle) {},
+		SetStyleFunc:       func(_ tcell.Style) {},
+	})
+
+	tui.input = &Input{
+		buffer: []rune("asdf"),
+	}
+
+	tui.MaskInput()
+
+	rows, _, _ := tui.RenderInput(width, height)
+
+	// Masking input deletes the buffer.
+	assert.Equal(t, []string{"     "}, rows.strings())
+
+	tui.setCache(paneInput, nil)
+	tui.input.buffer = []rune("asdf")
+
+	rows, _, _ = tui.RenderInput(width, height)
+
+	// Masked rendering transforms the buffer.
+	assert.Equal(t, []string{"**** "}, rows.strings())
+
+	tui.UnmaskInput()
+
+	rows, _, _ = tui.RenderInput(width, height)
+
+	// Unmasking input deletes the buffer.
+	assert.Equal(t, []string{"     "}, rows.strings())
 }

@@ -21,7 +21,7 @@ func TestHandleEvent(t *testing.T) {
 			},
 			f: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("xy"), ui.input.buffer)
-				assert.Equal(t, 2, ui.input.cursor)
+				assert.Equal(t, 2, ui.input.cursoroff)
 			},
 		},
 
@@ -33,7 +33,7 @@ func TestHandleEvent(t *testing.T) {
 			},
 			f: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune(""), ui.input.buffer)
-				assert.Equal(t, 0, ui.input.cursor)
+				assert.Equal(t, 0, ui.input.cursoroff)
 			},
 		},
 
@@ -44,7 +44,7 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 			},
 			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 1, ui.input.cursor)
+				assert.Equal(t, 1, ui.input.cursoroff)
 			},
 		},
 
@@ -57,7 +57,7 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 			},
 			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 0, ui.input.cursor)
+				assert.Equal(t, 0, ui.input.cursoroff)
 			},
 		},
 
@@ -69,7 +69,7 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyRight, 0, 0),
 			},
 			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 2, ui.input.cursor)
+				assert.Equal(t, 2, ui.input.cursoroff)
 			},
 		},
 
@@ -82,7 +82,7 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyRight, 0, 0),
 			},
 			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 2, ui.input.cursor)
+				assert.Equal(t, 2, ui.input.cursoroff)
 			},
 		},
 

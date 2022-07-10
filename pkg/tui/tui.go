@@ -19,9 +19,9 @@ type TUI struct {
 	cacheMutex sync.Mutex
 	panesCache map[string]Rows
 
-	inputs chan []byte
-	input  *Input
-	cursor []int
+	inputs    chan []byte
+	input     *Input
+	cursorpos []int
 
 	outputs chan []byte
 	output  *Output
@@ -181,10 +181,10 @@ func (tui *TUI) Draw() {
 		tui.paint(p.x, p.y, p.rows)
 	}
 
-	if tui.cursor == nil {
-		tui.screen.HideCursor()
+	if pos := tui.cursorpos; pos != nil {
+		tui.screen.ShowCursor(pos[0], pos[1])
 	} else {
-		tui.screen.ShowCursor(tui.cursor[0], tui.cursor[1])
+		tui.screen.HideCursor()
 	}
 
 	tui.screen.Show()

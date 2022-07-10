@@ -124,6 +124,13 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 	return row, style
 }
 
+func (row Row) string() (str string) {
+	for _, c := range row {
+		str += string(c.Content)
+	}
+	return
+}
+
 // Append adds a new Cell to the end of the Row.
 func (row Row) append(cells ...Cell) Row {
 	return append(row, cells...)
@@ -263,6 +270,13 @@ func NewRows(width, height int, cells ...Cell) Rows {
 	}
 
 	return rows
+}
+
+func (rows Rows) strings() (strs []string) {
+	for _, row := range rows {
+		strs = append(strs, row.string())
+	}
+	return
 }
 
 // Append adds a new Row to the end of the Rows.
