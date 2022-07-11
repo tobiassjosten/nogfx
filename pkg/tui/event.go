@@ -5,15 +5,15 @@ import (
 )
 
 const (
-	normalMode   = 100_000
-	inputMode    = 200_000
-	inputtedMode = 300_000
+	// @todo With only this mode left, it's a little obsolete. Remove and
+	// add the distinction in each event handler instead.
+	inputtedMode = 100_000
 )
 
 func (tui *TUI) eventHandlers() map[int]func(rune) bool {
-	return map[int]func(rune) bool{
-		int(tcell.KeyRune) + normalMode: tui.handleRuneNormal,
+	alt := int(tcell.ModAlt)
 
+	return map[int]func(rune) bool{
 		int(tcell.KeyRune) + inputtedMode: tui.handleRuneInputted,
 
 		int(tcell.KeyBackspace) + inputtedMode:  tui.handleBackspaceInputted,
@@ -21,22 +21,22 @@ func (tui *TUI) eventHandlers() map[int]func(rune) bool {
 		int(tcell.KeyETB) + inputtedMode:        tui.handleBackspaceInputted,
 		int(tcell.KeyNAK) + inputtedMode:        tui.handleBackspaceInputted,
 
-		int(tcell.KeyRune) + inputMode:  tui.handleRuneInput,
-		int(tcell.KeyEnter) + inputMode: tui.handleEnterInput,
-		int(tcell.KeyEsc) + inputMode:   tui.handleEscInput,
-		int(tcell.KeyCtrlC) + inputMode: tui.handleCtrlCInput,
-		int(tcell.KeyLeft) + inputMode:  tui.handleLeftInput,
-		int(tcell.KeyRight) + inputMode: tui.handleRightInput,
+		int(tcell.KeyRune):  tui.handleRuneInput,
+		int(tcell.KeyEnter): tui.handleEnterInput,
+		int(tcell.KeyEsc):   tui.handleEscInput,
+		int(tcell.KeyCtrlC): tui.handleCtrlCInput,
+		int(tcell.KeyLeft):  tui.handleLeftInput,
+		int(tcell.KeyRight): tui.handleRightInput,
 
-		int(tcell.KeyBackspace) + inputMode:  tui.handleBackspaceInput,
-		int(tcell.KeyBackspace2) + inputMode: tui.handleBackspaceInput,
-		int(tcell.KeyETB) + inputMode:        tui.handleOptBackspaceInput,
-		int(tcell.KeyNAK) + inputMode:        tui.handleCmdBackspaceInput,
+		int(tcell.KeyBackspace):  tui.handleBackspaceInput,
+		int(tcell.KeyBackspace2): tui.handleBackspaceInput,
+		int(tcell.KeyETB):        tui.handleOptBackspaceInput,
+		int(tcell.KeyNAK):        tui.handleCmdBackspaceInput,
 
-		int(tcell.KeyUp):                       tui.handleUpInput,
-		int(tcell.KeyUp) + int(tcell.ModAlt):   tui.handleAltUpInput,
-		int(tcell.KeyDown):                     tui.handleDownInput,
-		int(tcell.KeyDown) + int(tcell.ModAlt): tui.handleAltDownInput,
+		int(tcell.KeyUp):         tui.handleUpInput,
+		int(tcell.KeyUp) + alt:   tui.handleAltUpInput,
+		int(tcell.KeyDown):       tui.handleDownInput,
+		int(tcell.KeyDown) + alt: tui.handleAltDownInput,
 	}
 }
 
@@ -67,15 +67,14 @@ func (tui *TUI) HandleEvent(event *tcell.EventKey) bool {
 	}
 
 	if event.Modifiers()&tcell.ModAlt > 0 {
-		addAlt(inputMode + int(tcell.ModAlt))
+		addAlt(int(tcell.ModAlt))
 	}
-	addAlt(inputMode)
 
 	// Move the three basic alternatives last, since they're the least
 	// specific ones and only served as templates for addAlt().
-	alts = append(alts[2:], alts[:2]...)
+	alts = append(alts[3:], alts[:3]...)
 	if event.Modifiers()&tcell.ModAlt > 0 {
-		alts = append(alts[2:], alts[:2]...)
+		alts = append(alts[3:], alts[:3]...)
 	}
 
 	for _, alt := range alts {
@@ -192,48 +191,6 @@ func (tui *TUI) handleRightInput(_ rune) bool {
 	tui.input.inputted = false
 	tui.input.cursoroff = int(min(len(tui.input.buffer), tui.input.cursoroff+1))
 	return true
-}
-
-func (tui *TUI) handleRuneNormal(r rune) bool {
-	switch r {
-	case '1':
-		tui.inputs <- []byte{'s', 'w'}
-		return true
-
-	case '2':
-		tui.inputs <- []byte{'s'}
-		return true
-
-	case '3':
-		tui.inputs <- []byte{'s', 'e'}
-		return true
-
-	case '4':
-		tui.inputs <- []byte{'w'}
-		return true
-
-	case '5':
-		tui.inputs <- []byte{'m', 'a', 'p'}
-		return true
-
-	case '6':
-		tui.inputs <- []byte{'e'}
-		return true
-
-	case '7':
-		tui.inputs <- []byte{'n', 'w'}
-		return true
-
-	case '8':
-		tui.inputs <- []byte{'n'}
-		return true
-
-	case '9':
-		tui.inputs <- []byte{'n', 'e'}
-		return true
-	}
-
-	return false
 }
 
 func (tui *TUI) handleUpInput(_ rune) bool {
