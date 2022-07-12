@@ -112,7 +112,7 @@ var (
 func (world *World) ProcessOutput(output []byte) [][]byte {
 	var outputs [][]byte
 
-	// @todo Move to its own module.
+	/* @todo Move to its own module.
 	// Requires: prompt *hh*1, *mm*2, *ee*3, *ww*4 *Rr *rk *b*c*d *s
 	ps1 := []byte("\x1b[32m4")
 	ps2 := []byte("\x1b[37m\x1b[32m4")
@@ -152,6 +152,7 @@ func (world *World) ProcessOutput(output []byte) [][]byte {
 			eq = tstamp
 		}
 	}
+	*/
 
 	for _, module := range world.modules {
 		newoutputs := module.ProcessOutput(output)
