@@ -3,7 +3,6 @@ package achaea
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -103,10 +102,12 @@ func processInputs(inputs [][]byte, modules []pkg.Module) [][]byte {
 	return inputs
 }
 
+/* @todo Move to its own module.
 var (
 	bal = time.Time{}
 	eq  = time.Time{}
 )
+*/
 
 // ProcessOutput processes game output.
 func (world *World) ProcessOutput(output []byte) [][]byte {
