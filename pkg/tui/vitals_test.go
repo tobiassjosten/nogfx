@@ -160,6 +160,12 @@ func TestRenderVitals(t *testing.T) {
 			row:    tui.Row{tui.NewCell(' ')},
 		},
 
+		"no vitals": {
+			width:  1,
+			height: 5,
+			row:    tui.Row{tui.NewCell(' ')},
+		},
+
 		"width 1 health 1/1": {
 			vitals: map[string]pkg.CharacterVital{
 				"health": {Value: 1, Max: 1},
