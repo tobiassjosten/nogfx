@@ -17,53 +17,49 @@ type Message interface {
 	Unmarshal([]byte) error
 }
 
-func msger(msg Message) func() Message {
-	return func() Message { return msg }
-}
-
 var messages = map[string]func() Message{
-	(&CharLogin{}).ID():      msger(&CharLogin{}),
-	(&CharName{}).ID():       msger(&CharName{}),
-	(&CharStatusVars{}).ID(): msger(&CharStatusVars{}),
+	(&CharLogin{}).ID():      func() Message { return &CharLogin{} },
+	(&CharName{}).ID():       func() Message { return &CharName{} },
+	(&CharStatusVars{}).ID(): func() Message { return &CharStatusVars{} },
 
-	(&CharAfflictionsList{}).ID():   msger(&CharAfflictionsList{}),
-	(&CharAfflictionsAdd{}).ID():    msger(&CharAfflictionsAdd{}),
-	(&CharAfflictionsRemove{}).ID(): msger(&CharAfflictionsRemove{}),
+	(&CharAfflictionsList{}).ID():   func() Message { return &CharAfflictionsList{} },
+	(&CharAfflictionsAdd{}).ID():    func() Message { return &CharAfflictionsAdd{} },
+	(&CharAfflictionsRemove{}).ID(): func() Message { return &CharAfflictionsRemove{} },
 
-	(&CharDefencesList{}).ID():   msger(&CharDefencesList{}),
-	(&CharDefencesAdd{}).ID():    msger(&CharDefencesAdd{}),
-	(&CharDefencesRemove{}).ID(): msger(&CharDefencesRemove{}),
+	(&CharDefencesList{}).ID():   func() Message { return &CharDefencesList{} },
+	(&CharDefencesAdd{}).ID():    func() Message { return &CharDefencesAdd{} },
+	(&CharDefencesRemove{}).ID(): func() Message { return &CharDefencesRemove{} },
 
-	(&CharItemsContents{}).ID(): msger(&CharItemsContents{}),
-	(&CharItemsInv{}).ID():      msger(&CharItemsInv{}),
-	(&CharItemsRoom{}).ID():     msger(&CharItemsRoom{}),
-	(&CharItemsList{}).ID():     msger(&CharItemsList{}),
-	(&CharItemsAdd{}).ID():      msger(&CharItemsAdd{}),
-	(&CharItemsRemove{}).ID():   msger(&CharItemsRemove{}),
-	(&CharItemsUpdate{}).ID():   msger(&CharItemsUpdate{}),
+	(&CharItemsContents{}).ID(): func() Message { return &CharItemsContents{} },
+	(&CharItemsInv{}).ID():      func() Message { return &CharItemsInv{} },
+	(&CharItemsRoom{}).ID():     func() Message { return &CharItemsRoom{} },
+	(&CharItemsList{}).ID():     func() Message { return &CharItemsList{} },
+	(&CharItemsAdd{}).ID():      func() Message { return &CharItemsAdd{} },
+	(&CharItemsRemove{}).ID():   func() Message { return &CharItemsRemove{} },
+	(&CharItemsUpdate{}).ID():   func() Message { return &CharItemsUpdate{} },
 
-	(&CharSkillsGet{}).ID():    msger(&CharSkillsGet{}),
-	(&CharSkillsGroups{}).ID(): msger(&CharSkillsGroups{}),
-	(&CharSkillsInfo{}).ID():   msger(&CharSkillsInfo{}),
-	(&CharSkillsList{}).ID():   msger(&CharSkillsList{}),
+	(&CharSkillsGet{}).ID():    func() Message { return &CharSkillsGet{} },
+	(&CharSkillsGroups{}).ID(): func() Message { return &CharSkillsGroups{} },
+	(&CharSkillsInfo{}).ID():   func() Message { return &CharSkillsInfo{} },
+	(&CharSkillsList{}).ID():   func() Message { return &CharSkillsList{} },
 
-	(&CommChannelEnable{}).ID():  msger(&CommChannelEnable{}),
-	(&CommChannelList{}).ID():    msger(&CommChannelList{}),
-	(&CommChannelPlayers{}).ID(): msger(&CommChannelPlayers{}),
-	(&CommChannelText{}).ID():    msger(&CommChannelText{}),
+	(&CommChannelEnable{}).ID():  func() Message { return &CommChannelEnable{} },
+	(&CommChannelList{}).ID():    func() Message { return &CommChannelList{} },
+	(&CommChannelPlayers{}).ID(): func() Message { return &CommChannelPlayers{} },
+	(&CommChannelText{}).ID():    func() Message { return &CommChannelText{} },
 
-	(&CoreGoodbye{}).ID():        msger(&CoreGoodbye{}),
-	(&CoreHello{}).ID():          msger(&CoreHello{}),
-	(&CoreKeepAlive{}).ID():      msger(&CoreKeepAlive{}),
-	(&CorePing{}).ID():           msger(&CorePing{}),
-	(&CoreSupportsSet{}).ID():    msger(&CoreSupportsSet{}),
-	(&CoreSupportsAdd{}).ID():    msger(&CoreSupportsAdd{}),
-	(&CoreSupportsRemove{}).ID(): msger(&CoreSupportsRemove{}),
+	(&CoreGoodbye{}).ID():        func() Message { return &CoreGoodbye{} },
+	(&CoreHello{}).ID():          func() Message { return &CoreHello{} },
+	(&CoreKeepAlive{}).ID():      func() Message { return &CoreKeepAlive{} },
+	(&CorePing{}).ID():           func() Message { return &CorePing{} },
+	(&CoreSupportsSet{}).ID():    func() Message { return &CoreSupportsSet{} },
+	(&CoreSupportsAdd{}).ID():    func() Message { return &CoreSupportsAdd{} },
+	(&CoreSupportsRemove{}).ID(): func() Message { return &CoreSupportsRemove{} },
 
-	(&RoomInfo{}).ID():         msger(&RoomInfo{}),
-	(&RoomPlayers{}).ID():      msger(&RoomPlayers{}),
-	(&RoomAddPlayer{}).ID():    msger(&RoomAddPlayer{}),
-	(&RoomRemovePlayer{}).ID(): msger(&RoomRemovePlayer{}),
+	(&RoomInfo{}).ID():         func() Message { return &RoomInfo{} },
+	(&RoomPlayers{}).ID():      func() Message { return &RoomPlayers{} },
+	(&RoomAddPlayer{}).ID():    func() Message { return &RoomAddPlayer{} },
+	(&RoomRemovePlayer{}).ID(): func() Message { return &RoomRemovePlayer{} },
 }
 
 // Parse converts a byte slice into a GMCP message.

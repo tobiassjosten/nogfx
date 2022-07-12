@@ -8,13 +8,9 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 )
 
-func msger(msg gmcp.Message) func() gmcp.Message {
-	return func() gmcp.Message { return msg }
-}
-
 var messages = map[string]func() gmcp.Message{
-	(&CharStatus{}).ID(): msger(&CharStatus{}),
-	(&CharVitals{}).ID(): msger(&CharVitals{}),
+	(&CharStatus{}).ID(): func() gmcp.Message { return &CharStatus{} },
+	(&CharVitals{}).ID(): func() gmcp.Message { return &CharVitals{} },
 }
 
 // Parse converts a byte slice into a GMCP message.

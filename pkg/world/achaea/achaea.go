@@ -56,8 +56,7 @@ var moduleConstructors = []pkg.ModuleConstructor{
 
 // ProcessInput processes player input.
 func (world *World) ProcessInput(input []byte) [][]byte {
-	// @todo Figure out if the `;` character is configurable, so that we
-	// have to make this dynamic.
+	// @todo Read the CommandSeparator configuration option and use that.
 	inputs := bytes.Split(input, []byte(";"))
 
 	inputs = processInputs(inputs, world.modules)
@@ -65,8 +64,7 @@ func (world *World) ProcessInput(input []byte) [][]byte {
 		return nil
 	}
 
-	// @todo Figure out if the `;` character is configurable, so that we
-	// have to make this dynamic.
+	// @todo Read the CommandSeparator configuration option and use that.
 	return [][]byte{bytes.Join(inputs, []byte(";"))}
 }
 
