@@ -18,7 +18,7 @@ func TestLoopback(t *testing.T) {
 		require.Nil(t, err)
 	}()
 
-	out := make([]byte, 1, 1)
+	out := make([]byte, 1)
 	go func() {
 		_, err := loopback.Read(out)
 		require.Nil(t, err)

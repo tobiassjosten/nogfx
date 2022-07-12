@@ -18,211 +18,231 @@ func makeGMCP(id string, data interface{}) string {
 
 func TestParse(t *testing.T) {
 	tcs := map[string]struct {
-		data string
-		msg  gmcp.Message
-		err  string
+		datas []string
+		msgs  []gmcp.Message
+		errs  []string
 	}{
 		"Char.Login": {
-			data: "Char.Login {}",
-			msg:  &gmcp.CharLogin{},
+			datas: []string{"Char.Login {}"},
+			msgs:  []gmcp.Message{&gmcp.CharLogin{}},
 		},
 
 		"Char.Name": {
-			data: "Char.Name {}",
-			msg:  &gmcp.CharName{},
+			datas: []string{"Char.Name {}"},
+			msgs:  []gmcp.Message{&gmcp.CharName{}},
 		},
 
 		"Char.StatusVars": {
-			data: "Char.StatusVars {}",
-			msg:  &gmcp.CharStatusVars{},
+			datas: []string{"Char.StatusVars {}"},
+			msgs:  []gmcp.Message{&gmcp.CharStatusVars{}},
 		},
 
 		"Char.Afflictions.List": {
-			data: "Char.Afflictions.List []",
-			msg:  &gmcp.CharAfflictionsList{},
+			datas: []string{"Char.Afflictions.List []"},
+			msgs:  []gmcp.Message{&gmcp.CharAfflictionsList{}},
 		},
 
 		"Char.Afflictions.Add": {
-			data: "Char.Afflictions.Add {}",
-			msg:  &gmcp.CharAfflictionsAdd{},
+			datas: []string{"Char.Afflictions.Add {}"},
+			msgs:  []gmcp.Message{&gmcp.CharAfflictionsAdd{}},
 		},
 
 		"Char.Afflictions.Remove": {
-			data: "Char.Afflictions.Remove []",
-			msg:  &gmcp.CharAfflictionsRemove{},
+			datas: []string{"Char.Afflictions.Remove []"},
+			msgs:  []gmcp.Message{&gmcp.CharAfflictionsRemove{}},
 		},
 
 		"Char.Defences.List": {
-			data: "Char.Defences.List []",
-			msg:  &gmcp.CharDefencesList{},
+			datas: []string{"Char.Defences.List []"},
+			msgs:  []gmcp.Message{&gmcp.CharDefencesList{}},
 		},
 
 		"Char.Defences.Add": {
-			data: "Char.Defences.Add {}",
-			msg:  &gmcp.CharDefencesAdd{},
+			datas: []string{"Char.Defences.Add {}"},
+			msgs:  []gmcp.Message{&gmcp.CharDefencesAdd{}},
 		},
 
 		"Char.Defences.Remove": {
-			data: "Char.Defences.Remove []",
-			msg:  &gmcp.CharDefencesRemove{},
+			datas: []string{"Char.Defences.Remove []"},
+			msgs:  []gmcp.Message{&gmcp.CharDefencesRemove{}},
 		},
 
 		"Char.Items.Contents": {
-			data: "Char.Items.Contents 0",
-			msg:  &gmcp.CharItemsContents{},
+			datas: []string{"Char.Items.Contents 0"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsContents{}},
 		},
 
 		"Char.Items.Inv": {
-			data: "Char.Items.Inv",
-			msg:  &gmcp.CharItemsInv{},
+			datas: []string{"Char.Items.Inv"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsInv{}},
 		},
 
 		"Char.Items.Room": {
-			data: "Char.Items.Room",
-			msg:  &gmcp.CharItemsRoom{},
+			datas: []string{"Char.Items.Room"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsRoom{}},
 		},
 
 		"Char.Items.List": {
-			data: "Char.Items.List {}",
-			msg:  &gmcp.CharItemsList{},
+			datas: []string{"Char.Items.List {}"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsList{}},
 		},
 
 		"Char.Items.Add": {
-			data: "Char.Items.Add {}",
-			msg:  &gmcp.CharItemsAdd{},
+			datas: []string{"Char.Items.Add {}"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsAdd{}},
 		},
 
 		"Char.Items.Remove": {
-			data: "Char.Items.Remove {}",
-			msg:  &gmcp.CharItemsRemove{},
+			datas: []string{"Char.Items.Remove {}"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsRemove{}},
 		},
 
 		"Char.Items.Update": {
-			data: "Char.Items.Update {}",
-			msg:  &gmcp.CharItemsUpdate{},
+			datas: []string{"Char.Items.Update {}"},
+			msgs:  []gmcp.Message{&gmcp.CharItemsUpdate{}},
 		},
 
 		"Char.Skills.Get": {
-			data: "Char.Skills.Get {}",
-			msg:  &gmcp.CharSkillsGet{},
+			datas: []string{"Char.Skills.Get {}"},
+			msgs:  []gmcp.Message{&gmcp.CharSkillsGet{}},
 		},
 
 		"Char.Skills.Groups": {
-			data: "Char.Skills.Groups []",
-			msg:  &gmcp.CharSkillsGroups{},
+			datas: []string{"Char.Skills.Groups []"},
+			msgs:  []gmcp.Message{&gmcp.CharSkillsGroups{}},
 		},
 
 		"Char.Skills.Info": {
-			data: "Char.Skills.Info {}",
-			msg:  &gmcp.CharSkillsInfo{},
+			datas: []string{"Char.Skills.Info {}"},
+			msgs:  []gmcp.Message{&gmcp.CharSkillsInfo{}},
 		},
 
 		"Char.Skills.List": {
-			data: "Char.Skills.List {}",
-			msg:  &gmcp.CharSkillsList{},
+			datas: []string{"Char.Skills.List {}"},
+			msgs:  []gmcp.Message{&gmcp.CharSkillsList{}},
 		},
 
 		"Comm.Channel.Enable": {
-			data: `Comm.Channel.Enable ""`,
-			msg:  &gmcp.CommChannelEnable{},
+			datas: []string{`Comm.Channel.Enable ""`},
+			msgs:  []gmcp.Message{&gmcp.CommChannelEnable{}},
 		},
 
 		"Comm.Channel.List": {
-			data: "Comm.Channel.List []",
-			msg:  &gmcp.CommChannelList{},
+			datas: []string{"Comm.Channel.List []"},
+			msgs:  []gmcp.Message{&gmcp.CommChannelList{}},
 		},
 
 		"Comm.Channel.Players": {
-			data: "Comm.Channel.Players []",
-			msg:  &gmcp.CommChannelPlayers{},
+			datas: []string{"Comm.Channel.Players []"},
+			msgs:  []gmcp.Message{&gmcp.CommChannelPlayers{}},
 		},
 
 		"Comm.Channel.Text": {
-			data: "Comm.Channel.Text {}",
-			msg:  &gmcp.CommChannelText{},
+			datas: []string{"Comm.Channel.Text {}"},
+			msgs:  []gmcp.Message{&gmcp.CommChannelText{}},
 		},
 
 		"Core.Goodbye": {
-			data: "Core.Goodbye",
-			msg:  &gmcp.CoreGoodbye{},
+			datas: []string{"Core.Goodbye"},
+			msgs:  []gmcp.Message{&gmcp.CoreGoodbye{}},
 		},
 
 		"Core.Hello": {
-			data: "Core.Hello {}",
-			msg:  &gmcp.CoreHello{},
+			datas: []string{"Core.Hello {}"},
+			msgs:  []gmcp.Message{&gmcp.CoreHello{}},
 		},
 
 		"Core.KeepAlive": {
-			data: "Core.KeepAlive",
-			msg:  &gmcp.CoreKeepAlive{},
+			datas: []string{"Core.KeepAlive"},
+			msgs:  []gmcp.Message{&gmcp.CoreKeepAlive{}},
 		},
 
 		"Core.Ping": {
-			data: "Core.Ping",
-			msg:  &gmcp.CorePing{},
+			datas: []string{"Core.Ping"},
+			msgs:  []gmcp.Message{&gmcp.CorePing{}},
 		},
 
 		"Core.Supports.Set": {
-			data: "Core.Supports.Set []",
-			msg:  &gmcp.CoreSupportsSet{},
+			datas: []string{"Core.Supports.Set []"},
+			msgs:  []gmcp.Message{&gmcp.CoreSupportsSet{}},
 		},
 
 		"Core.Supports.Add": {
-			data: "Core.Supports.Add []",
-			msg:  &gmcp.CoreSupportsAdd{},
+			datas: []string{"Core.Supports.Add []"},
+			msgs:  []gmcp.Message{&gmcp.CoreSupportsAdd{}},
 		},
 
 		"Core.Supports.Remove": {
-			data: "Core.Supports.Remove []",
-			msg:  &gmcp.CoreSupportsRemove{},
+			datas: []string{"Core.Supports.Remove []"},
+			msgs:  []gmcp.Message{&gmcp.CoreSupportsRemove{}},
 		},
 
 		"Room.Info": {
-			data: "Room.Info {}",
-			msg:  &gmcp.RoomInfo{},
+			datas: []string{"Room.Info {}"},
+			msgs:  []gmcp.Message{&gmcp.RoomInfo{}},
 		},
 
 		"Room.Players": {
-			data: "Room.Players []",
-			msg:  &gmcp.RoomPlayers{},
+			datas: []string{"Room.Players []"},
+			msgs:  []gmcp.Message{&gmcp.RoomPlayers{}},
 		},
 
 		"Room.AddPlayer": {
-			data: "Room.AddPlayer {}",
-			msg:  &gmcp.RoomAddPlayer{},
+			datas: []string{"Room.AddPlayer {}"},
+			msgs:  []gmcp.Message{&gmcp.RoomAddPlayer{}},
 		},
 
 		"Room.RemovePlayer": {
-			data: "Room.RemovePlayer {}",
-			msg:  &gmcp.RoomRemovePlayer{},
+			datas: []string{"Room.RemovePlayer {}"},
+			msgs:  []gmcp.Message{&gmcp.RoomRemovePlayer{}},
 		},
 
 		"non-existant": {
-			data: "Non.Existant",
-			err:  "unknown message 'Non.Existant'",
+			datas: []string{"Non.Existant"},
+			errs:  []string{"unknown message 'Non.Existant'"},
 		},
 
 		"invalid JSON": {
-			data: "Char.Login asdf",
-			err:  "couldn't unmarshal *gmcp.CharLogin: invalid character 'a' looking for beginning of value",
+			datas: []string{"Char.Login asdf"},
+			errs:  []string{"couldn't unmarshal *gmcp.CharLogin: invalid character 'a' looking for beginning of value"},
+		},
+
+		"Room.Info x2": {
+			datas: []string{
+				`Room.Info {"exits":{"n":2,"s":3}}`,
+				`Room.Info {"exits":{"w":4,"e":5}}`,
+			},
+			msgs: []gmcp.Message{
+				&gmcp.RoomInfo{Exits: map[string]int{"n": 2, "s": 3}},
+				&gmcp.RoomInfo{Exits: map[string]int{"w": 4, "e": 5}},
+			},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			msg, err := gmcp.Parse([]byte(tc.data))
+			var msgs []gmcp.Message
+			var errs []string
 
-			if tc.err != "" {
-				if assert.NotNil(t, err) {
-					assert.Equal(t, tc.err, err.Error())
+			for _, data := range tc.datas {
+				msg, err := gmcp.Parse([]byte(data))
+				msgs = append(msgs, msg)
+				if err != nil {
+					errs = append(errs, err.Error())
+				}
+			}
+
+			if tc.errs != nil {
+				if assert.NotNil(t, errs) {
+					assert.Equal(t, tc.errs, errs)
 				}
 				return
-			} else if err != nil {
-				assert.Equal(t, "", err.Error())
+			} else if errs != nil {
+				assert.Nil(t, errs)
 				return
 			}
 
-			assert.Equal(t, tc.msg, msg)
+			assert.Equal(t, tc.msgs, msgs)
 		})
 	}
 }

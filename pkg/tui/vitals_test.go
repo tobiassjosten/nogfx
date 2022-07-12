@@ -4,332 +4,276 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+)
+
+var (
+	gapStyle = tcell.StyleDefault.Background(tcell.Color235)
+
+	healthFullStyle = tcell.StyleDefault.
+			Background(tcell.ColorGreen).
+			Foreground(tcell.ColorBlack)
+
+	healthEmptyStyle = tcell.StyleDefault.
+				Background(tcell.ColorDarkGreen).
+				Foreground(tcell.ColorBlack)
+
+	manaFullStyle = tcell.StyleDefault.
+			Background(tcell.ColorBlue).
+			Foreground(tcell.ColorBlack)
+
+	manaEmptyStyle = tcell.StyleDefault.
+			Background(tcell.ColorDarkBlue).
+			Foreground(tcell.ColorBlack)
+
+	enduranceFullStyle = tcell.StyleDefault.
+				Background(tcell.ColorTeal).
+				Foreground(tcell.ColorBlack)
+
+	enduranceEmptyStyle = tcell.StyleDefault.
+				Background(tcell.ColorDarkCyan).
+				Foreground(tcell.ColorBlack)
+
+	willpowerFullStyle = tcell.StyleDefault.
+				Background(tcell.ColorFuchsia).
+				Foreground(tcell.ColorBlack)
+
+	willpowerEmptyStyle = tcell.StyleDefault.
+				Background(tcell.ColorRebeccaPurple).
+				Foreground(tcell.ColorBlack)
+
+	energyFullStyle = tcell.StyleDefault.
+			Background(tcell.ColorYellow).
+			Foreground(tcell.ColorBlack)
+
+	energyEmptyStyle = tcell.StyleDefault.
+				Background(tcell.Color100).
+				Foreground(tcell.ColorBlack)
+
+	unknownFullStyle = tcell.StyleDefault.
+				Background(tcell.Color250).
+				Foreground(tcell.ColorBlack)
+
+	unknownEmptyStyle = tcell.StyleDefault.
+				Background(tcell.Color240).
+				Foreground(tcell.ColorBlack)
 )
 
 func TestRenderVital(t *testing.T) {
-	healthFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorGreen).
-		Foreground(tcell.ColorBlack)
-
-	manaFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorBlue).
-		Foreground(tcell.ColorBlack)
-
-	manaEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorDarkBlue).
-		Foreground(tcell.ColorBlack)
-
-	enduranceFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorTeal).
-		Foreground(tcell.ColorBlack)
-
-	enduranceEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorDarkCyan).
-		Foreground(tcell.ColorBlack)
-
-	willpowerFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorFuchsia).
-		Foreground(tcell.ColorBlack)
-
-	willpowerEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorRebeccaPurple).
-		Foreground(tcell.ColorBlack)
-
-	energyEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorRosyBrown).
-		Foreground(tcell.ColorBlack)
+	fullStyle := healthFullStyle
+	emptyStyle := healthEmptyStyle
 
 	tcs := map[string]struct {
-		vital *tui.Vital
-		width int
-		row   tui.Row
+		vital  pkg.CharacterVital
+		width  int
+		styles []tcell.Style
+		row    tui.Row
 	}{
-		"100% health, even": {
-			vital: tui.NewHealthVital(20, 20),
-			width: 4,
+		"1/1 one cell": {
+			vital:  pkg.CharacterVital{Value: 1, Max: 1},
+			width:  1,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell(' ', healthFullStyle),
-				tui.NewCell('2', healthFullStyle),
-				tui.NewCell('0', healthFullStyle),
-				tui.NewCell(' ', healthFullStyle),
+				tui.NewCell('1', fullStyle),
 			},
 		},
 
-		"100% health, odd": {
-			vital: tui.NewHealthVital(20, 20),
-			width: 5,
+		"0/1 one cell": {
+			vital:  pkg.CharacterVital{Value: 0, Max: 1},
+			width:  1,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell(' ', healthFullStyle),
-				tui.NewCell('2', healthFullStyle),
-				tui.NewCell('0', healthFullStyle),
-				tui.NewCell(' ', healthFullStyle),
-				tui.NewCell(' ', healthFullStyle),
+				tui.NewCell('0', emptyStyle),
 			},
 		},
 
-		"100% health, cramped odd": {
-			vital: tui.NewHealthVital(20, 20),
-			width: 3,
+		"1/2 two cells": {
+			vital:  pkg.CharacterVital{Value: 1, Max: 2},
+			width:  2,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell('2', healthFullStyle),
-				tui.NewCell('0', healthFullStyle),
-				tui.NewCell(' ', healthFullStyle),
+				tui.NewCell('1', fullStyle),
+				tui.NewCell(' ', emptyStyle),
 			},
 		},
 
-		"100% health, cramped even": {
-			vital: tui.NewHealthVital(20, 20),
-			width: 2,
+		"1/2 three cells": {
+			vital:  pkg.CharacterVital{Value: 1, Max: 2},
+			width:  3,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell('2', healthFullStyle),
-				tui.NewCell('0', healthFullStyle),
+				tui.NewCell(' ', fullStyle),
+				tui.NewCell('1', emptyStyle),
+				tui.NewCell(' ', emptyStyle),
 			},
 		},
 
-		"100% health, too cramped": {
-			vital: tui.NewHealthVital(200, 200),
-			width: 2,
+		"3/4 four cells": {
+			vital:  pkg.CharacterVital{Value: 3, Max: 4},
+			width:  4,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell(' ', healthFullStyle),
-				tui.NewCell(' ', healthFullStyle),
+				tui.NewCell(' ', fullStyle),
+				tui.NewCell('3', fullStyle),
+				tui.NewCell(' ', fullStyle),
+				tui.NewCell(' ', emptyStyle),
 			},
 		},
 
-		"75% mana": {
-			vital: tui.NewManaVital(15, 20),
-			width: 4,
+		"10/40 four cells": {
+			vital:  pkg.CharacterVital{Value: 10, Max: 40},
+			width:  4,
+			styles: []tcell.Style{fullStyle, emptyStyle},
 			row: tui.Row{
-				tui.NewCell(' ', manaFullStyle),
-				tui.NewCell('1', manaFullStyle),
-				tui.NewCell('5', manaFullStyle),
-				tui.NewCell(' ', manaEmptyStyle),
-			},
-		},
-
-		"50% endurance": {
-			vital: tui.NewEnduranceVital(10, 20),
-			width: 4,
-			row: tui.Row{
-				tui.NewCell(' ', enduranceFullStyle),
-				tui.NewCell('1', enduranceFullStyle),
-				tui.NewCell('0', enduranceEmptyStyle),
-				tui.NewCell(' ', enduranceEmptyStyle),
-			},
-		},
-
-		"25% willpower": {
-			vital: tui.NewWillpowerVital(5, 20),
-			width: 4,
-			row: tui.Row{
-				tui.NewCell(' ', willpowerFullStyle),
-				tui.NewCell('5', willpowerEmptyStyle),
-				tui.NewCell(' ', willpowerEmptyStyle),
-				tui.NewCell(' ', willpowerEmptyStyle),
-			},
-		},
-
-		"0% energy": {
-			vital: tui.NewEnergyVital(0, 20),
-			width: 4,
-			row: tui.Row{
-				tui.NewCell(' ', energyEmptyStyle),
-				tui.NewCell('0', energyEmptyStyle),
-				tui.NewCell(' ', energyEmptyStyle),
-				tui.NewCell(' ', energyEmptyStyle),
+				tui.NewCell(' ', fullStyle),
+				tui.NewCell('1', emptyStyle),
+				tui.NewCell('0', emptyStyle),
+				tui.NewCell(' ', emptyStyle),
 			},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			row := tui.RenderVital(tc.vital, tc.width)
+			row := tui.RenderVital(tc.vital, tc.width, tc.styles)
 			assert.Equal(t, tc.row, row)
 		})
 	}
 }
 
-type MockVital struct {
-}
-
 func TestRenderVitals(t *testing.T) {
-	healthFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorGreen).
-		Foreground(tcell.ColorBlack)
-
-	healthEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorDarkGreen).
-		Foreground(tcell.ColorBlack)
-
-	manaFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorBlue).
-		Foreground(tcell.ColorBlack)
-
-	manaEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorDarkBlue).
-		Foreground(tcell.ColorBlack)
-
-	enduranceFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorTeal).
-		Foreground(tcell.ColorBlack)
-
-	enduranceEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorDarkCyan).
-		Foreground(tcell.ColorBlack)
-
-	willpowerFullStyle := tcell.StyleDefault.
-		Background(tcell.ColorFuchsia).
-		Foreground(tcell.ColorBlack)
-
-	willpowerEmptyStyle := tcell.StyleDefault.
-		Background(tcell.ColorRebeccaPurple).
-		Foreground(tcell.ColorBlack)
-
 	tcs := map[string]struct {
-		vorder  []string
-		vitals  map[string]interface{}
-		updates map[string][]int
-		width   int
-		height  int
-		rows    tui.Rows
-		err     string
+		vitals map[string]pkg.CharacterVital
+		width  int
+		height int
+		row    tui.Row
+		err    string
 	}{
+		"too short": {
+			width:  1,
+			height: 4,
+			row:    tui.Row{tui.NewCell(' ')},
+		},
+
 		"no vitals": {
-			width:  2,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(2, tui.NewCell(' ')),
-				tui.NewRow(2, tui.NewCell(' ')),
-			},
+			width:  1,
+			height: 5,
+			row:    tui.Row{tui.NewCell(' ')},
 		},
 
-		"too short for vitals": {
-			vorder: []string{"health"},
-			vitals: map[string]interface{}{
-				"health": tui.NewHealthVital(1, 2),
+		"width 1 health 1/1": {
+			vitals: map[string]pkg.CharacterVital{
+				"health": {Value: 1, Max: 1},
 			},
-			width:  2,
-			height: 1,
-			rows: tui.Rows{
-				tui.NewRow(2, tui.NewCell(' ')),
-			},
+			width:  1,
+			height: 5,
+			row:    tui.Row{tui.NewCell('1', healthFullStyle)},
 		},
 
-		"too narrow for numbers": {
-			vorder: []string{"health"},
-			vitals: map[string]interface{}{
-				"health": tui.NewHealthVital(100, 200),
+		"width 2 mana 1/2": {
+			vitals: map[string]pkg.CharacterVital{
+				"mana": {Value: 1, Max: 2},
 			},
 			width:  2,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(2, tui.NewCell(' ')),
-				tui.Row{
-					tui.NewCell(' ', healthFullStyle),
-					tui.NewCell(' ', healthEmptyStyle),
-				},
+			height: 5,
+			row: tui.Row{
+				tui.NewCell('1', manaFullStyle),
+				tui.NewCell(' ', manaEmptyStyle),
 			},
 		},
 
-		"half health": {
-			vorder: []string{"health"},
-			vitals: map[string]interface{}{
-				"health": tui.NewHealthVital(1, 2),
+		"width 3 endurance 1/3": {
+			vitals: map[string]pkg.CharacterVital{
+				"endurance": {Value: 1, Max: 3},
+			},
+			width:  3,
+			height: 5,
+			row: tui.Row{
+				tui.NewCell(' ', enduranceFullStyle),
+				tui.NewCell('1', enduranceEmptyStyle),
+				tui.NewCell(' ', enduranceEmptyStyle),
+			},
+		},
+
+		"width 4 willpower 3/4": {
+			vitals: map[string]pkg.CharacterVital{
+				"willpower": {Value: 3, Max: 4},
+			},
+			width:  4,
+			height: 5,
+			row: tui.Row{
+				tui.NewCell(' ', willpowerFullStyle),
+				tui.NewCell('3', willpowerFullStyle),
+				tui.NewCell(' ', willpowerFullStyle),
+				tui.NewCell(' ', willpowerEmptyStyle),
+			},
+		},
+
+		"width 2 energy 100/200": {
+			vitals: map[string]pkg.CharacterVital{
+				"energy": {Value: 100, Max: 200},
 			},
 			width:  2,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(2, tui.NewCell(' ')),
-				tui.Row{
-					tui.NewCell('1', healthFullStyle),
-					tui.NewCell(' ', healthEmptyStyle),
-				},
+			height: 5,
+			row: tui.Row{
+				tui.NewCell(' ', energyFullStyle),
+				tui.NewCell(' ', energyEmptyStyle),
 			},
 		},
 
-		"full health, half mana": {
-			vorder: []string{"health", "mana"},
-			vitals: map[string]interface{}{
-				"health": tui.NewHealthVital(2, 2),
-				"mana":   tui.NewManaVital(1, 2),
+		"width 2 unknown 1/2": {
+			vitals: map[string]pkg.CharacterVital{
+				"unknown": {Value: 1, Max: 2},
 			},
-			width:  5,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(5, tui.NewCell(' ')),
-				tui.Row{
-					tui.NewCell('2', healthFullStyle),
-					tui.NewCell(' ', healthFullStyle),
-					tui.NewCell(' '),
-					tui.NewCell('1', manaFullStyle),
-					tui.NewCell(' ', manaEmptyStyle),
-				},
+			width:  2,
+			height: 5,
+			row: tui.Row{
+				tui.NewCell('1', unknownFullStyle),
+				tui.NewCell(' ', unknownEmptyStyle),
 			},
 		},
 
-		"half endurance, full willpower": {
-			vorder: []string{"endurance", "willpower"},
-			vitals: map[string]interface{}{
-				"endurance": tui.NewEnduranceVital(1, 2),
-				"willpower": tui.NewWillpowerVital(2, 2),
+		"width 9 health 1/2 mana 3/4": {
+			vitals: map[string]pkg.CharacterVital{
+				"health": {Value: 1, Max: 2},
+				"mana":   {Value: 3, Max: 4},
 			},
-			width:  5,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(5, tui.NewCell(' ')),
-				tui.Row{
-					tui.NewCell('1', enduranceFullStyle),
-					tui.NewCell(' ', enduranceEmptyStyle),
-					tui.NewCell(' '),
-					tui.NewCell('2', willpowerFullStyle),
-					tui.NewCell(' ', willpowerFullStyle),
-				},
-			},
-		},
-
-		"full endurance, half willpower": {
-			vorder: []string{"endurance", "willpower"},
-			vitals: map[string]interface{}{
-				"endurance": tui.NewEnduranceVital(1, 2),
-				"willpower": tui.NewWillpowerVital(2, 2),
-			},
-			updates: map[string][]int{
-				"endurance": []int{3, 3},
-				"willpower": []int{2, 4},
-			},
-			width:  5,
-			height: 2,
-			rows: tui.Rows{
-				tui.NewRow(5, tui.NewCell(' ')),
-				tui.Row{
-					tui.NewCell('3', enduranceFullStyle),
-					tui.NewCell(' ', enduranceFullStyle),
-					tui.NewCell(' '),
-					tui.NewCell('2', willpowerFullStyle),
-					tui.NewCell(' ', willpowerEmptyStyle),
-				},
+			width:  9,
+			height: 5,
+			row: tui.Row{
+				tui.NewCell(' ', healthFullStyle),
+				tui.NewCell('1', healthFullStyle),
+				tui.NewCell(' ', healthEmptyStyle),
+				tui.NewCell(' ', healthEmptyStyle),
+				tui.NewCell(' ', gapStyle),
+				tui.NewCell(' ', manaFullStyle),
+				tui.NewCell('3', manaFullStyle),
+				tui.NewCell(' ', manaFullStyle),
+				tui.NewCell(' ', manaEmptyStyle),
 			},
 		},
 
-		"add wrong type": {
-			vorder: []string{"wrong-type"},
-			vitals: map[string]interface{}{
-				"wrong-type": MockVital{},
+		"width 7 endurance 10/20 willpower 10/40": {
+			vitals: map[string]pkg.CharacterVital{
+				"endurance": {Value: 10, Max: 20},
+				"willpower": {Value: 10, Max: 40},
 			},
-			err: "unsupported vital 'wrong-type'",
-		},
-
-		"update non-existant": {
-			vorder: []string{"non-existant"},
-			updates: map[string][]int{
-				"non-existant": []int{1, 1},
+			width:  7,
+			height: 5,
+			row: tui.Row{
+				tui.NewCell('1', enduranceFullStyle),
+				tui.NewCell('0', enduranceEmptyStyle),
+				tui.NewCell(' ', enduranceEmptyStyle),
+				tui.NewCell(' ', gapStyle),
+				tui.NewCell('1', willpowerFullStyle),
+				tui.NewCell('0', willpowerEmptyStyle),
+				tui.NewCell(' ', willpowerEmptyStyle),
 			},
-			err: "couldn't update non-existent 'non-existant' vital",
 		},
 	}
 
@@ -351,6 +295,7 @@ func TestRenderVitals(t *testing.T) {
 					rows[y][x] = tui.NewCell(r, style)
 				},
 				SetCursorStyleFunc: func(_ tcell.CursorStyle) {},
+				ShowCursorFunc:     func(_, _ int) {},
 				SetStyleFunc:       func(_ tcell.Style) {},
 				ShowFunc:           func() {},
 				SizeFunc: func() (int, int) {
@@ -363,31 +308,15 @@ func TestRenderVitals(t *testing.T) {
 
 			ui := tui.NewTUI(screen)
 
-			var err error
-			for _, name := range tc.vorder {
-				if vital, ok := tc.vitals[name]; ok {
-					if e := ui.AddVital(name, vital); e != nil {
-						err = e
-					}
-				}
-			}
-			for _, name := range tc.vorder {
-				if update, ok := tc.updates[name]; ok {
-					if e := ui.UpdateVital(name, update[0], update[1]); e != nil {
-						err = e
-					}
-				}
-			}
-
-			if tc.err != "" {
-				assert.Equal(t, tc.err, err.Error())
-				return
-			}
-			require.Nil(t, err)
+			ui.SetCharacter(pkg.Character{Vitals: tc.vitals})
 
 			_ = ui.Run(ctx)
 
-			assert.Equal(t, tc.rows, rows)
+			vitalsi := len(rows) - 2
+			if vitalsi < 0 {
+				vitalsi = 0
+			}
+			assert.Equal(t, tc.row, rows[vitalsi])
 		})
 	}
 }

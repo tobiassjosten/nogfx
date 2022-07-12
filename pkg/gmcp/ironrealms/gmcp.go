@@ -7,17 +7,13 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
-func msger(msg gmcp.Message) func() gmcp.Message {
-	return func() gmcp.Message { return msg }
-}
-
 var messages = map[string]func() gmcp.Message{
-	(&IRERiftChange{}).ID():  msger(&IRERiftChange{}),
-	(&IRERiftList{}).ID():    msger(&IRERiftList{}),
-	(&IRERiftRequest{}).ID(): msger(&IRERiftRequest{}),
+	(&IRERiftChange{}).ID():  func() gmcp.Message { return &IRERiftChange{} },
+	(&IRERiftList{}).ID():    func() gmcp.Message { return &IRERiftList{} },
+	(&IRERiftRequest{}).ID(): func() gmcp.Message { return &IRERiftRequest{} },
 
-	(&IRETargetSet{}).ID():  msger(&IRETargetSet{}),
-	(&IRETargetInfo{}).ID(): msger(&IRETargetInfo{}),
+	(&IRETargetSet{}).ID():  func() gmcp.Message { return &IRETargetSet{} },
+	(&IRETargetInfo{}).ID(): func() gmcp.Message { return &IRETargetInfo{} },
 }
 
 // Parse converts a byte slice into a GMCP message.

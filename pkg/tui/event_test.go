@@ -9,122 +9,107 @@ import (
 )
 
 func TestHandleEvent(t *testing.T) {
+	bools := func(c int, b bool) (bs []bool) {
+		for i := 0; i < c; i++ {
+			bs = append(bs, b)
+		}
+		return
+	}
+
 	tcs := map[string]struct {
-		events []*tcell.EventKey
-		inputs [][]byte
-		f      func(*testing.T, *TUI)
+		events  []*tcell.EventKey
+		setup   func(*TUI)
+		inputs  [][]byte
+		handled []bool
+		test    func(*testing.T, *TUI)
 	}{
-		"space enables inputting": {
+		"inputting appends buffer and moves cursor": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
-			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
-			},
-		},
-
-		"escape disables inputting": {
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
-				tcell.NewEventKey(tcell.KeyEsc, 0, 0),
-			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.False(t, ui.input.inputting)
-			},
-		},
-
-		"ctrl+c disables inputting": {
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
-				tcell.NewEventKey(tcell.KeyCtrlC, 0, 0),
-			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.False(t, ui.input.inputting)
-			},
-		},
-
-		"inputting moves cursor right": {
-			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 2, ui.input.cursor)
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, []rune("xy"), ui.input.buffer)
+				assert.Equal(t, 2, ui.input.cursoroff)
+			},
+		},
+
+		"ctrl+c clears buffer": {
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
+				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
+				tcell.NewEventKey(tcell.KeyCtrlC, 0, 0),
+			},
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, []rune(""), ui.input.buffer)
+				assert.Equal(t, 0, ui.input.cursoroff)
 			},
 		},
 
 		"left arrow moves cursor left": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 1, ui.input.cursor)
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 1, ui.input.cursoroff)
 			},
 		},
 
 		"left arrow stops at buffer end": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 0, ui.input.cursor)
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 0, ui.input.cursoroff)
 			},
 		},
 
 		"right arrow moves cursor right": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyRight, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 2, ui.input.cursor)
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 2, ui.input.cursoroff)
 			},
 		},
 
 		"right arrow stops at buffer end": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'x', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'y', 0),
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyRight, 0, 0),
 				tcell.NewEventKey(tcell.KeyRight, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.Equal(t, 2, ui.input.cursor)
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 2, ui.input.cursoroff)
 			},
 		},
 
 		"backspace deletes character from buffer": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'f', 0),
 				tcell.NewEventKey(tcell.KeyBackspace, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("asd"), ui.input.buffer)
 			},
 		},
 
 		"backspace deletes based on cursor": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
@@ -132,15 +117,13 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyBackspace, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("asf"), ui.input.buffer)
 			},
 		},
 
 		"opt + backspace deletes word from buffer": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
@@ -148,15 +131,13 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyRune, 'f', 0),
 				tcell.NewEventKey(tcell.KeyETB, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("as "), ui.input.buffer)
 			},
 		},
 
 		"opt + backspace deletes based on cursor": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
@@ -165,30 +146,26 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyETB, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("as f"), ui.input.buffer)
 			},
 		},
 
 		"opt + backspace deletes last word from buffer": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'f', 0),
 				tcell.NewEventKey(tcell.KeyETB, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune{}, ui.input.buffer)
 			},
 		},
 
 		"cmd + backspace deletes everything from buffer": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
@@ -196,15 +173,13 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyRune, 'f', 0),
 				tcell.NewEventKey(tcell.KeyNAK, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune{}, ui.input.buffer)
 			},
 		},
 
 		"cmd + backspace deletes based on cursor": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
@@ -213,15 +188,13 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyLeft, 0, 0),
 				tcell.NewEventKey(tcell.KeyNAK, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
-				assert.True(t, ui.input.inputting)
+			test: func(t *testing.T, ui *TUI) {
 				assert.Equal(t, []rune("f"), ui.input.buffer)
 			},
 		},
 
 		"enter sends the buffer": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
@@ -231,15 +204,32 @@ func TestHandleEvent(t *testing.T) {
 			inputs: [][]byte{
 				[]byte("asdf"),
 			},
-			f: func(t *testing.T, ui *TUI) {
+			test: func(t *testing.T, ui *TUI) {
 				assert.True(t, ui.input.inputted)
 				assert.Equal(t, []rune("asdf"), ui.input.buffer)
 			},
 		},
 
+		"enter when masked clears the buffer": {
+			setup: func(ui *TUI) {
+				ui.MaskInput()
+			},
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
+				tcell.NewEventKey(tcell.KeyRune, 's', 0),
+				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
+				tcell.NewEventKey(tcell.KeyRune, 'f', 0),
+				tcell.NewEventKey(tcell.KeyEnter, 0, 0),
+			},
+			test: func(t *testing.T, ui *TUI) {
+				assert.Empty(t, ui.input.buffer)
+				assert.False(t, ui.input.inputted)
+				assert.Equal(t, 0, ui.input.cursoroff)
+			},
+		},
+
 		"backspace resets inputted": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
@@ -247,7 +237,7 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyEnter, 0, 0),
 				tcell.NewEventKey(tcell.KeyBackspace, 0, 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
+			test: func(t *testing.T, ui *TUI) {
 				assert.False(t, ui.input.inputted)
 				assert.Equal(t, []rune{}, ui.input.buffer)
 			},
@@ -255,7 +245,6 @@ func TestHandleEvent(t *testing.T) {
 
 		"new input resets inputted": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, ' ', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 				tcell.NewEventKey(tcell.KeyRune, 's', 0),
 				tcell.NewEventKey(tcell.KeyRune, 'd', 0),
@@ -263,91 +252,106 @@ func TestHandleEvent(t *testing.T) {
 				tcell.NewEventKey(tcell.KeyEnter, 0, 0),
 				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
 			},
-			f: func(t *testing.T, ui *TUI) {
+			test: func(t *testing.T, ui *TUI) {
 				assert.False(t, ui.input.inputted)
 				assert.Equal(t, []rune("a"), ui.input.buffer)
 			},
 		},
 
-		"keypad 1 sends sw": {
+		"up arrow scrolls back output": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '1', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
 			},
-			inputs: [][]byte{
-				[]byte("sw"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 1, ui.output.offset)
 			},
 		},
 
-		"keypad 2 sends s": {
+		"up up arrow scrolls back output": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '2', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
 			},
-			inputs: [][]byte{
-				[]byte("s"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 2, ui.output.offset)
 			},
 		},
 
-		"keypad 3 sends se": {
+		"alt up arrow scrolls back output more": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '3', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModAlt),
 			},
-			inputs: [][]byte{
-				[]byte("se"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 5, ui.output.offset)
 			},
 		},
 
-		"keypad 4 sends w": {
+		"alt up arrow scrolls back when inputted": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '4', 0),
+				tcell.NewEventKey(tcell.KeyRune, 'a', 0),
+				tcell.NewEventKey(tcell.KeyEnter, 0, 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModAlt),
 			},
-			inputs: [][]byte{
-				[]byte("w"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 5, ui.output.offset)
 			},
 		},
 
-		"keypad 5 sends map": {
+		"down arrow scrolls forward output": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '5', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+				tcell.NewEventKey(tcell.KeyDown, 0, 0),
 			},
-			inputs: [][]byte{
-				[]byte("map"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 1, ui.output.offset)
 			},
 		},
 
-		"keypad 6 sends e": {
+		"down arrow does nothing without scrollback": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '6', 0),
+				tcell.NewEventKey(tcell.KeyDown, 0, 0),
 			},
-			inputs: [][]byte{
-				[]byte("e"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 0, ui.output.offset)
 			},
 		},
 
-		"keypad 7 sends nw": {
+		"alt down arrow scrolls back output more": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '7', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModAlt),
+				tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModAlt),
+				tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModAlt),
 			},
-			inputs: [][]byte{
-				[]byte("nw"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 5, ui.output.offset)
 			},
 		},
 
-		"keypad 8 sends n": {
+		"alt down arrow does nothing without scrollback": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '8', 0),
+				tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModAlt),
 			},
-			inputs: [][]byte{
-				[]byte("n"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 0, ui.output.offset)
 			},
 		},
 
-		"keypad 9 sends ne": {
+		"escape resets scrollback": {
 			events: []*tcell.EventKey{
-				tcell.NewEventKey(tcell.KeyRune, '9', 0),
+				tcell.NewEventKey(tcell.KeyUp, 0, 0),
+				tcell.NewEventKey(tcell.KeyEsc, 0, 0),
 			},
-			inputs: [][]byte{
-				[]byte("ne"),
+			test: func(t *testing.T, ui *TUI) {
+				assert.Equal(t, 0, ui.output.offset)
 			},
+		},
+
+		"unknown keys dont do anything": {
+			events: []*tcell.EventKey{
+				tcell.NewEventKey(tcell.KeyCtrlP, 0, 0),
+			},
+			handled: []bool{false},
 		},
 	}
 
@@ -360,6 +364,10 @@ func TestHandleEvent(t *testing.T) {
 
 			ui := NewTUI(screen)
 
+			if tc.setup != nil {
+				tc.setup(ui)
+			}
+
 			done := make(chan struct{})
 
 			var inputs [][]byte
@@ -370,19 +378,25 @@ func TestHandleEvent(t *testing.T) {
 				done <- struct{}{}
 			}()
 
+			handled := []bool{}
 			for _, event := range tc.events {
-				_ = ui.HandleEvent(event)
+				handled = append(handled, ui.HandleEvent(event))
 			}
 			close(ui.inputs)
 
 			<-done
 
-			if len(tc.inputs) > 0 {
+			if tc.inputs != nil {
 				assert.Equal(t, tc.inputs, inputs)
 			}
 
-			if tc.f != nil {
-				tc.f(t, ui)
+			if tc.handled == nil {
+				tc.handled = bools(len(tc.events), true)
+			}
+			assert.Equal(t, tc.handled, handled)
+
+			if tc.test != nil {
+				tc.test(t, ui)
 			}
 		})
 	}

@@ -6,17 +6,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-const (
-	minimapRoomWidth   = 4
-	minimapRoomHeight  = 2
-	minimapRoomsMargin = 3
-
-	// We want to be able to show at least the current room and those
-	// drectly adjacent to it, or else don't bother with the minimap.
-	minimapMinWidth  = minimapRoomWidth*3 + minimapRoomsMargin
-	minimapMinHeight = minimapRoomHeight*3 + minimapRoomsMargin
-)
-
 // Minimap is a map rendition based on the given room.
 type Minimap struct {
 	room     *navigation.Room
@@ -28,6 +17,19 @@ type maproom struct {
 	room *navigation.Room
 	x    int
 	y    int
+}
+
+// RenderMap renders a map from the current room.
+func (tui *TUI) RenderMap(width, height int) Rows {
+	if rows, ok := tui.getCache(paneMap); ok {
+		return rows
+	}
+
+	rows := RenderMap(tui.room, width, height)
+
+	tui.setCache(paneMap, rows)
+
+	return rows
 }
 
 // RenderMap renders cascading layers of adjacent rooms, based on the given.

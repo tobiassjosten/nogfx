@@ -69,11 +69,7 @@ func TestCommandsReply(t *testing.T) {
 				},
 			}
 
-			ui := &mock.UIMock{
-				AddVitalFunc: func(_ string, _ interface{}) error {
-					return nil
-				},
-			}
+			ui := &mock.UIMock{}
 
 			engine := world.NewEngine(client, ui, "example.com:1337")
 
@@ -102,9 +98,6 @@ func TestMasking(t *testing.T) {
 	var masked bool
 
 	ui := &mock.UIMock{
-		AddVitalFunc: func(_ string, _ interface{}) error {
-			return nil
-		},
 		MaskInputFunc: func() {
 			masked = true
 		},

@@ -1,6 +1,7 @@
 package achaea
 
 import (
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 )
@@ -30,11 +31,49 @@ type Character struct {
 	Bleed int
 	Rage  int
 
-	Karma    int
-	Kai      int
-	Stance   string
 	Ferocity int
+	Kai      int
+	Karma    int
 	Spec     string
+	Stance   string
+}
+
+// PkgCharacter converts our game-specific Character to the general pkg struct.
+func (c *Character) PkgCharacter() pkg.Character {
+	pc := pkg.Character{
+		Vitals: map[string]pkg.CharacterVital{
+			"health":    {Value: c.Health, Max: c.MaxHealth},
+			"mana":      {Value: c.Mana, Max: c.MaxMana},
+			"endurance": {Value: c.Endurance, Max: c.MaxEndurance},
+			"willpower": {Value: c.Willpower, Max: c.MaxWillpower},
+		},
+	}
+
+	// @todo Implement a way to differentiate between having 0 of the below
+	// resources and not having it at all.
+
+	if c.Ferocity > 0 {
+		pc.Vitals["ferocity"] = pkg.CharacterVital{
+			Value: c.Ferocity,
+			Max:   100,
+		}
+	}
+
+	if c.Kai > 0 {
+		pc.Vitals["kai"] = pkg.CharacterVital{
+			Value: c.Kai,
+			Max:   100,
+		}
+	}
+
+	if c.Karma > 0 {
+		pc.Vitals["karma"] = pkg.CharacterVital{
+			Value: c.Karma,
+			Max:   100,
+		}
+	}
+
+	return pc
 }
 
 // FromCharName updates the character from a Char.Name GMCP message.

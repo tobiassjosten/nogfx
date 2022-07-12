@@ -43,10 +43,9 @@ type UI interface {
 	MaskInput()
 	UnmaskInput()
 
-	AddVital(string, interface{}) error
-	UpdateVital(string, int, int) error
-
+	SetCharacter(Character)
 	SetRoom(*navigation.Room)
+	SetTarget(*Target)
 }
 
 // World represents a game and hooks into all their various specific logic.

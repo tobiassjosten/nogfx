@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -32,12 +34,13 @@ func TestRenderOutput(t *testing.T) {
 		height int
 		pwidth int
 		offset int
+		cache  Rows
 		rows   []string
 	}{
 		"empty": {
 			width:  1,
 			height: 1,
-			rows:   nil,
+			rows:   []string{" "},
 		},
 
 		"simple output": {
@@ -65,21 +68,21 @@ func TestRenderOutput(t *testing.T) {
 			buffer: "a",
 			width:  2,
 			height: 1,
-			rows:   []string{"a"},
+			rows:   []string{"a "},
 		},
 
 		"word wrap simple": {
 			buffer: "a sdf",
 			width:  2,
 			height: 3,
-			rows:   []string{"a", "sd", "f"},
+			rows:   []string{"a ", "sd", "f "},
 		},
 
 		"word wrap overflow": {
 			buffer: "a sdf",
 			width:  2,
 			height: 2,
-			rows:   []string{"sd", "f"},
+			rows:   []string{"sd", "f "},
 		},
 
 		"history scrollback even": {
@@ -87,7 +90,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 3,
 			offset: 1,
-			rows:   []string{"a ", "──", "h"},
+			rows:   []string{"a ", "──", "h "},
 		},
 
 		"history scrollback odd": {
@@ -95,7 +98,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 4,
 			offset: 1,
-			rows:   []string{"a ", "sd", "──", "k"},
+			rows:   []string{"a ", "sd", "──", "k "},
 		},
 
 		"resize kill history scrollback": {
@@ -104,7 +107,7 @@ func TestRenderOutput(t *testing.T) {
 			height: 3,
 			pwidth: 1,
 			offset: 1,
-			rows:   []string{"sd", "fg", "h"},
+			rows:   []string{"sd", "fg", "h "},
 		},
 
 		"maintain history scrollback": {
@@ -113,7 +116,7 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 4,
 			offset: 1,
-			rows:   []string{"a ", "sd", "──", "xy"},
+			rows:   []string{"a ", "sd", "──", "xy"},
 		},
 
 		"print message": {
@@ -122,6 +125,11 @@ func TestRenderOutput(t *testing.T) {
 			width:  2,
 			height: 3,
 			rows:   []string{"as", "df", "xy"},
+		},
+
+		"cache rendition": {
+			cache: Rows{Row{NewCell('a'), NewCell('s')}},
+			rows:  []string{"as"},
 		},
 	}
 
@@ -151,6 +159,10 @@ func TestRenderOutput(t *testing.T) {
 
 			for _, print := range tc.prints {
 				tui.Print(print)
+			}
+
+			if tc.cache != nil {
+				tui.setCache(paneOutput, tc.cache)
 			}
 
 			rows := tui.RenderOutput(tc.width, tc.height)
@@ -185,15 +197,35 @@ func TestOutputAppend(t *testing.T) {
 
 		"maintain color": {
 			datas: [][]byte{
-				[]byte(""),
 				[]byte("\033[32;44my"),
 				[]byte("z"),
 			},
 			buffer: Rows{
 				Row{NewCell('z', redStyle)},
 				Row{NewCell('y', redStyle)},
-				Row{}, // sometimes, somehow, we get empties
 			},
+		},
+
+		"ga swallows first newline": {
+			datas: [][]byte{
+				[]byte("as"),
+				[]byte{telnet.GA},
+				[]byte(""),
+				[]byte("df"),
+				[]byte(""),
+				[]byte("zx"),
+			},
+			buffer: Rows{
+				Row{NewCell('z'), NewCell('x')},
+				Row{},
+				Row{NewCell('d'), NewCell('f')},
+				Row{NewCell('a'), NewCell('s')},
+			},
+		},
+
+		"caps at 5000 rows": {
+			datas:  bytes.Fields(bytes.Repeat([]byte("x "), 5001)),
+			buffer: NewRows(1, 5000, NewCell('x')),
 		},
 	}
 

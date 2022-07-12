@@ -4,7 +4,6 @@ import (
 	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
-	"github.com/tobiassjosten/nogfx/pkg/tui"
 )
 
 // ExampleWorld is a mock implementation of the pkg.World interface.
@@ -12,7 +11,7 @@ type ExampleWorld struct {
 	ui pkg.UI
 }
 
-// NewExampleWorld creates a new Imperian-specific pkg.World.
+// NewExampleWorld creates a new dummy pkg.World.
 func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 	go func() {
 		ui.Outputs() <- []byte("One lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum et nunc in dui efficitur commodo sed ut lectus. Etiam a urna nec augue gravida imperdiet. Aenean luctus ut augue in laoreet. Nunc ut dui sem. Maecenas id leo purus. Maecenas enim purus, finibus sit amet aliquam sit amet, commodo ut velit. Nunc nunc lectus, pulvinar ut metus quis, laoreet dapibus dolor. In rhoncus quis ligula sit amet pharetra. Aliquam nunc velit, pharetra nec imperdiet nec, iaculis nec ex. Vestibulum porta tristique dignissim. Pellentesque ac maximus lorem, ut viverra risus.")
@@ -117,10 +116,22 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 
 	ui.SetRoom(x)
 
-	_ = ui.AddVital("health", tui.NewHealthVital())
-	_ = ui.UpdateVital("health", 800, 1000)
-	_ = ui.AddVital("mana", tui.NewManaVital())
-	_ = ui.UpdateVital("mana", 950, 1000)
+	ui.SetCharacter(pkg.Character{
+		Vitals: map[string]pkg.CharacterVital{
+			"health":    {Value: 800, Max: 1000},
+			"mana":      {Value: 950, Max: 1000},
+			"energy":    {Value: 300, Max: 1000},
+			"something": {Value: 700, Max: 1000},
+		},
+	})
+
+	tgt := pkg.NewTarget(func(name string, tgt *pkg.Target) {
+		tgt.Name = name
+	})
+	tgt.Health = 37
+	tgt.SetCandidates([]string{"someone", "two"})
+	tgt.SetPresent([]string{"someone", "two", "three"})
+	ui.SetTarget(tgt)
 
 	return &ExampleWorld{
 		ui: ui,
