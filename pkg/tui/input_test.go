@@ -156,7 +156,7 @@ func TestRenderInput(t *testing.T) {
 
 			rows, cx, cy := tui.RenderInput(tc.width, tc.height)
 
-			assert.Equal(t, tc.rows, rows.strings())
+			assert.Equal(t, tc.rows, rows.Strings())
 			if tc.cursorpos != nil {
 				assert.Equal(t, tc.cursorpos, []int{cx, cy})
 			}
@@ -185,7 +185,7 @@ func TestMasking(t *testing.T) {
 	rows, _, _ := tui.RenderInput(width, height)
 
 	// Masking input deletes the buffer.
-	assert.Equal(t, []string{"     "}, rows.strings())
+	assert.Equal(t, []string{"     "}, rows.Strings())
 
 	tui.setCache(paneInput, nil)
 	tui.input.buffer = []rune("asdf")
@@ -193,12 +193,12 @@ func TestMasking(t *testing.T) {
 	rows, _, _ = tui.RenderInput(width, height)
 
 	// Masked rendering transforms the buffer.
-	assert.Equal(t, []string{"**** "}, rows.strings())
+	assert.Equal(t, []string{"**** "}, rows.Strings())
 
 	tui.UnmaskInput()
 
 	rows, _, _ = tui.RenderInput(width, height)
 
 	// Unmasking input deletes the buffer.
-	assert.Equal(t, []string{"     "}, rows.strings())
+	assert.Equal(t, []string{"     "}, rows.Strings())
 }

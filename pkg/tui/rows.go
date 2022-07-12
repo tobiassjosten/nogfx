@@ -124,7 +124,8 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 	return row, style
 }
 
-func (row Row) string() (str string) {
+// String converts the row to a string.
+func (row Row) String() (str string) {
 	for _, c := range row {
 		str += string(c.Content)
 	}
@@ -272,9 +273,10 @@ func NewRows(width, height int, cells ...Cell) Rows {
 	return rows
 }
 
-func (rows Rows) strings() (strs []string) {
+// Strings converts the rows to a slice of strings.
+func (rows Rows) Strings() (strs []string) {
 	for _, row := range rows {
-		strs = append(strs, row.string())
+		strs = append(strs, row.String())
 	}
 	return
 }

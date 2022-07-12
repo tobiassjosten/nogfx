@@ -9,6 +9,9 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/simpex"
 )
 
+// @todo Make this use 20 lessons at a time with the myrrh/bisemutum defense:
+// "Your mind is racing with enhanced speed."
+
 var (
 	modLMLIStart    = []byte("learn {^} {^ from *}")
 	modLMLOBegin1   = []byte("* begins the lesson in ^.")
@@ -16,6 +19,7 @@ var (
 	modLMLOContinue = []byte("* continues your training in ^.")
 	modLMLOFinish1  = []byte("* bows to you - the lesson in ^ is over.")
 	modLMLOFinish2  = []byte("* finishes the lesson in ^.")
+	// @todo Add "Storing his remaining inks, Maric, a filthy ratman bows to you, the lesson in Tattoos complete."
 )
 
 // LearnMultipleLessons lets players learn more than 15 lessons in one swoop by
