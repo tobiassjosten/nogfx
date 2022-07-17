@@ -11,17 +11,16 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type FuncModule func([]byte) [][]byte
 
-func (mod FuncModule) ProcessInput(data []byte) [][]byte {
-	return mod(data)
+func (mod FuncModule) InputTriggers() (ts []pkg.Trigger[pkg.Input]) {
+	return
 }
 
-func (mod FuncModule) ProcessOutput(data []byte) [][]byte {
-	return mod(data)
+func (mod FuncModule) OutputTriggers() (ts []pkg.Trigger[pkg.Output]) {
+	return
 }
 
 func wrapGMCP(msgs ...string) []byte {
@@ -36,26 +35,17 @@ func wrapGMCP(msgs ...string) []byte {
 
 func TestProcessInput(t *testing.T) {
 	tcs := map[string]struct {
-		in  []byte
-		out [][]byte
-		mod pkg.Module
+		in  pkg.Input
+		out pkg.Input
 	}{
 		"plain asdf": {
-			in:  []byte("asdf"),
-			out: [][]byte{[]byte("asdf")},
+			in:  pkg.Input{pkg.NewCommand([]byte("asdf"))},
+			out: pkg.Input{pkg.NewCommand([]byte("asdf"))},
 		},
 
 		"separated, repeated input": {
-			in:  []byte("asdf;3 qwer;zxcv"),
-			out: [][]byte{[]byte("asdf;qwer;qwer;qwer;zxcv")},
-		},
-
-		"blocked input": {
-			in:  []byte("asdf"),
-			out: nil,
-			mod: FuncModule(func(_ []byte) [][]byte {
-				return nil
-			}),
+			in:  pkg.Input{pkg.NewCommand([]byte("asdf;3 qwer;zxcv"))},
+			out: pkg.Input{pkg.NewCommand([]byte("asdf;qwer;qwer;qwer;zxcv"))},
 		},
 	}
 
@@ -65,10 +55,6 @@ func TestProcessInput(t *testing.T) {
 			ui := &mock.UIMock{}
 
 			world := NewWorld(client, ui).(*World)
-
-			if tc.mod != nil {
-				world.modules = append(world.modules, tc.mod)
-			}
 
 			assert.Equal(t, tc.out, world.ProcessInput(tc.in))
 		})
@@ -77,21 +63,12 @@ func TestProcessInput(t *testing.T) {
 
 func TestProcessOutput(t *testing.T) {
 	tcs := map[string]struct {
-		in  []byte
-		out [][]byte
-		mod pkg.Module
+		in  pkg.Output
+		out pkg.Output
 	}{
 		"plain asdf": {
-			in:  []byte("asdf"),
-			out: [][]byte{[]byte("asdf")},
-		},
-
-		"blocked output": {
-			in:  []byte("asdf"),
-			out: nil,
-			mod: FuncModule(func(_ []byte) [][]byte {
-				return nil
-			}),
+			in:  pkg.Output{pkg.NewLine([]byte("asdf"))},
+			out: pkg.Output{pkg.NewLine([]byte("asdf"))},
 		},
 	}
 
@@ -101,10 +78,6 @@ func TestProcessOutput(t *testing.T) {
 			ui := &mock.UIMock{}
 
 			world := NewWorld(client, ui).(*World)
-
-			if tc.mod != nil {
-				world.modules = append(world.modules, tc.mod)
-			}
 
 			assert.Equal(t, tc.out, world.ProcessOutput(tc.in))
 		})
@@ -116,7 +89,6 @@ func TestCommandsReply(t *testing.T) {
 		command []byte
 		sent    []byte
 		errs    []bool
-		err     string
 	}{
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
@@ -127,12 +99,6 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
 			errs:    []bool{true},
-			err:     "failed GMCP: ooops",
-		},
-
-		{
-			command: wrapGMCP(`Asdf.Qwer`),
-			err:     "failed parsing GMCP: unknown message 'Asdf.Qwer'",
 		},
 
 		{
@@ -148,17 +114,14 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{true},
-			err:     "failed GMCP: ooops",
 		},
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, true},
-			err:     "failed GMCP: ooops",
 		},
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, false, true},
-			err:     "failed GMCP: ooops",
 		},
 	}
 
@@ -184,14 +147,7 @@ func TestCommandsReply(t *testing.T) {
 
 			world := NewWorld(client, ui)
 
-			err := world.ProcessCommand(tc.command)
-
-			if tc.err != "" && assert.NotNil(t, err) {
-				assert.Equal(t, tc.err, err.Error())
-				return
-			}
-
-			require.Nil(t, err)
+			world.ProcessCommand(tc.command)
 
 			if len(tc.sent) > 0 {
 				assert.Equal(t, tc.sent, sent, string(sent))
@@ -277,13 +233,11 @@ func TestCommandsMutateWorld(t *testing.T) {
 			aworld := NewWorld(client, ui).(*World)
 
 			if len(tc.command) > 0 {
-				err := aworld.ProcessCommand(tc.command)
-				require.Nil(t, err)
+				aworld.ProcessCommand(tc.command)
 			}
 
 			for _, message := range tc.messages {
-				err := aworld.ProcessCommand(wrapGMCP(message.Marshal()))
-				require.Nil(t, err)
+				aworld.ProcessCommand(wrapGMCP(message.Marshal()))
 			}
 
 			if tc.character != nil {
@@ -329,8 +283,7 @@ func TestCommandsMutateVitals(t *testing.T) {
 
 			world := NewWorld(&mock.ClientMock{}, ui)
 
-			err := world.ProcessCommand(tc.command)
-			require.Nil(t, err)
+			world.ProcessCommand(tc.command)
 
 			assert.Equal(t, tc.character, character)
 		})

@@ -56,6 +56,8 @@ func (engine *Engine) Run(pctx context.Context) error {
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
 
+	output := pkg.Output{}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -70,39 +72,34 @@ func (engine *Engine) Run(pctx context.Context) error {
 		case <-serverDone:
 			engine.ui.Outputs() <- []byte("server disconnected")
 
-		case output := <-serverOutput:
-			ga := false
-			if len(output) > 0 && output[len(output)-1] == telnet.GA {
-				ga = true
-				// @todo Trigger special event to work through output buffer.
-				output = output[:len(output)-1]
-			}
+		case data := <-engine.ui.Inputs():
+			input := (pkg.Input{}).Add(data)
 
-			output = bytes.TrimRight(output, "\r\n")
+			input = engine.world.ProcessInput(input)
 
-			outputs := engine.world.ProcessOutput(output)
-			if len(outputs) == 0 {
-				continue
-			}
-
-			for _, output := range outputs {
-				engine.ui.Outputs() <- output
-			}
-			if ga {
-				engine.ui.Outputs() <- []byte{telnet.GA}
-			}
-
-		case input := <-engine.ui.Inputs():
-			inputs := engine.world.ProcessInput(input)
-			if len(inputs) == 0 {
-				continue
-			}
-
-			for _, input := range inputs {
-				if _, err := engine.client.Write(input); err != nil {
+			for _, command := range input {
+				if _, err := engine.client.Write(command.Text); err != nil {
 					return fmt.Errorf("failed sending: %w", err)
 				}
 			}
+
+		case data := <-serverOutput:
+			data = bytes.TrimRight(data, "\r\n")
+			output = output.Add(data)
+
+			// Consider it a full capture and proceed only after a
+			// Go Ahead termination.
+			// @todo Make this dynamic, based on Telnet negotiation.
+			if len(data) == 0 || data[len(data)-1] != telnet.GA {
+				continue
+			}
+
+			output = engine.world.ProcessOutput(output)
+			for _, line := range output.Lines() {
+				engine.ui.Outputs() <- line.Raw
+			}
+
+			output = pkg.Output{}
 
 		case command, ok := <-engine.client.Commands():
 			if !ok {
@@ -117,12 +114,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 				)
 			}
 
-			if err := engine.world.ProcessCommand(command); err != nil {
-				log.Printf(
-					"Failed processing command '%s': %s",
-					command, err.Error(),
-				)
-			}
+			engine.world.ProcessCommand(command)
 		}
 	}
 }

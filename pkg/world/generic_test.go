@@ -3,6 +3,7 @@ package world_test
 import (
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/world"
 
@@ -10,19 +11,13 @@ import (
 )
 
 func TestGenericWorld(t *testing.T) {
-	client := &mock.ClientMock{}
+	world := world.NewGenericWorld(&mock.ClientMock{}, &mock.UIMock{})
 
-	ui := &mock.UIMock{}
+	data := []byte("input")
 
-	world := world.NewGenericWorld(client, ui)
+	input := pkg.Input{pkg.NewCommand(data)}
+	assert.Equal(t, data, world.ProcessInput(input)[0])
 
-	in := []byte("asdf")
-
-	inputs := [][]byte{[]byte("input")}
-	assert.Equal(t, inputs, world.ProcessInput(inputs[0]))
-
-	outputs := [][]byte{[]byte("output")}
-	assert.Equal(t, outputs, world.ProcessOutput(outputs[0]))
-
-	assert.Nil(t, world.ProcessCommand(in))
+	output := pkg.Output{pkg.NewLine(data)}
+	assert.Equal(t, data, world.ProcessOutput(output)[0])
 }

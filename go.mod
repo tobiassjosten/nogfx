@@ -8,6 +8,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/stretchr/testify v1.7.1
 	github.com/urfave/cli/v2 v2.4.0
+	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d
 )
 
 require (
@@ -20,7 +21,6 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/mock"
-	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
@@ -203,23 +202,6 @@ func TestOutputAppend(t *testing.T) {
 			buffer: Rows{
 				Row{NewCell('z', redStyle)},
 				Row{NewCell('y', redStyle)},
-			},
-		},
-
-		"ga swallows first newline": {
-			datas: [][]byte{
-				[]byte("as"),
-				[]byte{telnet.GA},
-				[]byte(""),
-				[]byte("df"),
-				[]byte(""),
-				[]byte("zx"),
-			},
-			buffer: Rows{
-				Row{NewCell('z'), NewCell('x')},
-				Row{},
-				Row{NewCell('d'), NewCell('f')},
-				Row{NewCell('a'), NewCell('s')},
 			},
 		},
 

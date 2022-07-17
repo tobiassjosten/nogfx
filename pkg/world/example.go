@@ -1,18 +1,25 @@
 package world
 
 import (
-	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
+	"github.com/tobiassjosten/nogfx/pkg/simpex"
+	"github.com/tobiassjosten/nogfx/pkg/world/module"
+
+	"github.com/icza/gox/gox"
 )
 
 // ExampleWorld is a mock implementation of the pkg.World interface.
 type ExampleWorld struct {
-	ui pkg.UI
+	client pkg.Client
+	ui     pkg.UI
+
+	inputTriggers  []pkg.Trigger[pkg.Input]
+	outputTriggers []pkg.Trigger[pkg.Output]
 }
 
 // NewExampleWorld creates a new dummy pkg.World.
-func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
+func NewExampleWorld(client pkg.Client, ui pkg.UI) pkg.World {
 	go func() {
 		ui.Outputs() <- []byte("One lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum et nunc in dui efficitur commodo sed ut lectus. Etiam a urna nec augue gravida imperdiet. Aenean luctus ut augue in laoreet. Nunc ut dui sem. Maecenas id leo purus. Maecenas enim purus, finibus sit amet aliquam sit amet, commodo ut velit. Nunc nunc lectus, pulvinar ut metus quis, laoreet dapibus dolor. In rhoncus quis ligula sit amet pharetra. Aliquam nunc velit, pharetra nec imperdiet nec, iaculis nec ex. Vestibulum porta tristique dignissim. Pellentesque ac maximus lorem, ut viverra risus.")
 		ui.Outputs() <- []byte("Two velit ligula, gravida at enim a, interdum egestas massa. Maecenas feugiat commodo velit, et tristique erat dictum ut. Phasellus vel pulvinar nunc, eu convallis sem. In elit eros, fringilla sed porta eu, pharetra at leo. Integer pretium, odio a venenatis elementum, enim elit porttitor purus, eget fermentum est ex eu est. Duis quis euismod velit, eleifend lacinia sapien. Cras non ullamcorper turpis. Pellentesque elementum dui risus, ut fringilla tortor cursus sed. Pellentesque ipsum dui, fringilla vel tellus in, imperdiet semper ligula.")
@@ -133,23 +140,74 @@ func NewExampleWorld(_ pkg.Client, ui pkg.UI) pkg.World {
 	tgt.SetPresent([]string{"someone", "two", "three"})
 	ui.SetTarget(tgt)
 
-	return &ExampleWorld{
-		ui: ui,
+	world := &ExampleWorld{
+		client: client,
+		ui:     ui,
+
+		inputTriggers:  []pkg.Trigger[pkg.Input]{},
+		outputTriggers: []pkg.Trigger[pkg.Output]{},
 	}
+
+	var moduleConstructors = []pkg.ModuleConstructor{
+		module.NewRepeatInput,
+	}
+
+	for _, constructor := range moduleConstructors {
+		module := constructor(world)
+		world.inputTriggers = append(
+			world.inputTriggers, module.InputTriggers()...,
+		)
+		world.outputTriggers = append(
+			world.outputTriggers, module.OutputTriggers()...,
+		)
+	}
+
+	return world
+}
+
+// Print passes data onto the configured UI.
+func (world *ExampleWorld) Print(data []byte) {
+	world.ui.Print(data)
+}
+
+// Send passes data onto the configured Client.
+func (world *ExampleWorld) Send(data []byte) {
+	world.client.Send(data)
 }
 
 // ProcessInput processes player input.
-func (world *ExampleWorld) ProcessInput(input []byte) [][]byte {
-	world.ui.Print(append([]byte("> "), input...))
-	return [][]byte{input}
+func (world *ExampleWorld) ProcessInput(input pkg.Input) pkg.Input {
+	sep := []byte{';'}
+
+	input = input.Split(sep)
+
+	for _, trigger := range world.inputTriggers {
+		for i, command := range input {
+			match := simpex.Match(trigger.Pattern, command.Text)
+			if match == nil {
+				continue
+			}
+
+			input = trigger.Callback(pkg.TriggerMatch[pkg.Input]{
+				Captures: match,
+				Content:  input,
+				Index:    i,
+			})
+		}
+	}
+
+	for _, c := range input {
+		world.ui.Print(append([]byte("> "), c.Text...))
+	}
+
+	return input.Join(sep)
 }
 
 // ProcessOutput processes game output.
-func (world *ExampleWorld) ProcessOutput(output []byte) [][]byte {
-	return [][]byte{output}
+func (world *ExampleWorld) ProcessOutput(output pkg.Output) pkg.Output {
+	return output
 }
 
 // ProcessCommand processes telnet commands.
-func (world *ExampleWorld) ProcessCommand(command []byte) error {
-	return nil
+func (world *ExampleWorld) ProcessCommand(command []byte) {
 }

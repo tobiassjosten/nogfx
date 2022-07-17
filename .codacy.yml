@@ -6,4 +6,3 @@ engines:
 exclude_paths:
   - "**/*_mock.go"
   - "pkg/world/example.go"
-  - "pkg/world/example_test.go"
