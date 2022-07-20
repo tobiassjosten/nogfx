@@ -13,14 +13,8 @@ import (
 )
 
 var worlds = map[string]func(pkg.Client, pkg.UI) pkg.World{
-	// Dummy world just for testing.
-	"example.com:23": NewExampleWorld,
-
 	"achaea.com:23":  achaea.NewWorld,
 	"50.31.100.8:23": achaea.NewWorld,
-
-	// @todo Extend this when we support more games. For now, we list these
-	// two so as to force more general, shared functionality.
 }
 
 // Engine is the orchestrator of all the cogs of this machinery.
@@ -32,16 +26,16 @@ type Engine struct {
 
 // NewEngine creates a new Engine.
 func NewEngine(client pkg.Client, ui pkg.UI, address string) *Engine {
-	newWorld := NewGenericWorld
-	if constructor, ok := worlds[address]; ok {
-		newWorld = constructor
-	}
-
-	return &Engine{
+	engine := &Engine{
 		client: client,
 		ui:     ui,
-		world:  newWorld(client, ui),
 	}
+
+	if constructor, ok := worlds[address]; ok {
+		engine.world = constructor(client, ui)
+	}
+
+	return engine
 }
 
 // Run is the main loop of the application, where everything is orchestrated.
@@ -56,7 +50,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
 
-	output := pkg.Output{}
+	out := pkg.Exput{}
 
 	for {
 		select {
@@ -73,19 +67,20 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.ui.Outputs() <- []byte("server disconnected")
 
 		case data := <-engine.ui.Inputs():
-			input := (pkg.Input{}).Add(data)
+			in := (pkg.Exput{}).Add(data)
+			inout := in.Inoutput(pkg.Input)
 
-			input = engine.world.ProcessInput(input)
-
-			for _, command := range input {
-				if _, err := engine.client.Write(command.Text); err != nil {
-					return fmt.Errorf("failed sending: %w", err)
-				}
+			if engine.world != nil {
+				inout = engine.world.OnInoutput(inout)
 			}
+
+			engine.OnInoutput(inout)
 
 		case data := <-serverOutput:
 			data = bytes.TrimRight(data, "\r\n")
-			output = output.Add(data)
+
+			out = out.Add(data)
+			inout := out.Inoutput(pkg.Output)
 
 			// Consider it a full capture and proceed only after a
 			// Go Ahead termination.
@@ -94,12 +89,13 @@ func (engine *Engine) Run(pctx context.Context) error {
 				continue
 			}
 
-			output = engine.world.ProcessOutput(output)
-			for _, line := range output.Lines() {
-				engine.ui.Outputs() <- line.Raw
+			if engine.world != nil {
+				inout = engine.world.OnInoutput(inout)
 			}
 
-			output = pkg.Output{}
+			engine.OnInoutput(inout)
+
+			out = pkg.Exput{}
 
 		case command, ok := <-engine.client.Commands():
 			if !ok {
@@ -114,7 +110,9 @@ func (engine *Engine) Run(pctx context.Context) error {
 				)
 			}
 
-			engine.world.ProcessCommand(command)
+			inout := engine.world.OnCommand(command)
+
+			engine.OnInoutput(inout)
 		}
 	}
 }
@@ -169,6 +167,19 @@ func (engine *Engine) ProcessCommand(command []byte) error {
 	}
 
 	return nil
+}
+
+// OnInoutput dispatches input and output to the client and UI respectively.
+func (engine *Engine) OnInoutput(inout pkg.Inoutput) {
+	for _, data := range inout.Input.Bytes() {
+		if _, err := engine.client.Write(data); err != nil {
+			log.Printf("failed sending command: %s", err)
+		}
+	}
+
+	for _, data := range inout.Output.Bytes() {
+		engine.ui.Outputs() <- data
+	}
 }
 
 // SendGMCP writes a GMCP message to the client.

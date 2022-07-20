@@ -1,75 +1,60 @@
 package pkg
 
-import "bytes"
+import (
+	"bytes"
+)
 
-type Command struct {
-	Text []byte
+type IOKind string
+
+const (
+	Input  = IOKind("input")
+	Output = IOKind("output")
+)
+
+type Inoutput struct {
+	Input  Exput
+	Output Exput
 }
 
-func NewCommand(data []byte) Command {
-	return Command{
-		Text: data,
+func NewInoutput(input [][]byte, output [][]byte) (inout Inoutput) {
+	for _, data := range input {
+		inout.Input = inout.Input.Add(data)
 	}
-}
-
-type Input []Command
-
-func NewInput(data []byte) Input {
-	return Input{NewCommand(data)}
-}
-
-func (in Input) Add(data []byte) Input {
-	return append(in, NewCommand(data))
-}
-
-func (in Input) Insert(i int, data []byte) Input {
-	return append(in[:i], append([]Command{NewCommand(data)}, in[i:]...)...)
-}
-
-func (in Input) Replace(i int, data []byte) Input {
-	// @todo Check for existance.
-	// @todo Avoid mutating, so as to force using return value consistently.
-	in[i] = NewCommand(data)
-	return in
-}
-
-func (in Input) Split(s []byte) Input {
-	for i, c := range in {
-		parts := bytes.Split(c.Text, s)
-		if len(parts) == 1 {
-			continue
-		}
-
-		in = in.Replace(i, parts[0])
-		for _, data := range parts[1:] {
-			in = in.Add(data)
-		}
+	for _, data := range output {
+		inout.Output = inout.Output.Add(data)
 	}
-
-	return in
+	return
 }
 
-func (in Input) Join(s []byte) Input {
-	// @todo Implement…
-	return in
+func (inout Inoutput) AddBeforeInput(i int, data []byte) Inoutput {
+	inout.Input = inout.Input.AddBefore(i, data)
+	return inout
 }
 
-type Line struct {
-	Text []byte
-	Raw  []byte
-
-	Before []Line
-	After  []Line
-
-	replaced bool
+func (inout Inoutput) AddAfterInput(i int, data []byte) Inoutput {
+	inout.Input = inout.Input.AddAfter(i, data)
+	return inout
 }
 
-func NewLine(data []byte) Line {
-	text := []byte{}
+func (inout Inoutput) AddBeforeOutput(i int, data []byte) Inoutput {
+	inout.Output = inout.Output.AddBefore(i, data)
+	return inout
+}
 
+func (inout Inoutput) AddAfterOutput(i int, data []byte) Inoutput {
+	inout.Output = inout.Output.AddAfter(i, data)
+	return inout
+}
+
+type Text []byte
+
+func (txt Text) Clean() []byte {
+	clean := []byte{}
+
+	var escape byte = 27
 	escaped, escaping := false, false
-	for _, b := range data {
-		if b == 27 {
+	for _, b := range txt {
+		if b == escape {
 			escaped = true
 			continue
 		}
@@ -87,91 +72,98 @@ func NewLine(data []byte) Line {
 			continue
 		}
 
-		text = append(text, b)
+		clean = append(clean, b)
 	}
 
-	return Line{
-		Text: text,
-		Raw:  data,
-	}
+	return clean
 }
 
-func (l Line) Replace(data []byte) Line {
-	// @todo Log error on multiple mutations.
+func (txt Text) Replace(data []byte) Text {
 	// @todo Replace while keeping ANSI colors.
-	nl := NewLine(data)
-	nl.replaced = true
-
-	return nl
+	return data
 }
 
-// @todo Make this work with custom ANSI colors, resetting back to whatever was
-// current before the prefix.
-func (l Line) Prefix(data []byte) Line {
-	nl := NewLine(append(data, l.Raw...))
-	nl.Before = l.Before
-	nl.After = l.After
-	nl.replaced = l.replaced
+type Line struct {
+	Text Text
 
-	return nl
+	Before []Text
+	After  []Text
+
+	omitted bool
 }
 
-// @todo Make this work with custom ANSI colors, resetting back to whatever was
-// current before the suffix.
-func (l Line) Suffix(data []byte) Line {
-	nl := NewLine(append(l.Raw, data...))
-	nl.Before = l.Before
-	nl.After = l.After
-	nl.replaced = l.replaced
+type Exput []Line
 
-	return nl
+func NewExput(data []byte) Exput {
+	return Exput{Line{Text: data}}
 }
 
-type Output []Line
-
-func (out Output) Add(data []byte) Output {
-	return append(out, NewLine(data))
+func (ex Exput) Inoutput(kind IOKind) Inoutput {
+	switch kind {
+	case Input:
+		return Inoutput{Input: ex}
+	case Output:
+		return Inoutput{Output: ex}
+	}
+	return Inoutput{}
 }
 
-func (out Output) AddBefore(i int, data []byte) Output {
-	out[i].Before = append(out[i].Before, NewLine(data))
-	return out
+func (ex Exput) Add(data []byte) Exput {
+	return append(ex, Line{Text: data})
 }
 
-func (out Output) AddAfter(i int, data []byte) Output {
-	out[i].After = append(out[i].After, NewLine(data))
-	return out
+func (ex Exput) AddBefore(i int, data []byte) Exput {
+	newex := append(Exput{}, ex...)
+	newex[i].Before = append(newex[i].Before, data)
+	return newex
 }
 
-func (out Output) Insert(i int, data []byte) Output {
-	return append(out[:i], append([]Line{NewLine(data)}, out[i:]...)...)
+func (ex Exput) AddAfter(i int, data []byte) Exput {
+	newex := append(Exput{}, ex...)
+	newex[i].After = append(newex[i].After, data)
+	return newex
 }
 
-func (out Output) Remove(i int) Output {
-	return append(out[:i], out[i+1:]...)
+func (ex Exput) Omit(i int) Exput {
+	newex := append(Exput{}, ex...)
+	newex[i].omitted = true
+	return newex
 }
 
-func (out Output) Replace(i int, data []byte) Output {
-	// @todo Check for existance.
-	out[i] = out[i].Replace(data)
-	// @todo Mutate also RawLines.
-	return out
+func (ex Exput) Replace(i int, data []byte) Exput {
+	newex := append(Exput{}, ex...)
+	newex[i].Text = newex[i].Text.Replace(data)
+	return newex
 }
 
-func (out Output) Suffix(i int, data []byte) Output {
-	// @todo Check for existance.
-	out[i] = out[i].Suffix(data)
-	return out
-}
+func (ex Exput) Split(s []byte) Exput {
+	for i, c := range ex {
+		parts := bytes.Split(c.Text, s)
+		if len(parts) == 1 {
+			continue
+		}
 
-func (out Output) Lines() []Line {
-	var ls []Line
-
-	for _, line := range out {
-		ls = append(ls, line.Before...)
-		ls = append(ls, line)
-		ls = append(ls, line.After...)
+		ex = ex.Replace(i, parts[0])
+		for _, data := range parts[1:] {
+			ex = ex.Add(data)
+		}
 	}
 
-	return ls
+	return ex
+}
+
+func (ex Exput) Bytes() (bs [][]byte) {
+	for _, ln := range ex {
+		if ln.omitted {
+			continue
+		}
+		for _, text := range ln.Before {
+			bs = append(bs, text)
+		}
+		bs = append(bs, ln.Text)
+		for _, text := range ln.After {
+			bs = append(bs, text)
+		}
+	}
+	return
 }

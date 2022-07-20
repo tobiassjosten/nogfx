@@ -5,4 +5,3 @@ engines:
       - "**/*_test.go"
 exclude_paths:
   - "**/*_mock.go"
-  - "pkg/world/example.go"

@@ -3,76 +3,100 @@ package pkg_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestInput(t *testing.T) {
-	tcs := map[string]struct {
-		data  []byte
-		add   [][]byte
-		split []byte
-		input pkg.Input
-	}{
-		"instantiate": {
-			data:  []byte("asdf"),
-			input: pkg.Input{pkg.NewCommand([]byte("asdf"))},
-		},
+func TestExput(t *testing.T) {
+	exput := pkg.NewExput([]byte("asdf"))
 
-		"add once": {
-			data: []byte("asdf"),
-			add:  [][]byte{[]byte("qwer")},
-			input: pkg.Input{
-				pkg.NewCommand([]byte("asdf")),
-				pkg.NewCommand([]byte("qwer")),
-			},
-		},
-
-		"add twice": {
-			data: []byte("asdf"),
-			add: [][]byte{
-				[]byte("qwer"),
-				[]byte("zxcv"),
-			},
-			input: pkg.Input{
-				pkg.NewCommand([]byte("asdf")),
-				pkg.NewCommand([]byte("qwer")),
-				pkg.NewCommand([]byte("zxcv")),
-			},
-		},
-
-		"split": {
-			data:  []byte("as;df;gh"),
-			split: []byte{';'},
-			input: pkg.Input{
-				pkg.NewCommand([]byte("as")),
-				pkg.NewCommand([]byte("df")),
-				pkg.NewCommand([]byte("gh")),
-			},
-		},
-
-		// @todo Make sure operations don't mutate the object (but only
-		// return a new instance of it).
+	{
+		exputadd := exput.Add([]byte("asdf"))
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{Text: []byte("asdf")},
+			pkg.Line{Text: []byte("asdf")},
+		}, exputadd)
+		require.NotEqual(t, exput, exputadd, "operation shouldn't mutate")
 	}
 
-	for name, tc := range tcs {
-		t.Run(name, func(t *testing.T) {
-			var input pkg.Input
-			if tc.data != nil {
-				input = pkg.NewInput(tc.data)
-			}
-
-			if tc.add != nil {
-				for _, add := range tc.add {
-					input = input.Add(add)
-				}
-			}
-
-			if tc.split != nil {
-				input = input.Split(tc.split)
-			}
-
-			assert.Equal(t, tc.input, input)
-		})
+	{
+		exputaddbefore := exput.AddBefore(0, []byte("qwer"))
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{
+				Text:   []byte("asdf"),
+				Before: []pkg.Text{pkg.Text([]byte("qwer"))},
+			},
+		}, exputaddbefore)
+		require.NotEqual(t, exput, exputaddbefore, "operation shouldn't mutate")
 	}
+
+	{
+		exputaddafter := exput.AddAfter(0, []byte("zxcv"))
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{
+				Text:  []byte("asdf"),
+				After: []pkg.Text{pkg.Text([]byte("zxcv"))},
+			},
+		}, exputaddafter)
+		require.NotEqual(t, exput, exputaddafter, "operation shouldn't mutate")
+	}
+
+	{
+		var bytes [][]byte
+		assert.Equal(t, bytes, exput.Omit(0).Bytes())
+	}
+
+	{
+		exputreplace := exput.Replace(0, []byte("fdsa"))
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{Text: []byte("fdsa")},
+		}, exputreplace)
+		require.NotEqual(t, exput, exputreplace, "operation shouldn't mutate")
+	}
+
+	{
+		exputsplit := exput.Split([]byte{'d'})
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{Text: []byte("as")},
+			pkg.Line{Text: []byte("f")},
+		}, exputsplit)
+		require.NotEqual(t, exput, exputsplit, "operation shouldn't mutate")
+	}
+
+	{
+		exputsplit := exput.Split([]byte{'x'})
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{Text: []byte("asdf")},
+		}, exputsplit)
+		require.Equal(t, exput, exputsplit, "end result is the same")
+	}
+
+	assert.Equal(t, pkg.Inoutput{Input: exput}, exput.Inoutput(pkg.Input))
+	assert.Equal(t, pkg.Inoutput{Output: exput}, exput.Inoutput(pkg.Output))
+	assert.Equal(t, pkg.Inoutput{}, exput.Inoutput(pkg.IOKind("asdf")))
+
+	assert.Equal(t, [][]byte{
+		[]byte("qw"),
+		[]byte("as"),
+		[]byte("zx"),
+		[]byte("er"),
+		[]byte("df"),
+		[]byte("cv"),
+	}, (pkg.Exput{
+		pkg.Line{
+			Text:   []byte("as"),
+			Before: []pkg.Text{pkg.Text([]byte("qw"))},
+			After:  []pkg.Text{pkg.Text([]byte("zx"))},
+		},
+		pkg.Line{
+			Text: []byte("secret"),
+		},
+		pkg.Line{
+			Text:   []byte("df"),
+			Before: []pkg.Text{pkg.Text([]byte("er"))},
+			After:  []pkg.Text{pkg.Text([]byte("cv"))},
+		},
+	}).Omit(1).Bytes())
 }

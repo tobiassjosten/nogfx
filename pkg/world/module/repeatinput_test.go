@@ -4,49 +4,41 @@ import (
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg"
+	tst "github.com/tobiassjosten/nogfx/pkg/testing"
 	"github.com/tobiassjosten/nogfx/pkg/world/module"
 )
 
 func TestRepeatInput(t *testing.T) {
-	tcs := map[string]module.TestCase{
+	tcs := map[string]tst.IOTestCase{
 		"three asdf": {
-			Events: []module.TestEvent{
-				{module.Input, []string{"3 asdf"}},
-			},
-			Inputs: []pkg.Input{
-				{
-					pkg.NewCommand([]byte("asdf")),
-					pkg.NewCommand([]byte("asdf")),
-					pkg.NewCommand([]byte("asdf")),
-				},
+			Events: []tst.IOEvent{tst.IOEIn("3 asdf")},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("asdf").
+					AddAfterInput(0, []byte("asdf")).
+					AddAfterInput(0, []byte("asdf")),
 			},
 		},
 
 		"three empty": {
-			Events: []module.TestEvent{
-				{module.Input, []string{"3"}},
-			},
-			Inputs: []pkg.Input{{pkg.NewCommand([]byte("3"))}},
+			Events:    []tst.IOEvent{tst.IOEIn("3")},
+			Inoutputs: []pkg.Inoutput{tst.IOIn("3")},
 		},
 
 		"non-number": {
-			Events: []module.TestEvent{
-				{module.Input, []string{"x asdf"}},
-			},
-			Inputs: []pkg.Input{{pkg.NewCommand([]byte("x asdf"))}},
+			Events:    []tst.IOEvent{tst.IOEIn("x asdf")},
+			Inoutputs: []pkg.Inoutput{tst.IOIn("x asdf")},
 		},
 
 		"no output processing": {
-			Events: []module.TestEvent{
-				{module.Output, []string{"asdf"}},
-			},
-			Outputs: []pkg.Output{{pkg.NewLine([]byte("asdf"))}},
+			Events:    []tst.IOEvent{tst.IOEOut("asdf")},
+			Inoutputs: []pkg.Inoutput{tst.IOOut("asdf")},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			tc.Eval(t, module.NewRepeatInput)
+			mod := module.NewRepeatInput()
+			tc.Eval(t, mod)
 		})
 	}
 }

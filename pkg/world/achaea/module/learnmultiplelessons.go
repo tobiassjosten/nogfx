@@ -16,8 +16,6 @@ var maxLessons int = 15
 // LearnMultipleLessons lets players learn an unlimited amount of lessons in
 // one swoop by automatically chaining learning sessions together.
 type LearnMultipleLessons struct {
-	world pkg.World
-
 	total     int
 	remaining int
 	target    []byte
@@ -26,130 +24,138 @@ type LearnMultipleLessons struct {
 }
 
 // NewLearnMultipleLessons creates a new LearnMultipleLessons module.
-func NewLearnMultipleLessons(world pkg.World) pkg.Module {
-	return &LearnMultipleLessons{
-		world: world,
-	}
+func NewLearnMultipleLessons() pkg.Module {
+	return &LearnMultipleLessons{}
 }
 
-func (mod *LearnMultipleLessons) InputTriggers() []pkg.Trigger[pkg.Input] {
-	return []pkg.Trigger[pkg.Input]{
+// Triggers returns a list of triggers.
+func (mod *LearnMultipleLessons) Triggers() []pkg.Trigger {
+	whenActive := func(callback pkg.Callback) pkg.Callback {
+		if mod.timer == nil {
+			return pkg.NoopCallback
+		}
+		return callback
+	}
+
+	return []pkg.Trigger{
 		{
+			Kind:     pkg.Input,
 			Pattern:  []byte("learn {^} {^ from *}"),
 			Callback: mod.onStart,
 		},
-	}
-}
-
-func (mod *LearnMultipleLessons) OutputTriggers() []pkg.Trigger[pkg.Output] {
-	return []pkg.Trigger[pkg.Output]{
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("* begins the lesson in ^."),
-			Callback: mod.onBegin,
+			Callback: whenActive(mod.onBegin),
 		},
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("* bows to you and commences the lesson in ^."),
-			Callback: mod.onBegin,
+			Callback: whenActive(mod.onBegin),
 		},
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("* continues your training in ^."),
-			Callback: mod.onUpdate,
+			Callback: whenActive(mod.onUpdate),
 		},
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("* finishes the lesson in ^."),
-			Callback: mod.onFinish,
+			Callback: whenActive(mod.onFinish),
 		},
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("Storing ^ remaining inks, * bows to you, the lesson in Tattoos complete."),
-			Callback: mod.onFinish,
+			Callback: whenActive(mod.onFinish),
 		},
 		{
+			Kind:     pkg.Output,
 			Pattern:  []byte("* bows to you - the lesson in ^ is over."),
-			Callback: mod.onFinish,
+			Callback: whenActive(mod.onFinish),
 		},
 	}
 
 }
 
-func (mod *LearnMultipleLessons) onStart(match pkg.TriggerMatch[pkg.Input]) pkg.Input {
-	input := match.Content
-
-	mod.reset()
-
-	number, err := strconv.Atoi(string(match.Captures[0]))
-	if err != nil || number <= maxLessons {
-		return input
-	}
-
-	mod.total = number
-	mod.remaining = number
-	mod.target = match.Captures[1]
-
-	mod.start = time.Now()
-	mod.countdown()
-	input = input.Replace(match.Index, mod.learn())
-
-	return input
-}
-
-func (mod *LearnMultipleLessons) onBegin(match pkg.TriggerMatch[pkg.Output]) pkg.Output {
-	// Don't show ongoing learning messages except the very first.
-	if mod.total-mod.remaining == maxLessons {
-		return match.Content
-	}
-	return mod.onUpdate(match)
-}
-
-func (mod *LearnMultipleLessons) onUpdate(match pkg.TriggerMatch[pkg.Output]) pkg.Output {
-	output := match.Content
-
-	if mod.timer == nil {
-		return output
-	}
-
-	output = output.Remove(match.Index)
-
-	mod.countdown()
-
-	return output
-}
-
-func (mod *LearnMultipleLessons) onFinish(match pkg.TriggerMatch[pkg.Output]) pkg.Output {
-	output := match.Content
-
-	if mod.remaining <= 0 {
-		output = output.AddAfter(match.Index, []byte(fmt.Sprintf(
-			"%d of %d lessons learned.",
-			mod.total-mod.remaining, mod.total,
-		)))
-
+func (mod *LearnMultipleLessons) onStart(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
 		mod.reset()
 
-		return output
+		number, err := strconv.Atoi(string(match.Captures[0]))
+		if err != nil || number <= maxLessons {
+			continue
+		}
+
+		mod.total = number
+		mod.remaining = number
+		mod.target = match.Captures[1]
+
+		mod.start = time.Now()
+		mod.countdown()
+		inout.Input = inout.Input.Replace(match.Index, mod.learn())
 	}
 
-	timeleft := ""
+	return inout
+}
 
-	duration := time.Since(mod.start)
-	remaining := math.Ceil(float64(mod.remaining) / float64(maxLessons))
-	estimate := duration * time.Duration(remaining)
-
-	if mins := estimate.Minutes(); mins >= 1 {
-		timeleft += fmt.Sprintf("%.0f minutes ", mins)
-		estimate -= time.Duration(mins) * time.Minute
+func (mod *LearnMultipleLessons) onBegin(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
+		// Don't show ongoing learning messages except the very first.
+		if mod.total-mod.remaining == maxLessons {
+			continue
+		}
+		inout = mod.onUpdate([]pkg.Match{match}, inout)
 	}
-	timeleft += fmt.Sprintf("%.0f seconds", estimate.Seconds())
 
-	output = output.Replace(match.Index, []byte(fmt.Sprintf(
-		"%d of %d lessons learned, %s remaining.",
-		mod.total-mod.remaining, mod.total, timeleft,
-	)))
+	return inout
+}
 
-	mod.start = time.Now()
-	mod.countdown()
-	mod.world.Send(mod.learn())
+func (mod *LearnMultipleLessons) onUpdate(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
+		inout.Output = inout.Output.Omit(match.Index)
 
-	return output
+		mod.countdown()
+	}
+
+	return inout
+}
+
+func (mod *LearnMultipleLessons) onFinish(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
+		if mod.remaining <= 0 {
+			inout.Output = inout.Output.AddAfter(match.Index, []byte(fmt.Sprintf(
+				"%d of %d lessons learned.",
+				mod.total-mod.remaining, mod.total,
+			)))
+
+			mod.reset()
+
+			continue
+		}
+
+		timeleft := ""
+
+		duration := time.Since(mod.start)
+		remaining := math.Ceil(float64(mod.remaining) / float64(maxLessons))
+		estimate := duration * time.Duration(remaining)
+
+		if mins := estimate.Minutes(); mins >= 1 {
+			timeleft += fmt.Sprintf("%.0f minutes ", mins)
+			estimate -= time.Duration(mins) * time.Minute
+		}
+		timeleft += fmt.Sprintf("%.0f seconds", estimate.Seconds())
+
+		inout.Output = inout.Output.Replace(match.Index, []byte(fmt.Sprintf(
+			"%d of %d lessons learned, %s remaining.",
+			mod.total-mod.remaining, mod.total, timeleft,
+		)))
+
+		mod.start = time.Now()
+		mod.countdown()
+		inout.Input = inout.Input.Add(mod.learn())
+	}
+
+	return inout
 }
 
 func (mod *LearnMultipleLessons) reset() {

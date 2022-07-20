@@ -1,4 +1,4 @@
-package achaea
+package achaea_test
 
 import (
 	"errors"
@@ -9,19 +9,11 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
+	tst "github.com/tobiassjosten/nogfx/pkg/testing"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type FuncModule func([]byte) [][]byte
-
-func (mod FuncModule) InputTriggers() (ts []pkg.Trigger[pkg.Input]) {
-	return
-}
-
-func (mod FuncModule) OutputTriggers() (ts []pkg.Trigger[pkg.Output]) {
-	return
-}
 
 func wrapGMCP(msgs ...string) []byte {
 	var bs []byte
@@ -33,53 +25,43 @@ func wrapGMCP(msgs ...string) []byte {
 	return bs
 }
 
-func TestProcessInput(t *testing.T) {
+func TestInputOutput(t *testing.T) {
 	tcs := map[string]struct {
-		in  pkg.Input
-		out pkg.Input
+		Events    []tst.IOEvent
+		Inoutputs []pkg.Inoutput
 	}{
-		"plain asdf": {
-			in:  pkg.Input{pkg.NewCommand([]byte("asdf"))},
-			out: pkg.Input{pkg.NewCommand([]byte("asdf"))},
-		},
-
-		"separated, repeated input": {
-			in:  pkg.Input{pkg.NewCommand([]byte("asdf;3 qwer;zxcv"))},
-			out: pkg.Input{pkg.NewCommand([]byte("asdf;qwer;qwer;qwer;zxcv"))},
+		"separated repeated input": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("qwer;2 asdf;zxcv"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIns([]string{"qwer", "asdf", "zxcv"}).
+					AddAfterInput(1, []byte("asdf")),
+			},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			client := &mock.ClientMock{}
-			ui := &mock.UIMock{}
+			world := achaea.NewWorld(
+				&mock.ClientMock{},
+				&mock.UIMock{},
+			).(*achaea.World)
 
-			world := NewWorld(client, ui).(*World)
+			var inouts []pkg.Inoutput
 
-			assert.Equal(t, tc.out, world.ProcessInput(tc.in))
-		})
-	}
-}
+			for _, event := range tc.Events {
+				inout := world.OnInoutput(event.Inoutput())
+				inouts = append(inouts, inout)
+			}
 
-func TestProcessOutput(t *testing.T) {
-	tcs := map[string]struct {
-		in  pkg.Output
-		out pkg.Output
-	}{
-		"plain asdf": {
-			in:  pkg.Output{pkg.NewLine([]byte("asdf"))},
-			out: pkg.Output{pkg.NewLine([]byte("asdf"))},
-		},
-	}
-
-	for name, tc := range tcs {
-		t.Run(name, func(t *testing.T) {
-			client := &mock.ClientMock{}
-			ui := &mock.UIMock{}
-
-			world := NewWorld(client, ui).(*World)
-
-			assert.Equal(t, tc.out, world.ProcessOutput(tc.in))
+			assert.Equal(t, len(tc.Inoutputs), len(inouts))
+			for i, inout := range tc.Inoutputs {
+				if i >= len(inouts) {
+					break
+				}
+				assert.Equal(t, inout, inouts[i])
+			}
 		})
 	}
 }
@@ -145,9 +127,9 @@ func TestCommandsReply(t *testing.T) {
 
 			ui := &mock.UIMock{}
 
-			world := NewWorld(client, ui)
+			world := achaea.NewWorld(client, ui)
 
-			world.ProcessCommand(tc.command)
+			world.OnCommand(tc.command)
 
 			if len(tc.sent) > 0 {
 				assert.Equal(t, tc.sent, sent, string(sent))
@@ -160,7 +142,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 	tcs := []struct {
 		command   []byte
 		messages  []gmcp.Message
-		character *Character
+		character *achaea.Character
 		target    *pkg.Target
 	}{
 		{
@@ -170,7 +152,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 					Fullname: "Mason Durak",
 				},
 			},
-			character: &Character{
+			character: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
 			},
@@ -181,7 +163,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 			command: wrapGMCP(
 				`Char.Status {"name":"Durak","fullname":"Mason Durak","class":"Monk","level":"68 (19%)"}`,
 			),
-			character: &Character{
+			character: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
 				Class: "Monk",
@@ -192,7 +174,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 		{
 			// @todo Replace with []gmcp.Message.
 			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "bal": "1", "eq": "1", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
-			character: &Character{
+			character: &achaea.Character{
 				Balance:     true,
 				Equilibrium: true,
 
@@ -230,14 +212,14 @@ func TestCommandsMutateWorld(t *testing.T) {
 				SetTargetFunc:    func(_ *pkg.Target) {},
 			}
 
-			aworld := NewWorld(client, ui).(*World)
+			aworld := achaea.NewWorld(client, ui).(*achaea.World)
 
 			if len(tc.command) > 0 {
-				aworld.ProcessCommand(tc.command)
+				aworld.OnCommand(tc.command)
 			}
 
 			for _, message := range tc.messages {
-				aworld.ProcessCommand(wrapGMCP(message.Marshal()))
+				aworld.OnCommand(wrapGMCP(message.Marshal()))
 			}
 
 			if tc.character != nil {
@@ -281,9 +263,9 @@ func TestCommandsMutateVitals(t *testing.T) {
 				},
 			}
 
-			world := NewWorld(&mock.ClientMock{}, ui)
+			world := achaea.NewWorld(&mock.ClientMock{}, ui)
 
-			world.ProcessCommand(tc.command)
+			world.OnCommand(tc.command)
 
 			assert.Equal(t, tc.character, character)
 		})

@@ -10,7 +10,6 @@ import (
 	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 	igmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
-	"github.com/tobiassjosten/nogfx/pkg/simpex"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
 	"github.com/tobiassjosten/nogfx/pkg/world/module"
@@ -23,8 +22,7 @@ type World struct {
 	ui       pkg.UI
 	uiVitals map[string]struct{}
 
-	inputTriggers  []pkg.Trigger[pkg.Input]
-	outputTriggers []pkg.Trigger[pkg.Output]
+	triggers []pkg.Trigger
 
 	Character *Character
 	Room      *navigation.Room
@@ -39,106 +37,69 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 		ui:       ui,
 		uiVitals: map[string]struct{}{},
 
-		inputTriggers:  []pkg.Trigger[pkg.Input]{},
-		outputTriggers: []pkg.Trigger[pkg.Output]{},
-
 		Character: &Character{},
 		Target:    NewTarget(client),
 	}
 
 	// @todo Make sure these are ordered correctly. Potentially by adding a weight
 	// property for sorting?
-	var moduleConstructors = []pkg.ModuleConstructor{
-		module.NewRepeatInput,
-		amodule.NewLearnMultipleLessons,
+	var modules = []pkg.Module{
+		module.NewRepeatInput(),
+		amodule.NewLearnMultipleLessons(),
 	}
 
-	for _, constructor := range moduleConstructors {
-		module := constructor(world)
-		world.inputTriggers = append(
-			world.inputTriggers, module.InputTriggers()...,
-		)
-		world.outputTriggers = append(
-			world.outputTriggers, module.OutputTriggers()...,
-		)
+	for _, module := range modules {
+		world.triggers = append(world.triggers, module.Triggers()...)
 	}
 
 	return world
 }
 
-// Print passes data onto the configured UI.
-func (world *World) Print(data []byte) {
-	world.ui.Print(data)
-}
-
-// Send passes data onto the configured Client.
-func (world *World) Send(data []byte) {
-	world.client.Send(data)
-}
-
-// ProcessInput processes player input.
-func (world *World) ProcessInput(input pkg.Input) pkg.Input {
+// OnInoutput reacts to player input and server output.
+func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 	// @todo Read the CommandSeparator configuration option and use that.
 	sep := []byte{';'}
+	inout.Input = inout.Input.Split(sep)
 
-	input = input.Split(sep)
+	// @todo Append a prompt if there isn't one (e.g. detect that first).
 
-	for _, trigger := range world.inputTriggers {
-		for i, command := range input {
-			match := simpex.Match(trigger.Pattern, command.Text)
-			if match == nil {
-				continue
-			}
-
-			input = trigger.Callback(pkg.TriggerMatch[pkg.Input]{
-				Captures: match,
-				Content:  input,
-				Index:    i,
-			})
-		}
-	}
-
-	return input.Join(sep)
-}
-
-// ProcessOutput processes game output.
-func (world *World) ProcessOutput(output pkg.Output) pkg.Output {
 	// If the first line is empty (save for ANSI colors) we remove it, as
 	// it's been added to compensate for echoed player input.
-	if len(output) >= 3 && len(output[0].Text) == 0 {
-		if len(output[0].Raw) > 0 {
-			output[1].Raw = append(output[0].Raw, output[1].Raw...)
+	if len(inout.Output) >= 3 && len(inout.Output[0].Text) == 0 {
+		if len(inout.Output[0].Text) > 0 {
+			inout.Output[1].Text = append(
+				inout.Output[0].Text,
+				inout.Output[1].Text...,
+			)
 		}
-		output = output.Remove(0)
+		inout.Output = inout.Output.Omit(0)
 	}
 
-	for _, trigger := range world.outputTriggers {
-		for i, line := range output {
-			match := simpex.Match(trigger.Pattern, line.Text)
-			if match == nil {
-				continue
-			}
-
-			output = trigger.Callback(pkg.TriggerMatch[pkg.Output]{
-				Captures: match,
-				Content:  output,
-				Index:    i,
-			})
+	for _, trigger := range world.triggers {
+		if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
+			inout = trigger.Match(inout.Input.Bytes(), inout)
+		}
+		if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
+			inout = trigger.Match(inout.Output.Bytes(), inout)
 		}
 	}
 
 	// If only the prompt remains, we omit the whole paragraph.
-	if len(output) == 1 {
-		output = pkg.Output{}
+	// @todo Use above prompt detection instead of relying on lone lines
+	// being prompts.
+	if len(inout.Output) == 1 {
+		inout.Output = pkg.Exput{}
 	}
 
-	return output
+	return inout
 }
 
-// ProcessCommand processes telnet commands.
-func (world *World) ProcessCommand(command []byte) {
-	if data := gmcp.Unwrap(command); data != nil {
-		err := world.processGMCP(data)
+// OnCommand reacts to telnet commands.
+// @todo Consider merging this with OnOutput() or making it a callback for GMCP
+// only. Telnet commands are cool and all but YAGNI, evidently.
+func (world *World) OnCommand(cmd []byte) (inout pkg.Inoutput) {
+	if data := gmcp.Unwrap(cmd); data != nil {
+		err := world.onGMCP(data)
 		if err != nil {
 			log.Printf("failed processing gmcp: %s", err)
 		}
@@ -147,7 +108,7 @@ func (world *World) ProcessCommand(command []byte) {
 	}
 
 	switch {
-	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
+	case bytes.Equal(cmd, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
 		err := world.SendGMCP(&gmcp.CoreSupportsSet{
 			"Char":         1,
 			"Char.Items":   1,
@@ -161,9 +122,11 @@ func (world *World) ProcessCommand(command []byte) {
 			log.Printf("failed sending gmcp: %s", err)
 		}
 	}
+
+	return
 }
 
-func (world *World) processGMCP(data []byte) error {
+func (world *World) onGMCP(data []byte) error {
 	message, err := agmcp.Parse(data)
 	if err != nil {
 		return fmt.Errorf("failed parsing GMCP: %w", err)

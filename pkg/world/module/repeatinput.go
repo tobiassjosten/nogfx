@@ -1,7 +1,6 @@
 package module
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/tobiassjosten/nogfx/pkg"
@@ -10,42 +9,37 @@ import (
 // RepeatInput is a module that lets players repeat commands by inputting them
 // in the format of `3 command`, to send "command" thrice.
 type RepeatInput struct {
-	world pkg.World
 }
 
 // NewRepeatInput creates a new RepeatInput module.
-func NewRepeatInput(world pkg.World) pkg.Module {
-	log.Println("instantiating repeat input")
-	return &RepeatInput{
-		world: world,
-	}
+func NewRepeatInput() pkg.Module {
+	return &RepeatInput{}
 }
 
-func (mod RepeatInput) InputTriggers() []pkg.Trigger[pkg.Input] {
-	return []pkg.Trigger[pkg.Input]{
+func (mod RepeatInput) Triggers() []pkg.Trigger {
+	return []pkg.Trigger{
 		{
+			Kind:     pkg.Input,
 			Pattern:  []byte("{^} {*}"),
 			Callback: mod.onRepeat,
 		},
 	}
 }
 
-func (mod RepeatInput) OutputTriggers() []pkg.Trigger[pkg.Output] {
-	return []pkg.Trigger[pkg.Output]{}
-}
+func (mod *RepeatInput) onRepeat(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
+		i := match.Index
 
-func (mod *RepeatInput) onRepeat(match pkg.TriggerMatch[pkg.Input]) pkg.Input {
-	input := match.Content
+		number, err := strconv.Atoi(string(match.Captures[0]))
+		if err != nil {
+			continue
+		}
 
-	number, err := strconv.Atoi(string(match.Captures[0]))
-	if err != nil {
-		return input
+		inout.Input = inout.Input.Replace(i, match.Captures[1])
+		for ii := 0; ii < number-1; ii++ {
+			inout.Input = inout.Input.AddAfter(i, match.Captures[1])
+		}
 	}
 
-	input = input.Replace(match.Index, match.Captures[1])
-	for i := 0; i < number-1; i++ {
-		input = input.Insert(match.Index, match.Captures[1])
-	}
-
-	return input
+	return inout
 }

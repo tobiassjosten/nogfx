@@ -4,7 +4,7 @@ all: pkg/mock/pkg_client.go pkg/mock/pkg_module.go pkg/mock/pkg_ui.go pkg/mock/t
 pkg/mock/pkg_client.go: pkg/services.go
 	~/go/bin/moq -pkg mock pkg/ Client:ClientMock > pkg/mock/pkg_client.go
 
-pkg/mock/pkg_module.go: pkg/services.go
+pkg/mock/pkg_module.go: pkg/modules.go
 	~/go/bin/moq -pkg mock pkg/ Module:ModuleMock > pkg/mock/pkg_module.go
 
 pkg/mock/pkg_ui.go: pkg/services.go

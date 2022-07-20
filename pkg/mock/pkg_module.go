@@ -18,11 +18,8 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 		// make and configure a mocked pkg.Module
 // 		mockedModule := &ModuleMock{
-// 			InputTriggersFunc: func() []pkg.Trigger[pkg.Input] {
-// 				panic("mock out the InputTriggers method")
-// 			},
-// 			OutputTriggersFunc: func() []pkg.Trigger[pkg.Output] {
-// 				panic("mock out the OutputTriggers method")
+// 			TriggersFunc: func() []pkg.Trigger {
+// 				panic("mock out the Triggers method")
 // 			},
 // 		}
 //
@@ -31,73 +28,40 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 	}
 type ModuleMock struct {
-	// InputTriggersFunc mocks the InputTriggers method.
-	InputTriggersFunc func() []pkg.Trigger[pkg.Input]
-
-	// OutputTriggersFunc mocks the OutputTriggers method.
-	OutputTriggersFunc func() []pkg.Trigger[pkg.Output]
+	// TriggersFunc mocks the Triggers method.
+	TriggersFunc func() []pkg.Trigger
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// InputTriggers holds details about calls to the InputTriggers method.
-		InputTriggers []struct {
-		}
-		// OutputTriggers holds details about calls to the OutputTriggers method.
-		OutputTriggers []struct {
+		// Triggers holds details about calls to the Triggers method.
+		Triggers []struct {
 		}
 	}
-	lockInputTriggers  sync.RWMutex
-	lockOutputTriggers sync.RWMutex
+	lockTriggers sync.RWMutex
 }
 
-// InputTriggers calls InputTriggersFunc.
-func (mock *ModuleMock) InputTriggers() []pkg.Trigger[pkg.Input] {
-	if mock.InputTriggersFunc == nil {
-		panic("ModuleMock.InputTriggersFunc: method is nil but Module.InputTriggers was just called")
+// Triggers calls TriggersFunc.
+func (mock *ModuleMock) Triggers() []pkg.Trigger {
+	if mock.TriggersFunc == nil {
+		panic("ModuleMock.TriggersFunc: method is nil but Module.Triggers was just called")
 	}
 	callInfo := struct {
 	}{}
-	mock.lockInputTriggers.Lock()
-	mock.calls.InputTriggers = append(mock.calls.InputTriggers, callInfo)
-	mock.lockInputTriggers.Unlock()
-	return mock.InputTriggersFunc()
+	mock.lockTriggers.Lock()
+	mock.calls.Triggers = append(mock.calls.Triggers, callInfo)
+	mock.lockTriggers.Unlock()
+	return mock.TriggersFunc()
 }
 
-// InputTriggersCalls gets all the calls that were made to InputTriggers.
+// TriggersCalls gets all the calls that were made to Triggers.
 // Check the length with:
-//     len(mockedModule.InputTriggersCalls())
-func (mock *ModuleMock) InputTriggersCalls() []struct {
+//     len(mockedModule.TriggersCalls())
+func (mock *ModuleMock) TriggersCalls() []struct {
 } {
 	var calls []struct {
 	}
-	mock.lockInputTriggers.RLock()
-	calls = mock.calls.InputTriggers
-	mock.lockInputTriggers.RUnlock()
-	return calls
-}
-
-// OutputTriggers calls OutputTriggersFunc.
-func (mock *ModuleMock) OutputTriggers() []pkg.Trigger[pkg.Output] {
-	if mock.OutputTriggersFunc == nil {
-		panic("ModuleMock.OutputTriggersFunc: method is nil but Module.OutputTriggers was just called")
-	}
-	callInfo := struct {
-	}{}
-	mock.lockOutputTriggers.Lock()
-	mock.calls.OutputTriggers = append(mock.calls.OutputTriggers, callInfo)
-	mock.lockOutputTriggers.Unlock()
-	return mock.OutputTriggersFunc()
-}
-
-// OutputTriggersCalls gets all the calls that were made to OutputTriggers.
-// Check the length with:
-//     len(mockedModule.OutputTriggersCalls())
-func (mock *ModuleMock) OutputTriggersCalls() []struct {
-} {
-	var calls []struct {
-	}
-	mock.lockOutputTriggers.RLock()
-	calls = mock.calls.OutputTriggers
-	mock.lockOutputTriggers.RUnlock()
+	mock.lockTriggers.RLock()
+	calls = mock.calls.Triggers
+	mock.lockTriggers.RUnlock()
 	return calls
 }

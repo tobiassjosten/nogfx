@@ -41,10 +41,6 @@ type UI interface {
 
 // World represents a game and hooks into all their various specific logic.
 type World interface {
-	ProcessInput(Input) Input
-	ProcessOutput(Output) Output
-	ProcessCommand([]byte)
-
-	Send([]byte)
-	Print([]byte)
+	OnInoutput(Inoutput) Inoutput
+	OnCommand([]byte) Inoutput
 }
