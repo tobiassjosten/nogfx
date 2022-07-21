@@ -65,7 +65,8 @@ func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 
 	// If the first line is empty (save for ANSI colors) we remove it, as
 	// it's been added to compensate for echoed player input.
-	if len(inout.Output) >= 3 && len(inout.Output[0].Text) == 0 {
+	if len(inout.Output) >= 3 && len(inout.Output[0].Text.Clean()) == 0 {
+		// Move potential control codes to the next line.
 		if len(inout.Output[0].Text) > 0 {
 			inout.Output[1].Text = append(
 				inout.Output[0].Text,
@@ -87,7 +88,7 @@ func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 	// If only the prompt remains, we omit the whole paragraph.
 	// @todo Use above prompt detection instead of relying on lone lines
 	// being prompts.
-	if len(inout.Output) == 1 {
+	if len(inout.Output.Bytes()) == 1 {
 		inout.Output = pkg.Exput{}
 	}
 

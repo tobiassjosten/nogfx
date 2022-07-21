@@ -142,5 +142,5 @@ func IOOuts(outputs []string) pkg.Inoutput {
 		bs = append(bs, []byte(str))
 	}
 
-	return pkg.NewInoutput(bs, nil)
+	return pkg.NewInoutput(nil, bs)
 }

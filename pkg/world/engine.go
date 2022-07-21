@@ -79,15 +79,17 @@ func (engine *Engine) Run(pctx context.Context) error {
 		case data := <-serverOutput:
 			data = bytes.TrimRight(data, "\r\n")
 
-			out = out.Add(data)
-			inout := out.Inoutput(pkg.Output)
-
 			// Consider it a full capture and proceed only after a
 			// Go Ahead termination.
 			// @todo Make this dynamic, based on Telnet negotiation.
 			if len(data) == 0 || data[len(data)-1] != telnet.GA {
+				out = out.Add(data)
 				continue
 			}
+
+			// Strip the GA and proceed with processing.
+			out = out.Add(data[:len(data)-1])
+			inout := out.Inoutput(pkg.Output)
 
 			if engine.world != nil {
 				inout = engine.world.OnInoutput(inout)

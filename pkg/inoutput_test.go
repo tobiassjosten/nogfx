@@ -100,3 +100,37 @@ func TestExput(t *testing.T) {
 		},
 	}).Omit(1).Bytes())
 }
+
+func TestClean(t *testing.T) {
+	tcs := map[string]struct {
+		in  []byte
+		out []byte
+	}{
+		"colored": {
+			in:  []byte("\033[35masdf"),
+			out: []byte("asdf"),
+		},
+
+		"plain": {
+			in:  []byte("asdf"),
+			out: []byte("asdf"),
+		},
+
+		"invalid start": {
+			in:  []byte("\033(35masdf"),
+			out: []byte("(35masdf"),
+		},
+
+		"unterminated": {
+			in:  []byte("\033[35asdf"),
+			out: []byte(""),
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			text := pkg.Text(tc.in)
+			assert.Equal(t, tc.out, text.Clean())
+		})
+	}
+}

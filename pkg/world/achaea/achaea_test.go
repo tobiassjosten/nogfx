@@ -39,6 +39,33 @@ func TestInputOutput(t *testing.T) {
 					AddAfterInput(1, []byte("asdf")),
 			},
 		},
+
+		"extranous ga newline": {
+			Events: []tst.IOEvent{
+				tst.IOEOuts([]string{
+					"\033[35m",
+					"asdf",
+					"123h 234m\0371",
+				}),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOOuts([]string{
+					"\033[35m",
+					"\033[35masdf",
+					"123h 234m\0371",
+				}).
+					OmitOutput(0),
+			},
+		},
+
+		"single prompts": {
+			Events: []tst.IOEvent{
+				tst.IOEOut("123h 234m\0371"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				{Output: pkg.Exput{}},
+			},
+		},
 	}
 
 	for name, tc := range tcs {
@@ -60,7 +87,7 @@ func TestInputOutput(t *testing.T) {
 				if i >= len(inouts) {
 					break
 				}
-				assert.Equal(t, inout, inouts[i])
+				assert.Equal(t, inout, inouts[i], fmt.Sprintf("index %d", i))
 			}
 		})
 	}
