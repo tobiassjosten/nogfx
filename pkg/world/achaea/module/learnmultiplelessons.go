@@ -11,7 +11,7 @@ import (
 
 // @todo Make this use 20 lessons at a time with the myrrh/bisemutum defense:
 // "Your mind is racing with enhanced speed."
-var maxLessons int = 15
+var maxLessons = 15
 
 // LearnMultipleLessons lets players learn an unlimited amount of lessons in
 // one swoop by automatically chaining learning sessions together.
