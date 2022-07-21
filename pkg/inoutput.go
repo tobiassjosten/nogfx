@@ -36,6 +36,11 @@ func (inout Inoutput) AddAfterInput(i int, data []byte) Inoutput {
 	return inout
 }
 
+func (inout Inoutput) OmitInput(i int) Inoutput {
+	inout.Input = inout.Input.Omit(i)
+	return inout
+}
+
 func (inout Inoutput) AddBeforeOutput(i int, data []byte) Inoutput {
 	inout.Output = inout.Output.AddBefore(i, data)
 	return inout
@@ -43,6 +48,11 @@ func (inout Inoutput) AddBeforeOutput(i int, data []byte) Inoutput {
 
 func (inout Inoutput) AddAfterOutput(i int, data []byte) Inoutput {
 	inout.Output = inout.Output.AddAfter(i, data)
+	return inout
+}
+
+func (inout Inoutput) OmitOutput(i int) Inoutput {
+	inout.Output = inout.Output.Omit(i)
 	return inout
 }
 

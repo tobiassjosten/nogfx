@@ -16,23 +16,69 @@ func TestLearnMultipleLessons(t *testing.T) {
 		"learn 20": {
 			Events: []tst.IOEvent{
 				tst.IOEIn("learn 35 x from y"),
-				tst.IOEOut("Y bows to you - the lesson in X is over."),
-				tst.IOEOut("Y bows to you - the lesson in X is over."),
-				tst.IOEOut("Y bows to you - the lesson in X is over."),
+
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
 			},
 			Inoutputs: []pkg.Inoutput{
 				tst.IOIn("learn 15 x from y"),
+
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
 				tst.IO(
 					"learn 15 x from y",
 					"15 of 35 lessons learned, 0 seconds remaining.",
 				),
+
+				tst.IOOut("Y begins the lesson in X.").OmitOutput(0),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
 				tst.IO(
 					"learn 5 x from y",
 					"30 of 35 lessons learned, 0 seconds remaining.",
 				),
+
+				tst.IOOut("Y begins the lesson in X.").OmitOutput(0),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
 				tst.IOOut(
-					"Y bows to you - the lesson in X is over.",
+					"Y finishes the lesson in X.",
 				).AddAfterOutput(0, []byte("35 of 35 lessons learned.")),
+			},
+		},
+
+		"uninitiated": {
+			Events: []tst.IOEvent{
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X."),
+				tst.IOOut("Y finishes the lesson in X."),
+			},
+		},
+
+		"unnecessary": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("learn 15 x from y"),
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("learn 15 x from y"),
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X."),
+				tst.IOOut("Y finishes the lesson in X."),
 			},
 		},
 
@@ -51,15 +97,6 @@ func TestLearnMultipleLessons(t *testing.T) {
 			},
 			Inoutputs: []pkg.Inoutput{
 				tst.IOIn("learn z x from y"),
-			},
-		},
-
-		"uninitiated": {
-			Events: []tst.IOEvent{
-				tst.IOEOut("Y bows to you - the lesson in X is over."),
-			},
-			Inoutputs: []pkg.Inoutput{
-				tst.IOOut("Y bows to you - the lesson in X is over."),
 			},
 		},
 	}
