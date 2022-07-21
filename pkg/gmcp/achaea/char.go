@@ -109,10 +109,6 @@ func (msg *CharStatus) Marshal() string {
 func (msg *CharStatus) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
 
-	if msg == nil {
-		*msg = CharStatus{}
-	}
-
 	proxy := struct {
 		*CharStatus
 		PCity  *string `json:"city"`
@@ -246,10 +242,6 @@ func (msg *CharVitals) Marshal() string {
 // Unmarshal populates the message with data.
 func (msg *CharVitals) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
-
-	if msg == nil {
-		*msg = CharVitals{}
-	}
 
 	proxy := struct {
 		*CharVitals

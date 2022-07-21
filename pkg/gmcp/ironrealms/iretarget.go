@@ -69,10 +69,6 @@ func (msg *IRETargetInfo) Marshal() string {
 func (msg *IRETargetInfo) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
 
-	if msg == nil {
-		*msg = IRETargetInfo{}
-	}
-
 	proxy := struct {
 		*IRETargetInfo
 		CHealth string `json:"hpperc"`
