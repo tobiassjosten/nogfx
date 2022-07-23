@@ -55,6 +55,7 @@ func (tgt *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 	if tgt.area != nil && room.Area.ID == tgt.area.ID {
 		return
 	}
+	tgt.area = room.Area
 
 	npcs := tgt.npcs()[room.Area.ID]
 	tgt.Target.SetCandidates(npcs)
