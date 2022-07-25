@@ -130,6 +130,8 @@ func (tui *TUI) Run(pctx context.Context) error {
 	}
 
 	go func() {
+		numpad := false
+
 		for {
 			event := tui.screen.PollEvent()
 			if event == nil {
@@ -143,6 +145,18 @@ func (tui *TUI) Run(pctx context.Context) error {
 				tui.screen.Sync()
 
 			case *tcell.EventKey:
+				// Numpad keys are handled differently. First
+				// there's one event general to all numpad keys
+				// and then, immediately following, is another
+				// for the specific numpad key.
+				if isNumpad(ev) {
+					numpad = true
+					continue
+				} else if numpad {
+					numpad = false
+					ev = makeNumpad(ev)
+				}
+
 				if ev.Key() == tcell.KeyCtrlD {
 					cancel()
 					return
@@ -199,4 +213,57 @@ func (tui *TUI) paint(x, y int, rows Rows) {
 			)
 		}
 	}
+}
+
+const (
+	keyNumEnter tcell.Key = iota + 1024
+	keyNumEqual
+	keyNumMulti
+	keyNumPlus
+	keyNumMinus
+	keyNumDot
+	keyNumDiv
+	keyNum0
+	keyNum1
+	keyNum2
+	keyNum3
+	keyNum4
+	keyNum5
+	keyNum6
+	keyNum7
+	keyNum8
+	keyNum9
+)
+
+var numpadKeys = map[int]tcell.Key{
+	77:  keyNumEnter,
+	88:  keyNumEqual,
+	106: keyNumMulti,
+	107: keyNumPlus,
+	109: keyNumMinus,
+	110: keyNumDot,
+	111: keyNumDiv,
+	112: keyNum0,
+	113: keyNum1,
+	114: keyNum2,
+	115: keyNum3,
+	116: keyNum4,
+	117: keyNum5,
+	118: keyNum6,
+	119: keyNum7,
+	120: keyNum8,
+	121: keyNum9,
+}
+
+func isNumpad(ev *tcell.EventKey) bool {
+	return ev.Key() == tcell.KeyRune &&
+		ev.Rune() == 'O' &&
+		ev.Modifiers() == tcell.ModAlt
+}
+
+func makeNumpad(ev *tcell.EventKey) *tcell.EventKey {
+	if key, ok := numpadKeys[int(ev.Rune())]; ok {
+		return tcell.NewEventKey(key, 0, 0)
+	}
+	return ev
 }
