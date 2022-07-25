@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -19,16 +22,18 @@ var worlds = map[string]func(pkg.Client, pkg.UI) pkg.World{
 
 // Engine is the orchestrator of all the cogs of this machinery.
 type Engine struct {
-	client pkg.Client
-	ui     pkg.UI
-	world  pkg.World
+	client  pkg.Client
+	ui      pkg.UI
+	world   pkg.World
+	address string
 }
 
 // NewEngine creates a new Engine.
 func NewEngine(client pkg.Client, ui pkg.UI, address string) *Engine {
 	engine := &Engine{
-		client: client,
-		ui:     ui,
+		client:  client,
+		ui:      ui,
+		address: address,
 	}
 
 	if constructor, ok := worlds[address]; ok {
@@ -49,6 +54,11 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
+
+	gamelog := engine.openGamelog(ctx)
+	if gamelog != nil {
+		defer gamelog.Close()
+	}
 
 	out := pkg.Exput{}
 
@@ -77,6 +87,12 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.OnInoutput(inout)
 
 		case data := <-serverOutput:
+			if gamelog != nil {
+				if _, err := gamelog.Write(data); err != nil {
+					log.Printf("failed writing game log: %s", err)
+				}
+			}
+
 			data = bytes.TrimRight(data, "\r\n")
 
 			// Consider it a full capture and proceed only after a
@@ -192,4 +208,26 @@ func (engine *Engine) SendGMCP(msg gmcp.Message) error {
 	}
 
 	return nil
+}
+
+func (engine *Engine) openGamelog(ctx context.Context) *os.File {
+	ctxLogdir := ctx.Value(pkg.CtxLogdir)
+	logdir, ok := ctxLogdir.(string)
+	if !ok || logdir == "" {
+		log.Printf("missing logdir context: '%s'", logdir)
+		return nil
+	}
+
+	game := strings.Split(engine.address, ":")[0]
+
+	start := time.Now().Format("20060102-150405")
+	path := fmt.Sprintf("%s/%s-%s.log", logdir, game, start)
+
+	gamelog, err := os.Create(path)
+	if err != nil {
+		log.Printf("failed creating gamelog file: %s", err)
+		return nil
+	}
+
+	return gamelog
 }
