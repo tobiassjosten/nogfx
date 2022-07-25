@@ -99,6 +99,11 @@ func address(host string) (string, error) {
 func run(address string) error {
 	ctx := context.Background()
 
+	ctx, err := ctxDirs(ctx)
+	if err != nil {
+		return err
+	}
+
 	client, err := client(address)
 	if err != nil {
 		return err
@@ -143,4 +148,22 @@ func ui() (*tui.TUI, error) {
 	}
 
 	return tui.NewTUI(screen), nil
+}
+
+func ctxDirs(ctx context.Context) (context.Context, error) {
+	dir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed acquiring home directory: %w", err)
+	}
+
+	dir += "/nogfx/logs"
+
+	err = os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating gamelog directory: %w", err)
+	}
+
+	ctx = context.WithValue(ctx, pkg.CtxLogdir, dir)
+
+	return ctx, nil
 }
