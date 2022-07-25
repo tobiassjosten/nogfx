@@ -3,80 +3,108 @@ package module_test
 import (
 	"testing"
 
-	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg"
+	tst "github.com/tobiassjosten/nogfx/pkg/testing"
 	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
-	"github.com/tobiassjosten/nogfx/pkg/world/module"
 )
 
 func TestLearnMultipleLessons(t *testing.T) {
 	// @todo Figure out how best to mock time, so we can properly test the
 	// timeout functionality.
 
-	tcs := map[string]module.TestCase{
+	tcs := map[string]tst.IOTestCase{
 		"learn 20": {
-			Events: []module.TestEvent{
-				module.NewTestEvent(true, []byte(
-					"learn 35 x from y",
-				)),
-				module.NewTestEvent(false, []byte(
-					"Y bows to you - the lesson in X is over.",
-				)),
-				module.NewTestEvent(false, []byte(
-					"Y bows to you - the lesson in X is over.",
-				)),
-				module.NewTestEvent(false, []byte(
-					"Y bows to you - the lesson in X is over.",
-				)),
-			},
-			Inputs: [][]byte{
-				[]byte("learn 15 x from y"),
-			},
-			Outputs: [][]byte{
-				[]byte("Y bows to you - the lesson in X is over. [15/35]"),
-				[]byte("Y bows to you - the lesson in X is over. [30/35]"),
-				[]byte("Y bows to you - the lesson in X is over. [35/35]"),
-			},
-			Sent: [][]byte{
-				[]byte("learn 15 x from y"),
-				[]byte("learn 5 x from y"),
-			},
-		},
+			Events: []tst.IOEvent{
+				tst.IOEIn("learn 35 x from y"),
 
-		"incomplete": {
-			Events: []module.TestEvent{
-				module.NewTestEvent(true, []byte(
-					"learn 20",
-				)),
-			},
-		},
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
 
-		"non-number": {
-			Events: []module.TestEvent{
-				module.NewTestEvent(true, []byte(
-					"learn z x from y",
-				)),
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("learn 15 x from y"),
+
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
+				tst.IO(
+					"learn 15 x from y",
+					"15 of 35 lessons learned, 0 seconds remaining.",
+				),
+
+				tst.IOOut("Y begins the lesson in X.").OmitOutput(0),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
+				tst.IO(
+					"learn 5 x from y",
+					"30 of 35 lessons learned, 0 seconds remaining.",
+				),
+
+				tst.IOOut("Y begins the lesson in X.").OmitOutput(0),
+				tst.IOOut("Y continues your training in X.").OmitOutput(0),
+				tst.IOOut(
+					"Y finishes the lesson in X.",
+				).AddAfterOutput(0, []byte("35 of 35 lessons learned.")),
 			},
 		},
 
 		"uninitiated": {
-			Events: []module.TestEvent{
-				module.NewTestEvent(false, []byte(
-					"Y bows to you - the lesson in X is over.",
-				)),
+			Events: []tst.IOEvent{
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X."),
+				tst.IOOut("Y finishes the lesson in X."),
+			},
+		},
+
+		"unnecessary": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("learn 15 x from y"),
+				tst.IOEOut("Y begins the lesson in X."),
+				tst.IOEOut("Y continues your training in X."),
+				tst.IOEOut("Y finishes the lesson in X."),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("learn 15 x from y"),
+				tst.IOOut("Y begins the lesson in X."),
+				tst.IOOut("Y continues your training in X."),
+				tst.IOOut("Y finishes the lesson in X."),
+			},
+		},
+
+		"incomplete": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("learn 20"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("learn 20"),
+			},
+		},
+
+		"non-number": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("learn z x from y"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIn("learn z x from y"),
 			},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			client := &mock.ClientMock{
-				SendFunc: func(data []byte) {},
-			}
-			ui := &mock.UIMock{}
-
-			mod := amodule.NewLearnMultipleLessons(client, ui)
-
-			tc.Eval(t, mod, client)
+			mod := amodule.NewLearnMultipleLessons()
+			tc.Eval(t, mod)
 		})
 	}
 }

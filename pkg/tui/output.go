@@ -1,10 +1,7 @@
 package tui
 
 import (
-	"bytes"
-
 	"github.com/gdamore/tcell/v2"
-	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 // Print shows a message to the user.
@@ -22,29 +19,12 @@ type Output struct {
 	offset int
 	pwidth int
 	style  tcell.Style
-	ga     bool
 }
 
 // Append adds a new paragraph to the Output.
 func (output *Output) Append(data []byte) {
-	// Go Ahead marks are saved for later processing.
-	if bytes.Equal(data, []byte{telnet.GA}) {
-		output.ga = true
-		return
-	}
-
 	row, style := NewRowFromBytes(data, output.style)
 	output.style = style
-
-	// If the previous output was a Go Ahead mark AND this output is empty
-	// (after processing colors) then we skip it. Some games add an extra
-	// newline to compensate for players' own echoed commands.
-	if output.ga {
-		output.ga = false
-		if len(row) == 0 {
-			return
-		}
-	}
 
 	output.buffer = output.buffer.prepend(row)
 

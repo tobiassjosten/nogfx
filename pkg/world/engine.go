@@ -13,14 +13,8 @@ import (
 )
 
 var worlds = map[string]func(pkg.Client, pkg.UI) pkg.World{
-	// Dummy world just for testing.
-	"example.com:23": NewExampleWorld,
-
 	"achaea.com:23":  achaea.NewWorld,
 	"50.31.100.8:23": achaea.NewWorld,
-
-	// @todo Extend this when we support more games. For now, we list these
-	// two so as to force more general, shared functionality.
 }
 
 // Engine is the orchestrator of all the cogs of this machinery.
@@ -32,16 +26,16 @@ type Engine struct {
 
 // NewEngine creates a new Engine.
 func NewEngine(client pkg.Client, ui pkg.UI, address string) *Engine {
-	newWorld := NewGenericWorld
-	if constructor, ok := worlds[address]; ok {
-		newWorld = constructor
-	}
-
-	return &Engine{
+	engine := &Engine{
 		client: client,
 		ui:     ui,
-		world:  newWorld(client, ui),
 	}
+
+	if constructor, ok := worlds[address]; ok {
+		engine.world = constructor(client, ui)
+	}
+
+	return engine
 }
 
 // Run is the main loop of the application, where everything is orchestrated.
@@ -55,6 +49,8 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
+
+	out := pkg.Exput{}
 
 	for {
 		select {
@@ -70,39 +66,38 @@ func (engine *Engine) Run(pctx context.Context) error {
 		case <-serverDone:
 			engine.ui.Outputs() <- []byte("server disconnected")
 
-		case output := <-serverOutput:
-			ga := false
-			if len(output) > 0 && output[len(output)-1] == telnet.GA {
-				ga = true
-				// @todo Trigger special event to work through output buffer.
-				output = output[:len(output)-1]
+		case data := <-engine.ui.Inputs():
+			in := (pkg.Exput{}).Add(data)
+			inout := in.Inoutput(pkg.Input)
+
+			if engine.world != nil {
+				inout = engine.world.OnInoutput(inout)
 			}
 
-			output = bytes.TrimRight(output, "\r\n")
+			engine.OnInoutput(inout)
 
-			outputs := engine.world.ProcessOutput(output)
-			if len(outputs) == 0 {
+		case data := <-serverOutput:
+			data = bytes.TrimRight(data, "\r\n")
+
+			// Consider it a full capture and proceed only after a
+			// Go Ahead termination.
+			// @todo Make this dynamic, based on Telnet negotiation.
+			if len(data) == 0 || data[len(data)-1] != telnet.GA {
+				out = out.Add(data)
 				continue
 			}
 
-			for _, output := range outputs {
-				engine.ui.Outputs() <- output
-			}
-			if ga {
-				engine.ui.Outputs() <- []byte{telnet.GA}
+			// Strip the GA and proceed with processing.
+			out = out.Add(data[:len(data)-1])
+			inout := out.Inoutput(pkg.Output)
+
+			if engine.world != nil {
+				inout = engine.world.OnInoutput(inout)
 			}
 
-		case input := <-engine.ui.Inputs():
-			inputs := engine.world.ProcessInput(input)
-			if len(inputs) == 0 {
-				continue
-			}
+			engine.OnInoutput(inout)
 
-			for _, input := range inputs {
-				if _, err := engine.client.Write(input); err != nil {
-					return fmt.Errorf("failed sending: %w", err)
-				}
-			}
+			out = pkg.Exput{}
 
 		case command, ok := <-engine.client.Commands():
 			if !ok {
@@ -117,12 +112,9 @@ func (engine *Engine) Run(pctx context.Context) error {
 				)
 			}
 
-			if err := engine.world.ProcessCommand(command); err != nil {
-				log.Printf(
-					"Failed processing command '%s': %s",
-					command, err.Error(),
-				)
-			}
+			inout := engine.world.OnCommand(command)
+
+			engine.OnInoutput(inout)
 		}
 	}
 }
@@ -177,6 +169,19 @@ func (engine *Engine) ProcessCommand(command []byte) error {
 	}
 
 	return nil
+}
+
+// OnInoutput dispatches input and output to the client and UI respectively.
+func (engine *Engine) OnInoutput(inout pkg.Inoutput) {
+	for _, data := range inout.Input.Bytes() {
+		if _, err := engine.client.Write(data); err != nil {
+			log.Printf("failed sending command: %s", err)
+		}
+	}
+
+	for _, data := range inout.Output.Bytes() {
+		engine.ui.Outputs() <- data
+	}
 }
 
 // SendGMCP writes a GMCP message to the client.

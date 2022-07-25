@@ -1,4 +1,4 @@
-package achaea
+package achaea_test
 
 import (
 	"errors"
@@ -9,20 +9,11 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
+	tst "github.com/tobiassjosten/nogfx/pkg/testing"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-type FuncModule func([]byte) [][]byte
-
-func (mod FuncModule) ProcessInput(data []byte) [][]byte {
-	return mod(data)
-}
-
-func (mod FuncModule) ProcessOutput(data []byte) [][]byte {
-	return mod(data)
-}
 
 func wrapGMCP(msgs ...string) []byte {
 	var bs []byte
@@ -34,79 +25,70 @@ func wrapGMCP(msgs ...string) []byte {
 	return bs
 }
 
-func TestProcessInput(t *testing.T) {
+func TestInputOutput(t *testing.T) {
 	tcs := map[string]struct {
-		in  []byte
-		out [][]byte
-		mod pkg.Module
+		Events    []tst.IOEvent
+		Inoutputs []pkg.Inoutput
 	}{
-		"plain asdf": {
-			in:  []byte("asdf"),
-			out: [][]byte{[]byte("asdf")},
+		"separated repeated input": {
+			Events: []tst.IOEvent{
+				tst.IOEIn("qwer;2 asdf;zxcv"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOIns([]string{"qwer", "asdf", "zxcv"}).
+					AddAfterInput(1, []byte("asdf")),
+			},
 		},
 
-		"separated, repeated input": {
-			in:  []byte("asdf;3 qwer;zxcv"),
-			out: [][]byte{[]byte("asdf;qwer;qwer;qwer;zxcv")},
+		"extranous ga newline": {
+			Events: []tst.IOEvent{
+				tst.IOEOuts([]string{
+					"\033[35m",
+					"asdf",
+					"123h 234m\0371",
+				}),
+			},
+			Inoutputs: []pkg.Inoutput{
+				tst.IOOuts([]string{
+					"\033[35m",
+					"\033[35masdf",
+					"123h 234m\0371",
+				}).
+					OmitOutput(0),
+			},
 		},
 
-		"blocked input": {
-			in:  []byte("asdf"),
-			out: nil,
-			mod: FuncModule(func(_ []byte) [][]byte {
-				return nil
-			}),
+		"single prompts": {
+			Events: []tst.IOEvent{
+				tst.IOEOut("123h 234m\0371"),
+			},
+			Inoutputs: []pkg.Inoutput{
+				{Output: pkg.Exput{}},
+			},
 		},
 	}
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			client := &mock.ClientMock{}
-			ui := &mock.UIMock{}
+			world := achaea.NewWorld(
+				&mock.ClientMock{},
+				&mock.UIMock{},
+			).(*achaea.World)
 
-			world := NewWorld(client, ui).(*World)
+			var inouts []pkg.Inoutput
 
-			if tc.mod != nil {
-				world.modules = append(world.modules, tc.mod)
+			for _, event := range tc.Events {
+				inout := world.OnInoutput(event.Inoutput())
+				inouts = append(inouts, inout)
 			}
 
-			assert.Equal(t, tc.out, world.ProcessInput(tc.in))
-		})
-	}
-}
-
-func TestProcessOutput(t *testing.T) {
-	tcs := map[string]struct {
-		in  []byte
-		out [][]byte
-		mod pkg.Module
-	}{
-		"plain asdf": {
-			in:  []byte("asdf"),
-			out: [][]byte{[]byte("asdf")},
-		},
-
-		"blocked output": {
-			in:  []byte("asdf"),
-			out: nil,
-			mod: FuncModule(func(_ []byte) [][]byte {
-				return nil
-			}),
-		},
-	}
-
-	for name, tc := range tcs {
-		t.Run(name, func(t *testing.T) {
-			client := &mock.ClientMock{}
-			ui := &mock.UIMock{}
-
-			world := NewWorld(client, ui).(*World)
-
-			if tc.mod != nil {
-				world.modules = append(world.modules, tc.mod)
+			assert.Equal(t, len(tc.Inoutputs), len(inouts))
+			for i, inout := range tc.Inoutputs {
+				if i >= len(inouts) {
+					break
+				}
+				assert.Equal(t, inout, inouts[i], fmt.Sprintf("index %d", i))
 			}
-
-			assert.Equal(t, tc.out, world.ProcessOutput(tc.in))
 		})
 	}
 }
@@ -116,7 +98,6 @@ func TestCommandsReply(t *testing.T) {
 		command []byte
 		sent    []byte
 		errs    []bool
-		err     string
 	}{
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
@@ -127,12 +108,6 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
 			errs:    []bool{true},
-			err:     "failed GMCP: ooops",
-		},
-
-		{
-			command: wrapGMCP(`Asdf.Qwer`),
-			err:     "failed parsing GMCP: unknown message 'Asdf.Qwer'",
 		},
 
 		{
@@ -148,17 +123,14 @@ func TestCommandsReply(t *testing.T) {
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{true},
-			err:     "failed GMCP: ooops",
 		},
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, true},
-			err:     "failed GMCP: ooops",
 		},
 		{
 			command: wrapGMCP(`Char.Name {}`),
 			errs:    []bool{false, false, true},
-			err:     "failed GMCP: ooops",
 		},
 	}
 
@@ -182,16 +154,9 @@ func TestCommandsReply(t *testing.T) {
 
 			ui := &mock.UIMock{}
 
-			world := NewWorld(client, ui)
+			world := achaea.NewWorld(client, ui)
 
-			err := world.ProcessCommand(tc.command)
-
-			if tc.err != "" && assert.NotNil(t, err) {
-				assert.Equal(t, tc.err, err.Error())
-				return
-			}
-
-			require.Nil(t, err)
+			world.OnCommand(tc.command)
 
 			if len(tc.sent) > 0 {
 				assert.Equal(t, tc.sent, sent, string(sent))
@@ -204,7 +169,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 	tcs := []struct {
 		command   []byte
 		messages  []gmcp.Message
-		character *Character
+		character *achaea.Character
 		target    *pkg.Target
 	}{
 		{
@@ -214,7 +179,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 					Fullname: "Mason Durak",
 				},
 			},
-			character: &Character{
+			character: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
 			},
@@ -225,7 +190,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 			command: wrapGMCP(
 				`Char.Status {"name":"Durak","fullname":"Mason Durak","class":"Monk","level":"68 (19%)"}`,
 			),
-			character: &Character{
+			character: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
 				Class: "Monk",
@@ -236,7 +201,7 @@ func TestCommandsMutateWorld(t *testing.T) {
 		{
 			// @todo Replace with []gmcp.Message.
 			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "bal": "1", "eq": "1", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
-			character: &Character{
+			character: &achaea.Character{
 				Balance:     true,
 				Equilibrium: true,
 
@@ -274,16 +239,14 @@ func TestCommandsMutateWorld(t *testing.T) {
 				SetTargetFunc:    func(_ *pkg.Target) {},
 			}
 
-			aworld := NewWorld(client, ui).(*World)
+			aworld := achaea.NewWorld(client, ui).(*achaea.World)
 
 			if len(tc.command) > 0 {
-				err := aworld.ProcessCommand(tc.command)
-				require.Nil(t, err)
+				aworld.OnCommand(tc.command)
 			}
 
 			for _, message := range tc.messages {
-				err := aworld.ProcessCommand(wrapGMCP(message.Marshal()))
-				require.Nil(t, err)
+				aworld.OnCommand(wrapGMCP(message.Marshal()))
 			}
 
 			if tc.character != nil {
@@ -327,10 +290,9 @@ func TestCommandsMutateVitals(t *testing.T) {
 				},
 			}
 
-			world := NewWorld(&mock.ClientMock{}, ui)
+			world := achaea.NewWorld(&mock.ClientMock{}, ui)
 
-			err := world.ProcessCommand(tc.command)
-			require.Nil(t, err)
+			world.OnCommand(tc.command)
 
 			assert.Equal(t, tc.character, character)
 		})

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	_ "embed"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tobiassjosten/nogfx/pkg"
+	"github.com/tobiassjosten/nogfx/pkg/mock"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 	"github.com/tobiassjosten/nogfx/pkg/world"
@@ -110,9 +113,19 @@ func run(address string) error {
 	return engine.Run(ctx)
 }
 
-func client(address string) (*telnet.Client, error) {
+func client(address string) (pkg.Client, error) {
 	if address == "example.com:23" {
-		return telnet.NewClient(NewLoopback()), nil
+		return &mock.ClientMock{
+			ScannerFunc: func() *bufio.Scanner {
+				return bufio.NewScanner(strings.NewReader("asdf"))
+			},
+			CommandsFunc: func() <-chan []byte {
+				return make(chan []byte)
+			},
+			WriteFunc: func(data []byte) (int, error) {
+				return len(data), nil
+			},
+		}, nil
 	}
 
 	connection, err := net.Dial("tcp", address)

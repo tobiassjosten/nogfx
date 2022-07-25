@@ -3,6 +3,7 @@ package achaea
 import (
 	"bytes"
 	"fmt"
+	"log"
 
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
@@ -21,7 +22,7 @@ type World struct {
 	ui       pkg.UI
 	uiVitals map[string]struct{}
 
-	modules []pkg.Module
+	triggers []pkg.Trigger
 
 	Character *Character
 	Room      *navigation.Room
@@ -30,154 +31,85 @@ type World struct {
 
 // NewWorld creates a new Achaea-specific pkg.World.
 func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
-	var modules []pkg.Module
-	for _, constructor := range moduleConstructors {
-		modules = append(modules, constructor(client, ui))
-	}
-
-	return &World{
+	world := &World{
 		client: client,
 
 		ui:       ui,
 		uiVitals: map[string]struct{}{},
 
-		modules: modules,
-
 		Character: &Character{},
 		Target:    NewTarget(client),
 	}
+
+	// @todo Make sure these are ordered correctly. Potentially by adding a weight
+	// property for sorting?
+	var modules = []pkg.Module{
+		module.NewRepeatInput(),
+		amodule.NewLearnMultipleLessons(),
+	}
+
+	for _, module := range modules {
+		world.triggers = append(world.triggers, module.Triggers()...)
+	}
+
+	return world
 }
 
-var moduleConstructors = []pkg.ModuleConstructor{
-	module.NewRepeatInput,
-	amodule.NewLearnMultipleLessons,
-}
-
-// ProcessInput processes player input.
-func (world *World) ProcessInput(input []byte) [][]byte {
+// OnInoutput reacts to player input and server output.
+func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 	// @todo Read the CommandSeparator configuration option and use that.
-	inputs := bytes.Split(input, []byte(";"))
+	sep := []byte{';'}
+	inout.Input = inout.Input.Split(sep)
 
-	inputs = processInputs(inputs, world.modules)
-	if inputs == nil {
-		return nil
+	// @todo Append a prompt if there isn't one (e.g. detect that first).
+
+	// If the first line is empty (save for ANSI colors) we remove it, as
+	// it's been added to compensate for echoed player input.
+	if len(inout.Output) >= 3 && len(inout.Output[0].Text.Clean()) == 0 {
+		// Move potential control codes to the next line.
+		if len(inout.Output[0].Text) > 0 {
+			inout.Output[1].Text = append(
+				inout.Output[0].Text,
+				inout.Output[1].Text...,
+			)
+		}
+		inout.Output = inout.Output.Omit(0)
 	}
 
-	// @todo Read the CommandSeparator configuration option and use that.
-	return [][]byte{bytes.Join(inputs, []byte(";"))}
+	for _, trigger := range world.triggers {
+		if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
+			inout = trigger.Match(inout.Input.Bytes(), inout)
+		}
+		if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
+			inout = trigger.Match(inout.Output.Bytes(), inout)
+		}
+	}
+
+	// If only the prompt remains, we omit the whole paragraph.
+	// @todo Use above prompt detection instead of relying on lone lines
+	// being prompts.
+	if len(inout.Output.Bytes()) == 1 {
+		inout.Output = pkg.Exput{}
+	}
+
+	return inout
 }
 
-func processInputs(inputs [][]byte, modules []pkg.Module) [][]byte {
-	nullinputs := false
-
-	for i := 0; i < len(inputs); i++ {
-		input := inputs[i]
-
-		var newinputs [][]byte
-
-		for _, module := range modules {
-			newnewinputs := module.ProcessInput(input)
-			if newnewinputs == nil {
-				nullinputs = true
-				continue
-			}
-
-			newinputs = append(newinputs, newnewinputs...)
+// OnCommand reacts to telnet commands.
+// @todo Consider merging this with OnOutput() or making it a callback for GMCP
+// only. Telnet commands are cool and all but YAGNI, evidently.
+func (world *World) OnCommand(cmd []byte) (inout pkg.Inoutput) {
+	if data := gmcp.Unwrap(cmd); data != nil {
+		err := world.onGMCP(data)
+		if err != nil {
+			log.Printf("failed processing gmcp: %s", err)
 		}
 
-		if nullinputs {
-			inputs = append(inputs[:i], inputs[i+1:]...)
-		} else if len(newinputs) > 0 {
-			inputs = append(inputs[:i], append(
-				newinputs,
-				inputs[i+1:]...,
-			)...)
-		}
-	}
-
-	if nullinputs && len(inputs) == 0 {
-		return nil
-	}
-
-	return inputs
-}
-
-/* @todo Move to its own module.
-var (
-	bal = time.Time{}
-	eq  = time.Time{}
-)
-*/
-
-// ProcessOutput processes game output.
-func (world *World) ProcessOutput(output []byte) [][]byte {
-	var outputs [][]byte
-
-	/* @todo Move to its own module.
-	// Requires: prompt *hh*1, *mm*2, *ee*3, *ww*4 *Rr *rk *b*c*d *s
-	ps1 := []byte("\x1b[32m4")
-	ps2 := []byte("\x1b[37m\x1b[32m4")
-	if (len(output) > len(ps1) && bytes.Equal(output[:len(ps1)], ps1)) ||
-		(len(output) > len(ps2) && bytes.Equal(output[:len(ps2)], ps2)) {
-		loutput := len(output)
-
-		xstamp := "15:04:05.000"
-		lstamp := len(xstamp) - 1
-		sstamp := string(output[loutput-lstamp-1:loutput-1]) + "0"
-		tstamp, _ := time.Parse(xstamp, sstamp)
-
-		prlbal := output[loutput-lstamp-4] == 'R'
-		pllbal := output[loutput-lstamp-5] == 'L'
-		pbal := output[loutput-lstamp-6] == 'x'
-
-		eqoffset := 0
-		if !pbal {
-			eqoffset = 1
-		}
-		peq := output[loutput-lstamp-7+eqoffset] == 'e'
-		pbal = pbal && prlbal && pllbal
-
-		if pbal && bal != (time.Time{}) {
-			diff := fmt.Sprintf("\x1b[30;1m %.2fx\x1b[37m", tstamp.Sub(bal).Seconds())
-			output = append(output, []byte(diff)...)
-			bal = time.Time{}
-		} else if !pbal && bal == (time.Time{}) {
-			bal = tstamp
-		}
-
-		if peq && eq != (time.Time{}) {
-			diff := fmt.Sprintf("\x1b[30;1m %.2fe\x1b[37m", tstamp.Sub(eq).Seconds())
-			output = append(output, []byte(diff)...)
-			eq = time.Time{}
-		} else if !peq && eq == (time.Time{}) {
-			eq = tstamp
-		}
-	}
-	*/
-
-	for _, module := range world.modules {
-		newoutputs := module.ProcessOutput(output)
-		if newoutputs == nil {
-			return nil
-		}
-		outputs = append(outputs, newoutputs...)
-	}
-
-	if len(outputs) == 0 {
-		outputs = [][]byte{output}
-	}
-
-	return outputs
-}
-
-// ProcessCommand processes telnet commands.
-func (world *World) ProcessCommand(command []byte) error {
-	if data := gmcp.Unwrap(command); data != nil {
-		return world.processGMCP(data)
+		return
 	}
 
 	switch {
-	case bytes.Equal(command, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
+	case bytes.Equal(cmd, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
 		err := world.SendGMCP(&gmcp.CoreSupportsSet{
 			"Char":         1,
 			"Char.Items":   1,
@@ -188,14 +120,14 @@ func (world *World) ProcessCommand(command []byte) error {
 			"IRE.Target":   1,
 		})
 		if err != nil {
-			return fmt.Errorf("failed GMCP: %w", err)
+			log.Printf("failed sending gmcp: %s", err)
 		}
 	}
 
-	return nil
+	return
 }
 
-func (world *World) processGMCP(data []byte) error {
+func (world *World) onGMCP(data []byte) error {
 	message, err := agmcp.Parse(data)
 	if err != nil {
 		return fmt.Errorf("failed parsing GMCP: %w", err)

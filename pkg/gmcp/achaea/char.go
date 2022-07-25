@@ -38,7 +38,7 @@ type CharStatus struct {
 	OrderRank        *int     `json:"-"`
 	Race             *string  `json:"race,omitempty"`
 	Specialisation   *string  `json:"specialisation,omitempty"`
-	Target           *string  `json:"target,omitempty"`
+	Target           *string  `json:"-"`
 	UnboundCredits   *int     `json:"unboundcredits,string,omitempty"`
 	UnreadMsgs       *int     `json:"unread_msgs,string,omitempty"`
 	UnreadNews       *int     `json:"unread_news,string,omitempty"`
@@ -84,14 +84,30 @@ func (msg *CharStatus) marshalValue(value *string, rank *int) *string {
 	return &newvalue
 }
 
+func (msg *CharStatus) marshalTarget() *string {
+	if msg.Target == nil {
+		return nil
+	}
+
+	if *msg.Target == "" {
+		// Stupid but at least it's consistent…
+		return gox.NewString("None")
+	}
+
+	newvalue := *msg.Target
+
+	return &newvalue
+}
+
 // Marshal converts the message to a string.
 func (msg *CharStatus) Marshal() string {
 	proxy := struct {
 		*CharStatus
-		PCity  *string `json:"city,omitempty"`
-		PHouse *string `json:"house,omitempty"`
-		PLevel *string `json:"level,omitempty"`
-		POrder *string `json:"order,omitempty"`
+		PCity   *string `json:"city,omitempty"`
+		PHouse  *string `json:"house,omitempty"`
+		PLevel  *string `json:"level,omitempty"`
+		POrder  *string `json:"order,omitempty"`
+		PTarget *string `json:"target,omitempty"`
 	}{
 		CharStatus: msg,
 	}
@@ -100,6 +116,7 @@ func (msg *CharStatus) Marshal() string {
 	proxy.PHouse = msg.marshalValue(msg.House, msg.HouseRank)
 	proxy.PLevel = msg.marshalLevel()
 	proxy.POrder = msg.marshalValue(msg.Order, msg.OrderRank)
+	proxy.PTarget = msg.marshalTarget()
 
 	data, _ := json.Marshal(proxy)
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
@@ -109,16 +126,13 @@ func (msg *CharStatus) Marshal() string {
 func (msg *CharStatus) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
 
-	if msg == nil {
-		*msg = CharStatus{}
-	}
-
 	proxy := struct {
 		*CharStatus
-		PCity  *string `json:"city"`
-		PHouse *string `json:"house"`
-		PLevel *string `json:"level"`
-		POrder *string `json:"order"`
+		PCity   *string `json:"city"`
+		PHouse  *string `json:"house"`
+		PLevel  *string `json:"level"`
+		POrder  *string `json:"order"`
+		PTarget *string `json:"target"`
 	}{
 		CharStatus: msg,
 	}
@@ -181,8 +195,8 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 		}
 	}
 
-	if msg.Target != nil {
-		target := strings.TrimSuffix(*msg.Target, " (player)")
+	if proxy.PTarget != nil {
+		target := strings.TrimSuffix(*proxy.PTarget, " (player)")
 		if target == "None" {
 			target = ""
 		}
@@ -246,10 +260,6 @@ func (msg *CharVitals) Marshal() string {
 // Unmarshal populates the message with data.
 func (msg *CharVitals) Unmarshal(data []byte) error {
 	data = bytes.TrimPrefix(data, []byte(msg.ID()+" "))
-
-	if msg == nil {
-		*msg = CharVitals{}
-	}
 
 	proxy := struct {
 		*CharVitals

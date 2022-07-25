@@ -4,49 +4,42 @@ import (
 	"strconv"
 
 	"github.com/tobiassjosten/nogfx/pkg"
-	"github.com/tobiassjosten/nogfx/pkg/simpex"
-)
-
-var (
-	modRIINumber = []byte("{^} {*}")
 )
 
 // RepeatInput is a module that lets players repeat commands by inputting them
 // in the format of `3 command`, to send "command" thrice.
 type RepeatInput struct {
-	client pkg.Client
-	ui     pkg.UI
 }
 
 // NewRepeatInput creates a new RepeatInput module.
-func NewRepeatInput(client pkg.Client, ui pkg.UI) pkg.Module {
-	return &RepeatInput{
-		client: client,
-		ui:     ui,
+func NewRepeatInput() pkg.Module {
+	return &RepeatInput{}
+}
+
+func (mod RepeatInput) Triggers() []pkg.Trigger {
+	return []pkg.Trigger{
+		{
+			Kind:     pkg.Input,
+			Pattern:  []byte("{^} {*}"),
+			Callback: mod.onRepeat,
+		},
 	}
 }
 
-// ProcessInput processes player input.
-func (mod *RepeatInput) ProcessInput(input []byte) [][]byte {
-	matches := simpex.Match(modRIINumber, input)
-	if matches == nil {
-		return [][]byte{}
+func (mod *RepeatInput) onRepeat(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	for _, match := range matches {
+		i := match.Index
+
+		number, err := strconv.Atoi(string(match.Captures[0]))
+		if err != nil {
+			continue
+		}
+
+		inout.Input = inout.Input.Replace(i, match.Captures[1])
+		for ii := 0; ii < number-1; ii++ {
+			inout.Input = inout.Input.AddAfter(i, match.Captures[1])
+		}
 	}
 
-	number, err := strconv.Atoi(string(matches[0]))
-	if err != nil {
-		return [][]byte{}
-	}
-
-	var inputs [][]byte
-	for i := 0; i < number; i++ {
-		inputs = append(inputs, matches[1])
-	}
-
-	return inputs
-}
-
-// ProcessOutput processes server output.
-func (mod *RepeatInput) ProcessOutput(output []byte) [][]byte {
-	return [][]byte{}
+	return inout
 }

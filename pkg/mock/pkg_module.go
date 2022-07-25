@@ -18,11 +18,8 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 		// make and configure a mocked pkg.Module
 // 		mockedModule := &ModuleMock{
-// 			ProcessInputFunc: func(bytes []byte) [][]byte {
-// 				panic("mock out the ProcessInput method")
-// 			},
-// 			ProcessOutputFunc: func(bytes []byte) [][]byte {
-// 				panic("mock out the ProcessOutput method")
+// 			TriggersFunc: func() []pkg.Trigger {
+// 				panic("mock out the Triggers method")
 // 			},
 // 		}
 //
@@ -31,87 +28,40 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 	}
 type ModuleMock struct {
-	// ProcessInputFunc mocks the ProcessInput method.
-	ProcessInputFunc func(bytes []byte) [][]byte
-
-	// ProcessOutputFunc mocks the ProcessOutput method.
-	ProcessOutputFunc func(bytes []byte) [][]byte
+	// TriggersFunc mocks the Triggers method.
+	TriggersFunc func() []pkg.Trigger
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// ProcessInput holds details about calls to the ProcessInput method.
-		ProcessInput []struct {
-			// Bytes is the bytes argument value.
-			Bytes []byte
-		}
-		// ProcessOutput holds details about calls to the ProcessOutput method.
-		ProcessOutput []struct {
-			// Bytes is the bytes argument value.
-			Bytes []byte
+		// Triggers holds details about calls to the Triggers method.
+		Triggers []struct {
 		}
 	}
-	lockProcessInput  sync.RWMutex
-	lockProcessOutput sync.RWMutex
+	lockTriggers sync.RWMutex
 }
 
-// ProcessInput calls ProcessInputFunc.
-func (mock *ModuleMock) ProcessInput(bytes []byte) [][]byte {
-	if mock.ProcessInputFunc == nil {
-		panic("ModuleMock.ProcessInputFunc: method is nil but Module.ProcessInput was just called")
+// Triggers calls TriggersFunc.
+func (mock *ModuleMock) Triggers() []pkg.Trigger {
+	if mock.TriggersFunc == nil {
+		panic("ModuleMock.TriggersFunc: method is nil but Module.Triggers was just called")
 	}
 	callInfo := struct {
-		Bytes []byte
-	}{
-		Bytes: bytes,
-	}
-	mock.lockProcessInput.Lock()
-	mock.calls.ProcessInput = append(mock.calls.ProcessInput, callInfo)
-	mock.lockProcessInput.Unlock()
-	return mock.ProcessInputFunc(bytes)
+	}{}
+	mock.lockTriggers.Lock()
+	mock.calls.Triggers = append(mock.calls.Triggers, callInfo)
+	mock.lockTriggers.Unlock()
+	return mock.TriggersFunc()
 }
 
-// ProcessInputCalls gets all the calls that were made to ProcessInput.
+// TriggersCalls gets all the calls that were made to Triggers.
 // Check the length with:
-//     len(mockedModule.ProcessInputCalls())
-func (mock *ModuleMock) ProcessInputCalls() []struct {
-	Bytes []byte
+//     len(mockedModule.TriggersCalls())
+func (mock *ModuleMock) TriggersCalls() []struct {
 } {
 	var calls []struct {
-		Bytes []byte
 	}
-	mock.lockProcessInput.RLock()
-	calls = mock.calls.ProcessInput
-	mock.lockProcessInput.RUnlock()
-	return calls
-}
-
-// ProcessOutput calls ProcessOutputFunc.
-func (mock *ModuleMock) ProcessOutput(bytes []byte) [][]byte {
-	if mock.ProcessOutputFunc == nil {
-		panic("ModuleMock.ProcessOutputFunc: method is nil but Module.ProcessOutput was just called")
-	}
-	callInfo := struct {
-		Bytes []byte
-	}{
-		Bytes: bytes,
-	}
-	mock.lockProcessOutput.Lock()
-	mock.calls.ProcessOutput = append(mock.calls.ProcessOutput, callInfo)
-	mock.lockProcessOutput.Unlock()
-	return mock.ProcessOutputFunc(bytes)
-}
-
-// ProcessOutputCalls gets all the calls that were made to ProcessOutput.
-// Check the length with:
-//     len(mockedModule.ProcessOutputCalls())
-func (mock *ModuleMock) ProcessOutputCalls() []struct {
-	Bytes []byte
-} {
-	var calls []struct {
-		Bytes []byte
-	}
-	mock.lockProcessOutput.RLock()
-	calls = mock.calls.ProcessOutput
-	mock.lockProcessOutput.RUnlock()
+	mock.lockTriggers.RLock()
+	calls = mock.calls.Triggers
+	mock.lockTriggers.RUnlock()
 	return calls
 }

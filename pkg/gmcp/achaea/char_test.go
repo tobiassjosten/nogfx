@@ -122,6 +122,45 @@ func TestCharMessages(t *testing.T) {
 			}),
 		},
 
+		"Char.Status empty house": {
+			msg: &agmcp.CharStatus{},
+			data: makeGMCP("Char.Status", map[string]interface{}{
+				"house": "(None)",
+			}),
+			unmarshaled: &agmcp.CharStatus{
+				House: gox.NewString(""),
+			},
+			marshaled: makeGMCP("Char.Status", map[string]interface{}{
+				"house": "(None)",
+			}),
+		},
+
+		"Char.Status empty order": {
+			msg: &agmcp.CharStatus{},
+			data: makeGMCP("Char.Status", map[string]interface{}{
+				"order": "(None)",
+			}),
+			unmarshaled: &agmcp.CharStatus{
+				Order: gox.NewString(""),
+			},
+			marshaled: makeGMCP("Char.Status", map[string]interface{}{
+				"order": "(None)",
+			}),
+		},
+
+		"Char.Status empty target": {
+			msg: &agmcp.CharStatus{},
+			data: makeGMCP("Char.Status", map[string]interface{}{
+				"target": "None",
+			}),
+			unmarshaled: &agmcp.CharStatus{
+				Target: gox.NewString(""),
+			},
+			marshaled: makeGMCP("Char.Status", map[string]interface{}{
+				"target": "None",
+			}),
+		},
+
 		"Char.Status fractal-progress level": {
 			msg: &agmcp.CharStatus{},
 			data: makeGMCP("Char.Status", map[string]interface{}{
