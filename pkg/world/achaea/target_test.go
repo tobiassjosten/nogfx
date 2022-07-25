@@ -54,22 +54,6 @@ func TestWorldTargeting(t *testing.T) {
 			sent: []string{"settarget manticore"},
 		},
 
-		// @todo Make this actually check that we're not triggering a
-		// new candidates list to be set for the second room.
-		"traversing genji manticore present": {
-			messages: []gmcp.Message{
-				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&gmcp.RoomInfo{Number: 2, AreaNumber: 137},
-				&gmcp.CharItemsList{
-					Location: "room",
-					Items: []gmcp.CharItem{
-						{Name: "a ferocious manpicore"},
-					},
-				},
-			},
-			sent: []string{"settarget manticore"},
-		},
-
 		"entering genji manticore shaman present": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
