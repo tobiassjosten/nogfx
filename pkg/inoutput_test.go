@@ -66,6 +66,17 @@ func TestExput(t *testing.T) {
 	}
 
 	{
+		// Maintains order.
+		exputsplit := exput.Add([]byte("qwer")).Split([]byte{'d'})
+		assert.Equal(t, pkg.Exput{
+			pkg.Line{Text: []byte("as")},
+			pkg.Line{Text: []byte("f")},
+			pkg.Line{Text: []byte("qwer")},
+		}, exputsplit)
+		require.NotEqual(t, exput, exputsplit, "operation shouldn't mutate")
+	}
+
+	{
 		exputsplit := exput.Split([]byte{'x'})
 		assert.Equal(t, pkg.Exput{
 			pkg.Line{Text: []byte("asdf")},
