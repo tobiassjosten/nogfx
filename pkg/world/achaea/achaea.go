@@ -22,7 +22,7 @@ type World struct {
 	ui       pkg.UI
 	uiVitals map[string]struct{}
 
-	triggers []pkg.Trigger
+	modules []pkg.Module
 
 	Character *Character
 	Room      *navigation.Room
@@ -41,15 +41,12 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 		Target:    NewTarget(client),
 	}
 
-	// @todo Make sure these are ordered correctly. Potentially by adding a weight
-	// property for sorting?
-	var modules = []pkg.Module{
+	// @todo Make sure these are ordered correctly. Potentially by adding
+	// a weight property for sorting?
+	world.modules = []pkg.Module{
 		module.NewRepeatInput(),
 		amodule.NewLearnMultipleLessons(),
-	}
-
-	for _, module := range modules {
-		world.triggers = append(world.triggers, module.Triggers()...)
+		NewBashingMod(world),
 	}
 
 	return world
@@ -76,13 +73,17 @@ func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 		inout.Output = inout.Output.Omit(0)
 	}
 
-	for _, trigger := range world.triggers {
-		if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
-			inout = trigger.Match(inout.Input.Bytes(), inout)
+	for _, module := range world.modules {
+		for _, trigger := range module.Triggers() {
+			if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
+				inout = trigger.Match(inout.Input.Bytes(), inout)
+			}
+			if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
+				inout = trigger.Match(inout.Output.Bytes(), inout)
+			}
 		}
-		if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
-			inout = trigger.Match(inout.Output.Bytes(), inout)
-		}
+
+		module.PostInoutput()
 	}
 
 	// If only the prompt remains, we omit the whole paragraph.

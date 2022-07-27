@@ -12,7 +12,7 @@ func (tui *TUI) eventHandlers() map[int]func(rune) bool {
 
 	return map[int]func(rune) bool{
 		int(tcell.KeyRune):  tui.handleRuneInput,
-		int(tcell.KeyEnter): tui.handleEnterInput,
+		int(tcell.KeyEnter): tui.handleEnter,
 		int(tcell.KeyEsc):   tui.handleEscInput,
 		int(tcell.KeyCtrlC): tui.handleCtrlCInput,
 		int(tcell.KeyLeft):  tui.handleLeftInput,
@@ -28,14 +28,19 @@ func (tui *TUI) eventHandlers() map[int]func(rune) bool {
 		int(tcell.KeyDown):       tui.handleDownInput,
 		int(tcell.KeyDown) + alt: tui.handleAltDownInput,
 
-		int(keyNum1): tui.handleNum1,
-		int(keyNum2): tui.handleNum2,
-		int(keyNum3): tui.handleNum3,
-		int(keyNum4): tui.handleNum4,
-		int(keyNum6): tui.handleNum6,
-		int(keyNum7): tui.handleNum7,
-		int(keyNum8): tui.handleNum8,
-		int(keyNum9): tui.handleNum9,
+		int(keyNumEnter): tui.handleEnter,
+		int(keyNumPlus):  tui.handleNumPlus,
+		int(keyNumMinus): tui.handleNumMinus,
+		int(keyNumDiv):   tui.handleNumDiv,
+		int(keyNumMulti): tui.handleNumMulti,
+		int(keyNum1):     tui.handleNum1,
+		int(keyNum2):     tui.handleNum2,
+		int(keyNum3):     tui.handleNum3,
+		int(keyNum4):     tui.handleNum4,
+		int(keyNum6):     tui.handleNum6,
+		int(keyNum7):     tui.handleNum7,
+		int(keyNum8):     tui.handleNum8,
+		int(keyNum9):     tui.handleNum9,
 	}
 }
 
@@ -147,7 +152,7 @@ func (tui *TUI) handleRuneInput(r rune) bool {
 	return true
 }
 
-func (tui *TUI) handleEnterInput(_ rune) bool {
+func (tui *TUI) handleEnter(_ rune) bool {
 	tui.setCache(paneInput, nil)
 	input := tui.input.buffer
 	tui.input.inputted = true
@@ -222,42 +227,62 @@ func (tui *TUI) handleAltDownInput(_ rune) bool {
 	return true
 }
 
-func (tui *TUI) handleNum1(r rune) bool {
+func (tui *TUI) handleNum1(_ rune) bool {
 	tui.inputs <- []byte{'s', 'w'}
 	return true
 }
 
-func (tui *TUI) handleNum2(r rune) bool {
+func (tui *TUI) handleNum2(_ rune) bool {
 	tui.inputs <- []byte{'s'}
 	return true
 }
 
-func (tui *TUI) handleNum3(r rune) bool {
+func (tui *TUI) handleNum3(_ rune) bool {
 	tui.inputs <- []byte{'s', 'e'}
 	return true
 }
 
-func (tui *TUI) handleNum4(r rune) bool {
+func (tui *TUI) handleNum4(_ rune) bool {
 	tui.inputs <- []byte{'w'}
 	return true
 }
 
-func (tui *TUI) handleNum6(r rune) bool {
+func (tui *TUI) handleNum6(_ rune) bool {
 	tui.inputs <- []byte{'e'}
 	return true
 }
 
-func (tui *TUI) handleNum7(r rune) bool {
+func (tui *TUI) handleNum7(_ rune) bool {
 	tui.inputs <- []byte{'n', 'w'}
 	return true
 }
 
-func (tui *TUI) handleNum8(r rune) bool {
+func (tui *TUI) handleNum8(_ rune) bool {
 	tui.inputs <- []byte{'n'}
 	return true
 }
 
-func (tui *TUI) handleNum9(r rune) bool {
+func (tui *TUI) handleNum9(_ rune) bool {
 	tui.inputs <- []byte{'n', 'e'}
+	return true
+}
+
+func (tui *TUI) handleNumMulti(_ rune) bool {
+	tui.inputs <- []byte{'i', 'n'}
+	return true
+}
+
+func (tui *TUI) handleNumPlus(_ rune) bool {
+	tui.inputs <- []byte{'d'}
+	return true
+}
+
+func (tui *TUI) handleNumMinus(_ rune) bool {
+	tui.inputs <- []byte{'u'}
+	return true
+}
+
+func (tui *TUI) handleNumDiv(_ rune) bool {
+	tui.inputs <- []byte{'o', 'u', 't'}
 	return true
 }

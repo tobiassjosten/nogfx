@@ -55,6 +55,8 @@ func (engine *Engine) Run(pctx context.Context) error {
 	uiErrs := make(chan error)
 	go engine.RunUI(ctx, uiErrs, cancel)
 
+	// @todo Split this up into an actual game log (what the player sees)
+	// and a raw log (what the server sends, including Telnet commands).
 	gamelog := engine.openGamelog(ctx)
 	if gamelog != nil {
 		defer gamelog.Close()
@@ -77,7 +79,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.ui.Outputs() <- []byte("server disconnected")
 
 		case data := <-engine.ui.Inputs():
-			in := (pkg.Exput{}).Add(data)
+			in := (pkg.Exput{}).Append(data)
 			inout := in.Inoutput(pkg.Input)
 
 			if engine.world != nil {
@@ -87,6 +89,8 @@ func (engine *Engine) Run(pctx context.Context) error {
 			engine.OnInoutput(inout)
 
 		case data := <-serverOutput:
+			// @todo Measure to see if buffering and writing chunks
+			// is more performant.
 			if gamelog != nil {
 				if _, err := gamelog.Write(data); err != nil {
 					log.Printf("failed writing game log: %s", err)
@@ -99,12 +103,12 @@ func (engine *Engine) Run(pctx context.Context) error {
 			// Go Ahead termination.
 			// @todo Make this dynamic, based on Telnet negotiation.
 			if len(data) == 0 || data[len(data)-1] != telnet.GA {
-				out = out.Add(data)
+				out = out.Append(data)
 				continue
 			}
 
 			// Strip the GA and proceed with processing.
-			out = out.Add(data[:len(data)-1])
+			out = out.Append(data[:len(data)-1])
 			inout := out.Inoutput(pkg.Output)
 
 			if engine.world != nil {
@@ -115,20 +119,28 @@ func (engine *Engine) Run(pctx context.Context) error {
 
 			out = pkg.Exput{}
 
-		case command, ok := <-engine.client.Commands():
+		case data, ok := <-engine.client.Commands():
 			if !ok {
 				continue
 			}
 
-			err := engine.ProcessCommand(command)
+			// @todo Abstract this away to a Gamelog struct, with a
+			// .Text() and a .Raw() method?
+			if gamelog != nil {
+				if _, err := gamelog.Write(data); err != nil {
+					log.Printf("failed writing game log: %s", err)
+				}
+			}
+
+			err := engine.ProcessCommand(data)
 			if err != nil {
 				log.Printf(
 					"Failed processing command '%s': %s",
-					command, err.Error(),
+					data, err.Error(),
 				)
 			}
 
-			inout := engine.world.OnCommand(command)
+			inout := engine.world.OnCommand(data)
 
 			engine.OnInoutput(inout)
 		}

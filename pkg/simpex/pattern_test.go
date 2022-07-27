@@ -57,7 +57,7 @@ func TestMatch(t *testing.T) {
 		"character match capture": {
 			pattern: []byte("Lorem ipsum do{?}or sit amet."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
-			matches: [][]byte{[]byte{'l'}},
+			matches: [][]byte{{'l'}},
 		},
 		"character match escaped one": {
 			pattern: []byte("Lorem ipsum do??or sit amet."),
@@ -198,7 +198,7 @@ func TestMatch(t *testing.T) {
 			matches: [][]byte{
 				[]byte("Lorem"),
 				[]byte("ipsum"),
-				[]byte{'l'},
+				{'l'},
 				[]byte("sit amet"),
 			},
 		},
@@ -208,7 +208,7 @@ func TestMatch(t *testing.T) {
 			matches: [][]byte{
 				[]byte("{Lorem}"),
 				[]byte("^"),
-				[]byte{'?'},
+				{'?'},
 				[]byte("*"),
 			},
 		},
@@ -252,23 +252,23 @@ func TestMatch(t *testing.T) {
 var (
 	benchresult [][]byte
 	benchmarks  = map[string][][]byte{
-		"exact match": [][]byte{
+		"exact match": {
 			[]byte("Lorem ipsum dolor sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
 		},
-		"character match": [][]byte{
+		"character match": {
 			[]byte("Lorem ipsum do?or sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
 		},
-		"word match": [][]byte{
+		"word match": {
 			[]byte("Lorem ^ dolor sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
 		},
-		"phrase match": [][]byte{
+		"phrase match": {
 			[]byte("Lorem ipsum dolor * amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
 		},
-		"all specials": [][]byte{
+		"all specials": {
 			[]byte("{Lorem} {^} do{?}or {*}."),
 			[]byte("Lorem ipsum dolor sit amet."),
 		},

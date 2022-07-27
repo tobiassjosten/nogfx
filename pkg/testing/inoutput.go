@@ -70,10 +70,10 @@ func (te IOEvent) Inoutput() pkg.Inoutput {
 	inout := pkg.Inoutput{}
 
 	for _, data := range te.Input {
-		inout.Input = inout.Input.Add([]byte(data))
+		inout.Input = inout.Input.Append([]byte(data))
 	}
 	for _, data := range te.Output {
-		inout.Output = inout.Output.Add([]byte(data))
+		inout.Output = inout.Output.Append([]byte(data))
 	}
 
 	return inout

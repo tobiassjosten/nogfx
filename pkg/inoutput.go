@@ -24,12 +24,24 @@ type Inoutput struct {
 // NewInoutput creates a new Inoutput.
 func NewInoutput(input [][]byte, output [][]byte) (inout Inoutput) {
 	for _, data := range input {
-		inout.Input = inout.Input.Add(data)
+		inout.Input = inout.Input.Append(data)
 	}
 	for _, data := range output {
-		inout.Output = inout.Output.Add(data)
+		inout.Output = inout.Output.Append(data)
 	}
 	return
+}
+
+// AppendInput is a shortcut for Inoutput.Input.Append().
+func (inout Inoutput) AppendInput(data []byte) Inoutput {
+	inout.Input = inout.Input.Append(data)
+	return inout
+}
+
+// RemoveInputMatching is a shortcut for Inoutput.Input.RemoveMatching().
+func (inout Inoutput) RemoveInputMatching(data []byte) Inoutput {
+	inout.Input = inout.Input.RemoveMatching(data)
+	return inout
 }
 
 // AddBeforeInput is a shortcut for Inoutput.Input.AddBefore().
@@ -50,6 +62,34 @@ func (inout Inoutput) OmitInput(i int) Inoutput {
 	return inout
 }
 
+// ReplaceInput is a shortcut for Inoutput.Input.Replace().
+func (inout Inoutput) ReplaceInput(i int, data []byte) Inoutput {
+	inout.Input = inout.Input.Replace(i, data)
+	return inout
+}
+
+// HasOutput checks if the Output has a text matching the given byte slice.
+func (inout Inoutput) HasOutput(data []byte) bool {
+	for _, out := range inout.Output {
+		if bytes.Equal(data, out.Text) {
+			return true
+		}
+	}
+	return false
+}
+
+// AppendOutput is a shortcut for Inoutput.Output.Append().
+func (inout Inoutput) AppendOutput(data []byte) Inoutput {
+	inout.Output = inout.Output.Append(data)
+	return inout
+}
+
+// RemoveOutputMatching is a shortcut for Inoutput.Output.RemoveMatching().
+func (inout Inoutput) RemoveOutputMatching(data []byte) Inoutput {
+	inout.Output = inout.Output.RemoveMatching(data)
+	return inout
+}
+
 // AddBeforeOutput is a shortcut for Inoutput.Output.AddBefore().
 func (inout Inoutput) AddBeforeOutput(i int, data []byte) Inoutput {
 	inout.Output = inout.Output.AddBefore(i, data)
@@ -65,6 +105,12 @@ func (inout Inoutput) AddAfterOutput(i int, data []byte) Inoutput {
 // OmitOutput is a shortcut for Inoutput.Output.Omit().
 func (inout Inoutput) OmitOutput(i int) Inoutput {
 	inout.Output = inout.Output.Omit(i)
+	return inout
+}
+
+// ReplaceOutput is a shortcut for Inoutput.Output.Replace().
+func (inout Inoutput) ReplaceOutput(i int, data []byte) Inoutput {
+	inout.Output = inout.Output.Replace(i, data)
 	return inout
 }
 
@@ -138,13 +184,25 @@ func (ex Exput) Inoutput(kind IOKind) Inoutput {
 }
 
 // Add appends a new Line to the Exput
-func (ex Exput) Add(data []byte) Exput {
+func (ex Exput) Append(data []byte) Exput {
 	return append(ex, Line{Text: data})
+}
+
+// RemoveMatching removes lines matching the given data.
+func (ex Exput) RemoveMatching(data []byte) Exput {
+	for i := 0; i < len(ex); {
+		if bytes.Equal(data, ex[i].Text.Clean()) {
+			ex = append(ex[:i], ex[i+1:]...)
+			continue
+		}
+		i++
+	}
+	return ex
 }
 
 // AddBefore appends a new Line before a given other Line. This is useful for
 // data that belongs together, as omitting one line also omits all lines added
-// before and after it (but not independently of it, with Add()).
+// before and after it (but not independently of it, with Append).
 func (ex Exput) AddBefore(i int, data []byte) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].Before = append(newex[i].Before, data)
@@ -153,7 +211,7 @@ func (ex Exput) AddBefore(i int, data []byte) Exput {
 
 // AddAfter appends a new Line after a given other Line. This is useful for
 // data that belongs together, as omitting one line also omits all lines added
-// before and after it (but not independently of it, with Add()).
+// before and after it (but not independently of it, with Append).
 func (ex Exput) AddAfter(i int, data []byte) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].After = append(newex[i].After, data)

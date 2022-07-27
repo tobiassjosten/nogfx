@@ -13,7 +13,7 @@ func TestExput(t *testing.T) {
 	exput := pkg.NewExput([]byte("asdf"))
 
 	{
-		exputadd := exput.Add([]byte("asdf"))
+		exputadd := exput.Append([]byte("asdf"))
 		assert.Equal(t, pkg.Exput{
 			pkg.Line{Text: []byte("asdf")},
 			pkg.Line{Text: []byte("asdf")},
@@ -67,7 +67,7 @@ func TestExput(t *testing.T) {
 
 	{
 		// Maintains order.
-		exputsplit := exput.Add([]byte("qwer")).Split([]byte{'d'})
+		exputsplit := exput.Append([]byte("qwer")).Split([]byte{'d'})
 		assert.Equal(t, pkg.Exput{
 			pkg.Line{Text: []byte("as")},
 			pkg.Line{Text: []byte("f")},

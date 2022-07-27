@@ -9,6 +9,8 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg"
 )
 
+// @todo Move to achaea and rename with -Mod suffix.
+
 // @todo Make this use 20 lessons at a time with the myrrh/bisemutum defense:
 // "Your mind is racing with enhanced speed."
 var maxLessons = 15
@@ -28,13 +30,18 @@ func NewLearnMultipleLessons() pkg.Module {
 	return &LearnMultipleLessons{}
 }
 
+func (mod *LearnMultipleLessons) PostInoutput() {
+}
+
 // Triggers returns a list of triggers.
 func (mod *LearnMultipleLessons) Triggers() []pkg.Trigger {
 	whenActive := func(callback pkg.Callback) pkg.Callback {
-		if mod.timer == nil {
-			return pkg.NoopCallback
+		return func(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+			if mod.timer == nil {
+				return inout
+			}
+			return callback(matches, inout)
 		}
-		return callback
 	}
 
 	return []pkg.Trigger{
@@ -152,7 +159,7 @@ func (mod *LearnMultipleLessons) onFinish(matches []pkg.Match, inout pkg.Inoutpu
 
 		mod.start = time.Now()
 		mod.countdown()
-		inout.Input = inout.Input.Add(mod.learn())
+		inout = inout.AppendInput(mod.learn())
 	}
 
 	return inout

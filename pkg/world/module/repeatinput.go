@@ -16,6 +16,9 @@ func NewRepeatInput() pkg.Module {
 	return &RepeatInput{}
 }
 
+func (mod *RepeatInput) PostInoutput() {
+}
+
 func (mod RepeatInput) Triggers() []pkg.Trigger {
 	return []pkg.Trigger{
 		{

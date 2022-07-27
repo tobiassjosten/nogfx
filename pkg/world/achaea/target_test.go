@@ -54,7 +54,7 @@ func TestWorldTargeting(t *testing.T) {
 			sent: []string{"settarget manticore"},
 		},
 
-		"entering genji manticore shaman present": {
+		"entering genji manticore atavian present": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
 				&gmcp.CharItemsList{
@@ -65,7 +65,7 @@ func TestWorldTargeting(t *testing.T) {
 					},
 				},
 			},
-			sent: []string{"settarget shaman"},
+			sent: []string{"settarget atavian"},
 		},
 
 		"entering genji manticore present pvping": {
@@ -98,7 +98,7 @@ func TestWorldTargeting(t *testing.T) {
 			sent: []string{"settarget manticore"},
 		},
 
-		"entering genji manticore shaman enter": {
+		"entering genji manticore atavian enter": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
 				&gmcp.CharItemsAdd{
@@ -122,7 +122,7 @@ func TestWorldTargeting(t *testing.T) {
 			},
 			sent: []string{
 				"settarget manticore",
-				"settarget shaman",
+				"settarget atavian",
 			},
 		},
 
@@ -142,7 +142,7 @@ func TestWorldTargeting(t *testing.T) {
 			},
 		},
 
-		"entering genji manticore shaman present shaman leaves": {
+		"entering genji manticore atavian present atavian leaves": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
 				&gmcp.CharItemsList{
@@ -163,7 +163,7 @@ func TestWorldTargeting(t *testing.T) {
 				},
 			},
 			sent: []string{
-				"settarget shaman",
+				"settarget atavian",
 				"settarget manticore",
 			},
 		},
@@ -253,10 +253,10 @@ func TestWorldTargeting(t *testing.T) {
 			},
 		},
 
-		"entering genji manaual target shaman leaving genji": {
+		"entering genji manaual target atavian leaving genji": {
 			messages: []gmcp.Message{
 				&gmcp.RoomInfo{Number: 1, AreaNumber: 137},
-				&agmcp.CharStatus{Target: gox.NewString("shaman")},
+				&agmcp.CharStatus{Target: gox.NewString("atavian")},
 				&gmcp.RoomInfo{Number: 2, AreaNumber: 731},
 				&agmcp.CharStatus{Target: gox.NewString("")},
 			},

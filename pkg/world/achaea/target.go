@@ -133,7 +133,7 @@ func (tgt *Target) npcs() map[int][]string {
 	// where the most dangerous NPC is first and the rest in falling order.
 	return map[int][]string{
 		// The Keep of Belladona.
-		134: []string{
+		134: {
 			// Aggressive:
 			"grothgar", "crocodile", "guardian", "hound",
 			"minotaur",
@@ -142,6 +142,6 @@ func (tgt *Target) npcs() map[int][]string {
 		},
 
 		// The Village of Genji.
-		137: []string{"shaman", "warrior", "manticore", "villager"},
+		137: {"atavian", "manticore"},
 	}
 }

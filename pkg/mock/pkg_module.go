@@ -18,6 +18,9 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 		// make and configure a mocked pkg.Module
 // 		mockedModule := &ModuleMock{
+// 			PostInoutputFunc: func()  {
+// 				panic("mock out the PostInoutput method")
+// 			},
 // 			TriggersFunc: func() []pkg.Trigger {
 // 				panic("mock out the Triggers method")
 // 			},
@@ -28,16 +31,49 @@ var _ pkg.Module = &ModuleMock{}
 //
 // 	}
 type ModuleMock struct {
+	// PostInoutputFunc mocks the PostInoutput method.
+	PostInoutputFunc func()
+
 	// TriggersFunc mocks the Triggers method.
 	TriggersFunc func() []pkg.Trigger
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// PostInoutput holds details about calls to the PostInoutput method.
+		PostInoutput []struct {
+		}
 		// Triggers holds details about calls to the Triggers method.
 		Triggers []struct {
 		}
 	}
-	lockTriggers sync.RWMutex
+	lockPostInoutput sync.RWMutex
+	lockTriggers     sync.RWMutex
+}
+
+// PostInoutput calls PostInoutputFunc.
+func (mock *ModuleMock) PostInoutput() {
+	if mock.PostInoutputFunc == nil {
+		panic("ModuleMock.PostInoutputFunc: method is nil but Module.PostInoutput was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockPostInoutput.Lock()
+	mock.calls.PostInoutput = append(mock.calls.PostInoutput, callInfo)
+	mock.lockPostInoutput.Unlock()
+	mock.PostInoutputFunc()
+}
+
+// PostInoutputCalls gets all the calls that were made to PostInoutput.
+// Check the length with:
+//     len(mockedModule.PostInoutputCalls())
+func (mock *ModuleMock) PostInoutputCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockPostInoutput.RLock()
+	calls = mock.calls.PostInoutput
+	mock.lockPostInoutput.RUnlock()
+	return calls
 }
 
 // Triggers calls TriggersFunc.
