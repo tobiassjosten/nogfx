@@ -15,7 +15,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: webiny/action-conventional-commits@v1.1.0
+      - name: Verify commit messages
+        uses: webiny/action-conventional-commits@v1.1.0
 
       - name: Check YAML formatting
         uses: ibiqlik/action-yamllint@v3
