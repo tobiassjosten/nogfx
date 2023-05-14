@@ -22,7 +22,7 @@ jobs:
         uses: ibiqlik/action-yamllint@v3
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: 1.18
 
@@ -54,7 +54,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: 1.18
 
