@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -97,7 +96,7 @@ func TestReader(t *testing.T) {
 				done <- struct{}{}
 			}()
 
-			output, err := ioutil.ReadAll(client)
+			output, err := io.ReadAll(client)
 
 			if tc.errMsg != "" {
 				assert.Equal(tc.errMsg, err.Error())

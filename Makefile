@@ -14,4 +14,4 @@ pkg/mock/pkg_world.go: pkg/services.go
 	~/go/bin/moq -pkg mock pkg/ World:WorldMock > pkg/mock/pkg_world.go
 
 pkg/mock/tcell_screen.go: pkg/services.go
-	~/go/bin/moq -pkg mock ~/go/pkg/mod/github.com/gdamore/tcell/v2@v2.5.1/ Screen:ScreenMock > pkg/mock/tcell_screen.go
+	~/go/bin/moq -pkg mock ~/go/pkg/mod/github.com/gdamore/tcell/v2@v2.6.0/ Screen:ScreenMock > pkg/mock/tcell_screen.go
