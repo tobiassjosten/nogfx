@@ -3,7 +3,7 @@ package telnet_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -195,7 +195,7 @@ func TestNegotiation(t *testing.T) {
 				}
 			}()
 
-			_, err := ioutil.ReadAll(client)
+			_, err := io.ReadAll(client)
 
 			if tc.err != nil {
 				assert.Equal(tc.err, err)

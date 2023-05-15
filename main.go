@@ -5,7 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -30,7 +30,7 @@ const (
 var appHelpTemplate string
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	fileFlags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
 	f, err := os.OpenFile("nogfx.log", fileFlags, 0644)

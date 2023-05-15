@@ -93,11 +93,14 @@ var _ tcell.Screen = &ScreenMock{}
 // 			SetCellFunc: func(x int, y int, style tcell.Style, ch ...rune)  {
 // 				panic("mock out the SetCell method")
 // 			},
-// 			SetContentFunc: func(x int, y int, mainc rune, combc []rune, style tcell.Style)  {
+// 			SetContentFunc: func(x int, y int, primary rune, combining []rune, style tcell.Style)  {
 // 				panic("mock out the SetContent method")
 // 			},
 // 			SetCursorStyleFunc: func(cursorStyle tcell.CursorStyle)  {
 // 				panic("mock out the SetCursorStyle method")
+// 			},
+// 			SetSizeFunc: func(n1 int, n2 int)  {
+// 				panic("mock out the SetSize method")
 // 			},
 // 			SetStyleFunc: func(style tcell.Style)  {
 // 				panic("mock out the SetStyle method")
@@ -203,10 +206,13 @@ type ScreenMock struct {
 	SetCellFunc func(x int, y int, style tcell.Style, ch ...rune)
 
 	// SetContentFunc mocks the SetContent method.
-	SetContentFunc func(x int, y int, mainc rune, combc []rune, style tcell.Style)
+	SetContentFunc func(x int, y int, primary rune, combining []rune, style tcell.Style)
 
 	// SetCursorStyleFunc mocks the SetCursorStyle method.
 	SetCursorStyleFunc func(cursorStyle tcell.CursorStyle)
+
+	// SetSizeFunc mocks the SetSize method.
+	SetSizeFunc func(n1 int, n2 int)
 
 	// SetStyleFunc mocks the SetStyle method.
 	SetStyleFunc func(style tcell.Style)
@@ -356,10 +362,10 @@ type ScreenMock struct {
 			X int
 			// Y is the y argument value.
 			Y int
-			// Mainc is the mainc argument value.
-			Mainc rune
-			// Combc is the combc argument value.
-			Combc []rune
+			// Primary is the primary argument value.
+			Primary rune
+			// Combining is the combining argument value.
+			Combining []rune
 			// Style is the style argument value.
 			Style tcell.Style
 		}
@@ -367,6 +373,13 @@ type ScreenMock struct {
 		SetCursorStyle []struct {
 			// CursorStyle is the cursorStyle argument value.
 			CursorStyle tcell.CursorStyle
+		}
+		// SetSize holds details about calls to the SetSize method.
+		SetSize []struct {
+			// N1 is the n1 argument value.
+			N1 int
+			// N2 is the n2 argument value.
+			N2 int
 		}
 		// SetStyle holds details about calls to the SetStyle method.
 		SetStyle []struct {
@@ -425,6 +438,7 @@ type ScreenMock struct {
 	lockSetCell                sync.RWMutex
 	lockSetContent             sync.RWMutex
 	lockSetCursorStyle         sync.RWMutex
+	lockSetSize                sync.RWMutex
 	lockSetStyle               sync.RWMutex
 	lockShow                   sync.RWMutex
 	lockShowCursor             sync.RWMutex
@@ -1184,45 +1198,45 @@ func (mock *ScreenMock) SetCellCalls() []struct {
 }
 
 // SetContent calls SetContentFunc.
-func (mock *ScreenMock) SetContent(x int, y int, mainc rune, combc []rune, style tcell.Style) {
+func (mock *ScreenMock) SetContent(x int, y int, primary rune, combining []rune, style tcell.Style) {
 	if mock.SetContentFunc == nil {
 		panic("ScreenMock.SetContentFunc: method is nil but Screen.SetContent was just called")
 	}
 	callInfo := struct {
-		X     int
-		Y     int
-		Mainc rune
-		Combc []rune
-		Style tcell.Style
+		X         int
+		Y         int
+		Primary   rune
+		Combining []rune
+		Style     tcell.Style
 	}{
-		X:     x,
-		Y:     y,
-		Mainc: mainc,
-		Combc: combc,
-		Style: style,
+		X:         x,
+		Y:         y,
+		Primary:   primary,
+		Combining: combining,
+		Style:     style,
 	}
 	mock.lockSetContent.Lock()
 	mock.calls.SetContent = append(mock.calls.SetContent, callInfo)
 	mock.lockSetContent.Unlock()
-	mock.SetContentFunc(x, y, mainc, combc, style)
+	mock.SetContentFunc(x, y, primary, combining, style)
 }
 
 // SetContentCalls gets all the calls that were made to SetContent.
 // Check the length with:
 //     len(mockedScreen.SetContentCalls())
 func (mock *ScreenMock) SetContentCalls() []struct {
-	X     int
-	Y     int
-	Mainc rune
-	Combc []rune
-	Style tcell.Style
+	X         int
+	Y         int
+	Primary   rune
+	Combining []rune
+	Style     tcell.Style
 } {
 	var calls []struct {
-		X     int
-		Y     int
-		Mainc rune
-		Combc []rune
-		Style tcell.Style
+		X         int
+		Y         int
+		Primary   rune
+		Combining []rune
+		Style     tcell.Style
 	}
 	mock.lockSetContent.RLock()
 	calls = mock.calls.SetContent
@@ -1258,6 +1272,41 @@ func (mock *ScreenMock) SetCursorStyleCalls() []struct {
 	mock.lockSetCursorStyle.RLock()
 	calls = mock.calls.SetCursorStyle
 	mock.lockSetCursorStyle.RUnlock()
+	return calls
+}
+
+// SetSize calls SetSizeFunc.
+func (mock *ScreenMock) SetSize(n1 int, n2 int) {
+	if mock.SetSizeFunc == nil {
+		panic("ScreenMock.SetSizeFunc: method is nil but Screen.SetSize was just called")
+	}
+	callInfo := struct {
+		N1 int
+		N2 int
+	}{
+		N1: n1,
+		N2: n2,
+	}
+	mock.lockSetSize.Lock()
+	mock.calls.SetSize = append(mock.calls.SetSize, callInfo)
+	mock.lockSetSize.Unlock()
+	mock.SetSizeFunc(n1, n2)
+}
+
+// SetSizeCalls gets all the calls that were made to SetSize.
+// Check the length with:
+//     len(mockedScreen.SetSizeCalls())
+func (mock *ScreenMock) SetSizeCalls() []struct {
+	N1 int
+	N2 int
+} {
+	var calls []struct {
+		N1 int
+		N2 int
+	}
+	mock.lockSetSize.RLock()
+	calls = mock.calls.SetSize
+	mock.lockSetSize.RUnlock()
 	return calls
 }
 
