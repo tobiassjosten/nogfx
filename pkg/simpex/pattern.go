@@ -125,7 +125,7 @@ func Match(pattern []byte, text []byte) [][]byte {
 			pattern = pattern[1:]
 			text = text[edge:]
 
-		case '?':
+		case '_':
 			if len(pattern) > 1 && p == pattern[1] {
 				if p != text[0] {
 					return nil
@@ -166,7 +166,7 @@ func isnotalphanum(r rune) bool {
 }
 
 func isspecial(r rune) bool {
-	return r == '{' || r == '}' || r == '?' || r == '^' || r == '*'
+	return r == '{' || r == '}' || r == '_' || r == '^' || r == '*'
 }
 
 func isnotspecial(r rune) bool {

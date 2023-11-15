@@ -6,65 +6,101 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg"
 )
 
+// type Message struct {
+// 	Pattern string
+// 	Format  string
+// 	Tags    []pkg.Tag
+// }
+
+// type Messages []Message
+
+// var (
+// 	TekuraFPSidekick = Message{
+// 		Pattern: "You kick {*}.",
+// 		Format:  "You kick %[1]s",
+// 		Tags:    []pkg.Tag{},
+// 	}
+// 	TekuraFPAttacks = Messages{TekuraFPSidekick}
+
+// 	TelepathyFPMindCrush = Message{
+// 		Pattern: "You kick {*}.",
+// 		Format:  "You kick %[1]s",
+// 		Tags:    []pkg.Tag{},
+// 	}
+// 	TelepathyFPAttacks = Messages{TelepathyFPMindCrush}
+
+// 	FPAttacks = (Messages{}).Merge(TekuraFPAttacks, TelepathyFPAttacks)
+
+// 	TekuraSPSidekick = Message{
+// 		Pattern: "{*} kicks you.",
+// 		Format:  "%[1]s kicks you",
+// 		Tags:    []pkg.Tag{},
+// 	}
+
+// 	TekuraTPSidekick = Message{
+// 		Pattern: "{*} kicks {*}.",
+// 		Format:  "%[1]s kicks %[2]s",
+// 		Tags:    []pkg.Tag{},
+// 	}
+// )
+
 var (
 	attack     = []byte("queue addclear eqbal combo sdk ucp ucp")
 	cleareqbal = []byte("clearqueue eqbal")
 )
 
-type BashingMod struct {
-	world *World
+type Bashing struct {
+	world *world
 
 	active    bool
 	attacking bool
 	killed    int
 }
 
-func NewBashingMod(world *World) pkg.Module {
-	return &BashingMod{world: world}
+// Processor enhances bashing-related tasks in Achaea.
+func (bsh *Bashing) Processor() pkg.Processor {
+	return pkg.ChainProcessor(
+		pkg.MatchInput("kill", bsh.onInit),
+
+		pkg.MatchOutput(
+			"You have slain *, retrieving the corpse.",
+			bsh.onSlain,
+		),
+
+		pkg.MatchOutputs([]string{
+			// @todo How can we reuse what we've got in TunnelVision?
+			"You pump out at * with a powerful side kick.",
+			"You launch a powerful uppercut at *.",
+			"A dizzying beam of energy strikes you as your attack rebounds off of *'s shield.",
+		}, bsh.onAttack),
+
+		pkg.MatchOutput(
+			"A ^ pile of sovereigns spills from the corpse.",
+			bsh.onGold,
+		),
+
+		pkg.MatchOutput(
+			"A nearly invisible magical shield forms around {*}.",
+			bsh.onShield,
+		),
+
+		pkg.ProcessorFunc(bsh.postprocess),
+	)
 }
 
-func (mod *BashingMod) PostInoutput() {
-	mod.attacking = false
-	mod.killed = 0
+func (bsh *Bashing) postprocess(inout pkg.Inoutput) pkg.Inoutput {
+	bsh.attacking = false
+	bsh.killed = 0
+
+	return inout
 }
 
-func (mod *BashingMod) Triggers() []pkg.Trigger {
-	return []pkg.Trigger{
-		{
-			Kind:     pkg.Input,
-			Pattern:  []byte("kill"),
-			Callback: mod.onInit,
-		},
-
-		{
-			Kind:     pkg.Output,
-			Pattern:  []byte("You have slain *, retrieving the corpse."),
-			Callback: mod.onSlain,
-		},
-
-		{
-			Kind: pkg.Output,
-			Patterns: [][]byte{
-				// Monk Sidekick.
-				[]byte("You pump out at * with a powerful side kick."),
-				// Monk Uppercut.
-				[]byte("You launch a powerful uppercut at *."),
-				// Shield.
-				[]byte("A dizzying beam of energy strikes you as your attack rebounds off of *'s shield."),
-			},
-			Callback: mod.onAttack,
-		},
-
-		{
-			Kind:     pkg.Output,
-			Pattern:  []byte("A ^ pile of sovereigns spills from the corpse."),
-			Callback: mod.onGold,
-		},
+func (bsh *Bashing) onInit(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	if bsh.world.Target.isPlayer {
+		return inout
 	}
-}
 
-func (mod *BashingMod) onInit(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
-	mod.active = true
+	bsh.active = true
 
 	for _, match := range matches {
 		inout.ReplaceInput(match.Index, attack)
@@ -73,23 +109,23 @@ func (mod *BashingMod) onInit(matches []pkg.Match, inout pkg.Inoutput) pkg.Inout
 	return inout
 }
 
-func (mod *BashingMod) onSlain(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
-	if !mod.active {
+func (bsh *Bashing) onSlain(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	if !bsh.active {
 		return inout
 	}
 
 	for _, match := range matches {
-		mod.killed = int(math.Max(float64(mod.killed), float64(match.Index)))
+		bsh.killed = int(math.Max(float64(bsh.killed), float64(match.Index)))
 	}
 
-	if mod.world.Target.Queue() > 0 {
+	if bsh.world.Target.Queue() > 0 {
 		return inout
 	}
 
-	mod.active = false
+	bsh.active = false
 
 	inout = inout.RemoveInputMatching(attack)
-	mod.attacking = false
+	bsh.attacking = false
 
 	inout = inout.AppendInput(cleareqbal)
 
@@ -99,41 +135,46 @@ func (mod *BashingMod) onSlain(matches []pkg.Match, inout pkg.Inoutput) pkg.Inou
 	return inout
 }
 
-func (mod *BashingMod) onAttack(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+func (bsh *Bashing) onAttack(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
 	// With some attacks we might kill the target and start attacking a new
 	// one within the same paragraph, so here we make sure we stay active
 	// if there are attacks after the kill.
-	if mod.killed > 0 && !mod.active {
+	if bsh.killed > 0 && !bsh.active {
 		for _, match := range matches {
-			if match.Index > mod.killed {
-				mod.active = true
+			if match.Index > bsh.killed {
+				bsh.active = true
 			}
 		}
 
 		inout = inout.RemoveInputMatching(cleareqbal)
 	}
 
-	if !mod.active {
+	if !bsh.active {
 		return inout
 	}
 
-	if mod.attacking {
+	if bsh.attacking {
 		inout = inout.RemoveInputMatching(attack)
 	}
 
 	inout = inout.AppendInput(attack)
-	mod.attacking = true
+	bsh.attacking = true
 
 	return inout
 }
 
-func (mod *BashingMod) onGold(_ []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
-	if mod.killed == 0 {
+func (bsh *Bashing) onGold(_ []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	if bsh.killed == 0 {
 		return inout
 	}
 
-	inout = inout.AppendInput([]byte("get gold"))
-	inout = inout.AppendInput([]byte("put gold in pack"))
+	inout = inout.AppendInput([]byte("get sovereigns"))
+	inout = inout.AppendInput([]byte("put sovereigns in pack"))
 
+	return inout
+}
+
+func (bsh *Bashing) onShield(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+	_ = bsh.world.Target
 	return inout
 }

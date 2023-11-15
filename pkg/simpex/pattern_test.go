@@ -1,6 +1,8 @@
 package simpex_test
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/simpex"
@@ -50,23 +52,23 @@ func TestMatch(t *testing.T) {
 		},
 
 		"character match simple": {
-			pattern: []byte("Lorem ipsum do?or sit amet."),
+			pattern: []byte("Lorem ipsum do_or sit amet."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{},
 		},
 		"character match capture": {
-			pattern: []byte("Lorem ipsum do{?}or sit amet."),
+			pattern: []byte("Lorem ipsum do{_}or sit amet."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{{'l'}},
 		},
 		"character match escaped one": {
-			pattern: []byte("Lorem ipsum do??or sit amet."),
-			text:    []byte("Lorem ipsum do?or sit amet."),
+			pattern: []byte("Lorem ipsum do__or sit amet."),
+			text:    []byte("Lorem ipsum do_or sit amet."),
 			matches: [][]byte{},
 		},
 		"character match escaped two": {
-			pattern: []byte("Lorem ipsum do???or sit amet."),
-			text:    []byte("Lorem ipsum do?lor sit amet."),
+			pattern: []byte("Lorem ipsum do___or sit amet."),
+			text:    []byte("Lorem ipsum do_lor sit amet."),
 			matches: [][]byte{},
 		},
 
@@ -183,17 +185,17 @@ func TestMatch(t *testing.T) {
 		},
 
 		"combination match simple": {
-			pattern: []byte("Lorem ^ do?or *."),
+			pattern: []byte("Lorem ^ do_or *."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{},
 		},
 		"combination match escaped": {
-			pattern: []byte("Lorem ^^ do??or **."),
-			text:    []byte("Lorem ^ do?or *."),
+			pattern: []byte("Lorem ^^ do__or **."),
+			text:    []byte("Lorem ^ do_or *."),
 			matches: [][]byte{},
 		},
 		"combination match capture": {
-			pattern: []byte("{Lorem} {^} do{?}or {*}."),
+			pattern: []byte("{Lorem} {^} do{_}or {*}."),
 			text:    []byte("Lorem ipsum dolor sit amet."),
 			matches: [][]byte{
 				[]byte("Lorem"),
@@ -203,12 +205,12 @@ func TestMatch(t *testing.T) {
 			},
 		},
 		"combination match capture escaped": {
-			pattern: []byte("{{{Lorem}}} {^^} do{??}or {**}."),
-			text:    []byte("{Lorem} ^ do?or *."),
+			pattern: []byte("{{{Lorem}}} {^^} do{__}or {**}."),
+			text:    []byte("{Lorem} ^ do_or *."),
 			matches: [][]byte{
 				[]byte("{Lorem}"),
 				[]byte("^"),
-				{'?'},
+				{'_'},
 				[]byte("*"),
 			},
 		},
@@ -250,39 +252,56 @@ func TestMatch(t *testing.T) {
 }
 
 var (
-	benchresult [][]byte
-	benchmarks  = map[string][][]byte{
+	benchresult1 [][]byte
+	benchresult2 [][][]byte
+	benchmarks   = map[string][][]byte{
 		"exact match": {
 			[]byte("Lorem ipsum dolor sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("^Lorem ipsum dolor sit amet.$"),
 		},
 		"character match": {
-			[]byte("Lorem ipsum do?or sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("Lorem ipsum do_or sit amet."),
+			[]byte("^Lorem ipsum do.or sit amet.$"),
 		},
 		"word match": {
-			[]byte("Lorem ^ dolor sit amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("Lorem ^ dolor sit amet."),
+			[]byte("^Lorem [a-zA-Z0-9]+ dolor sit amet.$"),
 		},
 		"phrase match": {
-			[]byte("Lorem ipsum dolor * amet."),
 			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("Lorem ipsum dolor * amet."),
+			[]byte("^Lorem ipsum dolor .+ amet.$"),
 		},
 		"all specials": {
-			[]byte("{Lorem} {^} do{?}or {*}."),
 			[]byte("Lorem ipsum dolor sit amet."),
+			[]byte("{Lorem} {^} do{_}or {*}."),
+			[]byte("^(Lorem) ([a-zA-Z0-9]+) do(.)or (.+).$"),
 		},
 	}
 )
 
 func BenchmarkMatch(b *testing.B) {
-	var r [][]byte
+	var r1 [][]byte
+	var r2 [][][]byte
+
 	for name, benchmark := range benchmarks {
-		b.Run(name, func(b *testing.B) {
+		b.Run(fmt.Sprintf("%s simpex", name), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				r = simpex.Match(benchmark[0], benchmark[1])
+				r1 = simpex.Match(benchmark[1], benchmark[0])
+			}
+		})
+
+		b.Run(fmt.Sprintf("%s regexp", name), func(b *testing.B) {
+			pattern, _ := regexp.Compile(string(benchmark[2]))
+			for i := 0; i < b.N; i++ {
+				r2 = pattern.FindAllSubmatch(benchmark[0], -1)
 			}
 		})
 	}
-	benchresult = r
+
+	benchresult1 = r1
+	benchresult2 = r2
 }

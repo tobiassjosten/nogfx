@@ -1,110 +1,78 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	_ "embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/tobiassjosten/nogfx/pkg"
-	"github.com/tobiassjosten/nogfx/pkg/mock"
+	"github.com/tobiassjosten/nogfx/pkg/process"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
-	"github.com/tobiassjosten/nogfx/pkg/world"
+	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/urfave/cli/v2"
+	"golang.org/x/net/idna"
 )
-
-const (
-	defaultPort = 23
-)
-
-//go:embed help.tmpl
-var appHelpTemplate string
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	if len(os.Args) < 2 {
+		log.Fatal("usage: nogfx example.com:23")
+	}
 
-	fileFlags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
-	f, err := os.OpenFile("nogfx.log", fileFlags, 0644)
+	f, err := os.OpenFile(
+		filepath.Join(pkg.Directory, "errors.log"),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 	log.SetOutput(f)
 
-	cli.AppHelpTemplate = appHelpTemplate
-
-	app := &cli.App{
-		Name:      "nogfx",
-		Usage:     "because the book is always better",
-		ArgsUsage: "<hostname>",
-		HideHelp:  true,
-
-		Authors: []*cli.Author{
-			{
-				Name:  "Tobias Sjösten",
-				Email: "tobias@nogfx.org",
-			},
-		},
-
-		Action: func(c *cli.Context) error {
-			if c.Args().Len() == 0 {
-				return cli.ShowAppHelp(c)
-			}
-
-			address, err := address(c.Args().Get(0))
-			if err != nil {
-				return err
-			}
-
-			return run(address)
-		},
+	address, err := parseAddress(os.Args[1])
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if err := app.Run(os.Args); err != nil {
+	if err := run(address); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func address(host string) (string, error) {
-	if strings.Contains(host, ":") {
-		parts := strings.Split(host, ":")
-		// @todo Add support for IPv6 addresses.
-		if len(parts) != 2 || len(parts[0]) == 0 || len(parts[1]) == 0 {
-			return "", fmt.Errorf("invalid address '%s'", host)
-		}
-
-		if _, err := strconv.ParseFloat(parts[1], 64); err != nil {
-			return "", fmt.Errorf("invalid port '%s'", parts[1])
-		}
-
-		return host, nil
+func parseAddress(address string) (string, error) {
+	if !strings.Contains(address, ":") {
+		address += ":23"
 	}
 
-	if host == "" {
-		host = "example.com"
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return "", fmt.Errorf("invalid server address %q: %w", address, err)
 	}
 
-	return fmt.Sprintf("%s:%d", host, defaultPort), nil
+	if _, err := strconv.ParseFloat(port, 64); err != nil {
+		return "", fmt.Errorf("invalid server port %q: %w", port, err)
+	}
+
+	host, err = idna.Lookup.ToASCII(host)
+	if err != nil {
+		return "", fmt.Errorf("invalid server host: %w", err)
+	}
+
+	return net.JoinHostPort(host, port), nil
 }
 
 func run(address string) error {
 	ctx := context.Background()
 
-	ctx, err := ctxDirs(ctx)
-	if err != nil {
-		return err
-	}
-
-	client, err := client(address)
+	client, err := telnet.Dial(address)
 	if err != nil {
 		return err
 	}
@@ -114,31 +82,38 @@ func run(address string) error {
 		return err
 	}
 
-	engine := world.NewEngine(client, ui, address)
-	return engine.Run(ctx)
-}
-
-func client(address string) (pkg.Client, error) {
-	if address == "example.com:23" {
-		return &mock.ClientMock{
-			ScannerFunc: func() *bufio.Scanner {
-				return bufio.NewScanner(strings.NewReader("asdf"))
-			},
-			CommandsFunc: func() <-chan []byte {
-				return make(chan []byte)
-			},
-			WriteFunc: func(data []byte) (int, error) {
-				return len(data), nil
-			},
-		}, nil
-	}
-
-	connection, err := net.Dial("tcp", address)
+	logProcessor, err := process.LogProcessor(
+		filepath.Join(pkg.Directory, "logs"),
+		fmt.Sprintf(
+			"%s-%s.log",
+			strings.Split(address, ":")[0],
+			time.Now().Format("20060102-150405"),
+		),
+	)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to create log processor: %w", err)
 	}
 
-	return telnet.NewClient(connection), nil
+	engine := &pkg.Engine{
+		Client: client,
+		UI:     ui,
+		Processor: process.ChainProcessor(
+			process.RepeatInputProcessor(),
+			logProcessor,
+		),
+	}
+
+	switch address {
+	case "achaea.com:23", "50.31.100.8:23":
+		processor, err := achaea.Processor(client, ui)
+		if err != nil {
+			return fmt.Errorf("failed to create Acahea processor: %w", err)
+		}
+
+		engine.Processor = processor
+	}
+
+	return engine.Run(ctx)
 }
 
 func ui() (*tui.TUI, error) {
@@ -148,22 +123,4 @@ func ui() (*tui.TUI, error) {
 	}
 
 	return tui.NewTUI(screen), nil
-}
-
-func ctxDirs(ctx context.Context) (context.Context, error) {
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed acquiring home directory: %w", err)
-	}
-
-	dir += "/nogfx/logs"
-
-	err = os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		return nil, fmt.Errorf("failed creating gamelog directory: %w", err)
-	}
-
-	ctx = context.WithValue(ctx, pkg.CtxLogdir, dir)
-
-	return ctx, nil
 }

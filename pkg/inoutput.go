@@ -1,7 +1,12 @@
 package pkg
 
+/*
+
 import (
 	"bytes"
+
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 // IOKind signifies the direction of the IO, whether it's player input or
@@ -17,24 +22,62 @@ const (
 // Inoutput collects one paragraph of output lines and one list of input
 // commands, for processing and dispatching to UI/client.
 type Inoutput struct {
+	Tags   Tags
 	Input  Exput
 	Output Exput
 }
 
 // NewInoutput creates a new Inoutput.
 func NewInoutput(input [][]byte, output [][]byte) (inout Inoutput) {
+	inout.Tags = Tags{}
+
 	for _, data := range input {
 		inout.Input = inout.Input.Append(data)
 	}
+
 	for _, data := range output {
 		inout.Output = inout.Output.Append(data)
 	}
+
 	return
+}
+
+// Commands returns all telnet commnds from the Output.
+func (inout Inoutput) Commands() (commands [][]byte) {
+	for _, line := range inout.Output {
+		if line.Text[0] != telnet.IAC {
+			continue
+		}
+		commands = append(commands, line.Text)
+	}
+
+	return
+}
+
+func (inout Inoutput) GMCPs() (gmcps [][]byte) {
+	for _, cmd := range inout.Commands() {
+		if data := gmcp.Unwrap(cmd); data != nil {
+			gmcps = append(gmcps, data)
+		}
+	}
+
+	return
+}
+
+func (inout Inoutput) AddTag(tag Tag, values ...any) Inoutput {
+	inout.Tags = inout.Tags.Add(tag, values)
+	return inout
 }
 
 // AppendInput is a shortcut for Inoutput.Input.Append().
 func (inout Inoutput) AppendInput(data []byte) Inoutput {
 	inout.Input = inout.Input.Append(data)
+	return inout
+}
+
+// InsertInput is a shortcut for Inoutput.Input.Insert().
+func (inout Inoutput) InsertInput(i int, data []byte) Inoutput {
+	inout.Input = inout.Input.Insert(i, data)
 	return inout
 }
 
@@ -44,21 +87,9 @@ func (inout Inoutput) RemoveInputMatching(data []byte) Inoutput {
 	return inout
 }
 
-// AddBeforeInput is a shortcut for Inoutput.Input.AddBefore().
-func (inout Inoutput) AddBeforeInput(i int, data []byte) Inoutput {
-	inout.Input = inout.Input.AddBefore(i, data)
-	return inout
-}
-
-// AddAfterInput is a shortcut for Inoutput.Input.AddAfter().
-func (inout Inoutput) AddAfterInput(i int, data []byte) Inoutput {
-	inout.Input = inout.Input.AddAfter(i, data)
-	return inout
-}
-
-// OmitInput is a shortcut for Inoutput.Input.Omit().
-func (inout Inoutput) OmitInput(i int) Inoutput {
-	inout.Input = inout.Input.Omit(i)
+// RemoveInput is a shortcut for Inoutput.Input.Remove().
+func (inout Inoutput) RemoveInput(i int) Inoutput {
+	inout.Input = inout.Input.Remove(i)
 	return inout
 }
 
@@ -84,33 +115,33 @@ func (inout Inoutput) AppendOutput(data []byte) Inoutput {
 	return inout
 }
 
+// InsertOutput is a shortcut for Inoutput.Output.Insert().
+func (inout Inoutput) InsertOutput(i int, data []byte) Inoutput {
+	inout.Output = inout.Output.Insert(i, data)
+	return inout
+}
+
 // RemoveOutputMatching is a shortcut for Inoutput.Output.RemoveMatching().
 func (inout Inoutput) RemoveOutputMatching(data []byte) Inoutput {
 	inout.Output = inout.Output.RemoveMatching(data)
 	return inout
 }
 
-// AddBeforeOutput is a shortcut for Inoutput.Output.AddBefore().
-func (inout Inoutput) AddBeforeOutput(i int, data []byte) Inoutput {
-	inout.Output = inout.Output.AddBefore(i, data)
-	return inout
-}
-
-// AddAfterOutput is a shortcut for Inoutput.Output.AddAfter().
-func (inout Inoutput) AddAfterOutput(i int, data []byte) Inoutput {
-	inout.Output = inout.Output.AddAfter(i, data)
-	return inout
-}
-
-// OmitOutput is a shortcut for Inoutput.Output.Omit().
-func (inout Inoutput) OmitOutput(i int) Inoutput {
-	inout.Output = inout.Output.Omit(i)
+// RemoveOutput is a shortcut for Inoutput.Output.Remove().
+func (inout Inoutput) RemoveOutput(i int) Inoutput {
+	inout.Output = inout.Output.Remove(i)
 	return inout
 }
 
 // ReplaceOutput is a shortcut for Inoutput.Output.Replace().
 func (inout Inoutput) ReplaceOutput(i int, data []byte) Inoutput {
 	inout.Output = inout.Output.Replace(i, data)
+	return inout
+}
+
+// AddOutputTag is a shortcut for Inoutput.Output.AddOutputTag().
+func (inout Inoutput) AddOutputTag(i int, tag Tag, values ...any) Inoutput {
+	inout.Output = inout.Output.AddTag(i, tag, values...)
 	return inout
 }
 
@@ -161,7 +192,7 @@ type Line struct {
 	Before []Text
 	After  []Text
 
-	omitted bool
+	Tags Tags
 }
 
 // Exput represents both Input and Output.
@@ -169,7 +200,7 @@ type Exput []Line
 
 // NewExput creates a new Exput.
 func NewExput(data []byte) Exput {
-	return Exput{Line{Text: data}}
+	return Exput{Line{Text: data, Tags: Tags{}}}
 }
 
 // Inoutput creates an Inoutput based on the Exput data.
@@ -183,9 +214,18 @@ func (ex Exput) Inoutput(kind IOKind) Inoutput {
 	return Inoutput{}
 }
 
-// Add appends a new Line to the Exput
+// Append appends a new Line to the Exput
 func (ex Exput) Append(data []byte) Exput {
 	return append(ex, Line{Text: data})
+}
+
+// Insert creates a Line from the given data and inserts it at the designated
+// position in the Exput, shifting the existing Line and all following one
+// position back.
+func (ex Exput) Insert(i int, data []byte) Exput {
+	newex := append(Exput{}, ex...)
+	newex = append(append(newex[:i], NewExput(data)...), newex[i:]...)
+	return newex
 }
 
 // RemoveMatching removes lines matching the given data.
@@ -200,29 +240,9 @@ func (ex Exput) RemoveMatching(data []byte) Exput {
 	return ex
 }
 
-// AddBefore appends a new Line before a given other Line. This is useful for
-// data that belongs together, as omitting one line also omits all lines added
-// before and after it (but not independently of it, with Append).
-func (ex Exput) AddBefore(i int, data []byte) Exput {
-	newex := append(Exput{}, ex...)
-	newex[i].Before = append(newex[i].Before, data)
-	return newex
-}
-
-// AddAfter appends a new Line after a given other Line. This is useful for
-// data that belongs together, as omitting one line also omits all lines added
-// before and after it (but not independently of it, with Append).
-func (ex Exput) AddAfter(i int, data []byte) Exput {
-	newex := append(Exput{}, ex...)
-	newex[i].After = append(newex[i].After, data)
-	return newex
-}
-
-// Omit flags a Line to be omitted from the Bytes() summary.
-func (ex Exput) Omit(i int) Exput {
-	newex := append(Exput{}, ex...)
-	newex[i].omitted = true
-	return newex
+// Remove deletes a given Line.
+func (ex Exput) Remove(i int) Exput {
+	return append(ex[:i], ex[i+1:]...)
 }
 
 // Replace changes the visible parts of a Line while retaining ANSI colors.
@@ -252,12 +272,16 @@ func (ex Exput) Split(s []byte) Exput {
 	return ex
 }
 
+// AddTag appends the given tag to the Exput's slice of tags.
+func (ex Exput) AddTag(i int, tag Tag, values ...any) Exput {
+	newex := append(Exput{}, ex...)
+	newex[i].Tags = newex[i].Tags.Add(tag, values...)
+	return newex
+}
+
 // Bytes assembles the Exput into a slice of byte slices.
 func (ex Exput) Bytes() (bs [][]byte) {
 	for _, ln := range ex {
-		if ln.omitted {
-			continue
-		}
 		for _, text := range ln.Before {
 			bs = append(bs, text)
 		}
@@ -268,3 +292,5 @@ func (ex Exput) Bytes() (bs [][]byte) {
 	}
 	return
 }
+
+*/

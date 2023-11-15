@@ -9,6 +9,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestInoutput(t *testing.T) {
+	inout := pkg.NewInoutput(
+		[][]byte{[]byte("qwer")},
+		[][]byte{[]byte("asdf")},
+	)
+
+	{
+		inoutreplace := inout.ReplaceInput(0, []byte("zxcv"))
+		assert.Equal(t, pkg.Inoutput{
+			Input: pkg.Exput{
+				pkg.Line{Text: []byte("zxcv")},
+			},
+			Output: pkg.Exput{
+				pkg.Line{Text: []byte("asdf")},
+			},
+		}, inoutreplace)
+		require.NotEqual(t, inout, inoutreplace, "operation shouldn't mutate")
+	}
+
+	{
+		inoutreplace := inout.ReplaceOutput(0, []byte("zxcv"))
+		assert.Equal(t, pkg.Inoutput{
+			Input: pkg.Exput{
+				pkg.Line{Text: []byte("qwer")},
+			},
+			Output: pkg.Exput{
+				pkg.Line{Text: []byte("zxcv")},
+			},
+		}, inoutreplace)
+		require.NotEqual(t, inout, inoutreplace, "operation shouldn't mutate")
+	}
+}
+
 func TestExput(t *testing.T) {
 	exput := pkg.NewExput([]byte("asdf"))
 
@@ -45,7 +78,7 @@ func TestExput(t *testing.T) {
 
 	{
 		var bytes [][]byte
-		assert.Equal(t, bytes, exput.Omit(0).Bytes())
+		assert.Equal(t, bytes, exput.Remove(0).Bytes())
 	}
 
 	{
@@ -109,7 +142,7 @@ func TestExput(t *testing.T) {
 			Before: []pkg.Text{pkg.Text([]byte("er"))},
 			After:  []pkg.Text{pkg.Text([]byte("cv"))},
 		},
-	}).Omit(1).Bytes())
+	}).Remove(1).Bytes())
 }
 
 func TestClean(t *testing.T) {

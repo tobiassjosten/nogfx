@@ -75,12 +75,26 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 	}
 	style := styles[0]
 
+	custom := false
+	cstyle := style
+
 	escaped := false
 	parsing := false
 	ansi := []rune{}
 
 	for _, r := range string(bs) {
-		if r == '\033' {
+		// @todo Explain this "custom styles" work, as simple internal
+		// formatting.
+		if r == '\x1a' {
+			if !custom {
+				custom = true
+				cstyle = style
+			}
+			escaped = true
+			continue
+		}
+
+		if r == '\x1b' {
 			escaped = true
 			continue
 		}
@@ -88,6 +102,9 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 		if escaped {
 			if r == '[' {
 				parsing = true
+			} else if custom && r == ']' {
+				custom = false
+				style = cstyle
 			} else {
 				row = row.append(NewCell('^', style), NewCell(r, style))
 			}

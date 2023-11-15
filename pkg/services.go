@@ -12,8 +12,7 @@ import (
 type Client interface {
 	io.ReadWriter
 	Send([]byte)
-	Commands() <-chan []byte
-	Scanner() *bufio.Scanner
+	SplitFunc() bufio.SplitFunc
 
 	// Telnet utilities.
 	Will(byte) error
@@ -37,10 +36,4 @@ type UI interface {
 	SetCharacter(Character)
 	SetRoom(*navigation.Room)
 	SetTarget(*Target)
-}
-
-// World represents a game and hooks into all their various specific logic.
-type World interface {
-	OnInoutput(Inoutput) Inoutput
-	OnCommand([]byte) Inoutput
 }

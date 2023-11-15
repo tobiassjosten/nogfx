@@ -2,109 +2,112 @@ package telnet
 
 import (
 	"bytes"
+	"fmt"
+
+	"golang.org/x/exp/slices"
 )
 
-// Convenience constants to make telnet commands more readable.
-const (
-	ECHO  byte = 1
-	TTYPE byte = 24
-	MCCP2 byte = 86
-	ATCP  byte = 200
-	GMCP  byte = 201
-	SE    byte = 240
-	GA    byte = 249
-	SB    byte = 250
-	WILL  byte = 251
-	WONT  byte = 252
-	DO    byte = 253
-	DONT  byte = 254
-	IAC   byte = 255
-)
+// IsCommand determines whether the given sequence is a valid Telnet command.
+func IsCommand(cmd []byte) bool {
+	l := len(cmd)
 
-var (
-	acceptWill = map[byte]struct{}{
-		ECHO: {},
-		GMCP: {},
-	}
-)
-
-// Will sends the IAC WILL <CMD> sequence.
-func (client *Client) Will(command byte) error {
-	_, err := client.data.Write([]byte{IAC, WILL, command})
-	return err
-}
-
-// Wont sends the IAC WONT <CMD> sequence.
-func (client *Client) Wont(command byte) error {
-	_, err := client.data.Write([]byte{IAC, WONT, command})
-	return err
-}
-
-// Do sends the IAC DO <CMD> sequence.
-func (client *Client) Do(command byte) error {
-	_, err := client.data.Write([]byte{IAC, DO, command})
-	return err
-}
-
-// Dont sends the IAC DONT <CMD> sequence.
-func (client *Client) Dont(command byte) error {
-	_, err := client.data.Write([]byte{IAC, DONT, command})
-	return err
-}
-
-// Subneg sends the IAC SB <CMD> 0/1 <DATA> IAC SE sequence.
-func (client *Client) Subneg(b byte, value []byte) error {
-	var v byte
-	if len(value) > 0 {
-		v = 1
+	if l < 2 {
+		return false
 	}
 
-	_, err := client.data.Write(append(append(
-		[]byte{IAC, SB, b, v},
-		value...,
-	), IAC, SE))
-	return err
-}
-
-func (client *Client) processCommand(command []byte) (bool, [][]byte) {
-	var responses [][]byte
-
-	if len(command) < 3 {
-		return false, nil
+	if bytes.Equal(cmd, []byte{IAC, IAC}) {
+		return true
 	}
 
-	switch command[1] {
-	case WILL:
-		if _, ok := acceptWill[command[2]]; ok {
-			responses = append(responses, []byte{IAC, DO, command[2]})
-			return true, responses
+	if bytes.Equal(cmd, []byte{IAC, GA}) {
+		return true
+	}
+
+	if l == 3 && (cmd[1] == Will || cmd[1] == Wont || cmd[1] == Do || cmd[1] == Dont) {
+		return true
+	}
+
+	if bytes.Equal(cmd[:2], []byte{IAC, SB}) && bytes.Equal(cmd[l-2:], []byte{IAC, SE}) {
+		return true
+	}
+
+	return false
+}
+
+// @todo Implement support for RFC 885. Achaea sends IAC WILL 25[19 in hex] and
+// obviously wants to negotiate something. What will they send if we accept
+// that? Should we respond with the same IAC WILL 25?
+
+// @todo Implement support for MCCP2.
+
+func (nvt *NVT) negotiate(cmd []byte) error {
+	switch cmd[1] {
+	case Do:
+		if nvt.options[ourside][cmd[2]].On() {
+			return nil
 		}
 
-		responses = append(responses, []byte{IAC, DONT, command[2]})
-		return true, responses
+		if !slices.Contains(nvt.ourCoulds, cmd[2]) {
+			_, err := nvt.Write([]byte{IAC, Wont, cmd[2]})
+			if err != nil {
+				return fmt.Errorf("failed to decline DO %d: %w", cmd[2], err)
+			}
 
-	case WONT:
-		responses = append(responses, []byte{IAC, DONT, command[2]})
-		return true, responses
-
-	case DO:
-		responses = append(responses, []byte{IAC, WONT, command[2]})
-		return true, responses
-
-	case DONT:
-		responses = append(responses, []byte{IAC, WONT, command[2]})
-		return true, responses
-	}
-
-	if len(command) < 5 {
-		return false, nil
-	}
-
-	if bytes.Equal(command[:2], []byte{IAC, SB}) {
-		if bytes.Equal(command[len(command)-2:], []byte{IAC, SE}) {
-			return true, nil
+			return nil
 		}
+
+		_, err := nvt.Write([]byte{IAC, Will, cmd[2]})
+		if err != nil {
+			return fmt.Errorf("failed to accept DO %d: %w", cmd[2], err)
+		}
+
+		nvt.options[ourside][cmd[2]] = StateEnabled
+
+	case Will:
+		if nvt.options[theirside][cmd[2]].On() {
+			return nil
+		}
+
+		if !slices.Contains(nvt.theirCoulds, cmd[2]) {
+			_, err := nvt.Write([]byte{IAC, Dont, cmd[2]})
+			if err != nil {
+				return fmt.Errorf("failed to decline WILL %d: %w", cmd[2], err)
+			}
+
+			return nil
+		}
+
+		_, err := nvt.Write([]byte{IAC, Do, cmd[2]})
+		if err != nil {
+			return fmt.Errorf("failed to accept Will %d: %w", cmd[2], err)
+		}
+
+		nvt.options[theirside][cmd[2]] = StateEnabled
+
+	case Dont:
+		if nvt.options[ourside][cmd[2]].Off() {
+			return nil
+		}
+
+		_, err := nvt.Write([]byte{IAC, Wont, cmd[2]})
+		if err != nil {
+			return fmt.Errorf("failed to accept DONT %d: %w", cmd[2], err)
+		}
+
+		nvt.options[ourside][cmd[2]] = StateDisabled
+
+	case Wont:
+		if nvt.options[theirside][cmd[2]].Off() {
+			return nil
+		}
+
+		_, err := nvt.Write([]byte{IAC, Dont, cmd[2]})
+		if err != nil {
+			return fmt.Errorf("failed to accept WONT %d: %w", cmd[2], err)
+		}
+
+		nvt.options[theirside][cmd[2]] = StateDisabled
 	}
 
-	return false, nil
+	return nil
 }

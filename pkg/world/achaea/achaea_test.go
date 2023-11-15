@@ -54,7 +54,7 @@ func TestInputOutput(t *testing.T) {
 					"\033[35masdf",
 					"123h 234m\0371",
 				}).
-					OmitOutput(0),
+					RemoveOutput(0),
 			},
 		},
 

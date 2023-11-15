@@ -67,7 +67,7 @@ func Parse(data []byte) (Message, error) {
 	parts := strings.SplitN(string(data), " ", 2)
 
 	if _, ok := messages[parts[0]]; !ok {
-		return nil, fmt.Errorf("unknown message '%s'", parts[0])
+		return nil, nil
 	}
 	msg := messages[parts[0]]()
 

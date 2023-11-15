@@ -78,6 +78,7 @@ func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
 
 	// @todo Consider which environments that are actually important for
 	// the map to visualise and color the brackets accordingly.
+	// WATER! Cave för de med Remedies/Transmutation?
 
 	if !room.Known {
 		mmap.rows[y][x-1].Style = mmap.rows[y][x-1].Style.Foreground(tcell.Color237)

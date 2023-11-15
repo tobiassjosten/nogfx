@@ -2,207 +2,315 @@ package telnet_test
 
 import (
 	"bytes"
-	"fmt"
-	"io/ioutil"
-	"strings"
+	"io"
 	"testing"
 
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestWillWontDoDont(t *testing.T) {
-	reader := bytes.NewReader([]byte{})
-	writer := bytes.NewBuffer([]byte{})
-	stream := &mockStream{reader, writer, nil}
-
-	client := telnet.NewClient(stream)
-
-	tcs := []struct {
-		verb byte
-		noun byte
-		f    func(byte) error
+func TestIsCommand(t *testing.T) {
+	tcs := map[string]struct {
+		data    []byte
+		verdict bool
 	}{
-		{
-			verb: telnet.WILL,
-			noun: telnet.ECHO,
-			f:    client.Will,
+		"empty": {
+			data:    []byte{},
+			verdict: false,
 		},
-		{
-			verb: telnet.WONT,
-			noun: telnet.ECHO,
-			f:    client.Wont,
+
+		"a": {
+			data:    []byte("a"),
+			verdict: false,
 		},
-		{
-			verb: telnet.DO,
-			noun: telnet.ECHO,
-			f:    client.Do,
+
+		"as": {
+			data:    []byte("as"),
+			verdict: false,
 		},
-		{
-			verb: telnet.DONT,
-			noun: telnet.ECHO,
-			f:    client.Dont,
+
+		"asd": {
+			data:    []byte("asd"),
+			verdict: false,
+		},
+
+		"asdf": {
+			data:    []byte("asdf"),
+			verdict: false,
+		},
+
+		"iac iac": {
+			data:    []byte{telnet.IAC, telnet.IAC},
+			verdict: true,
+		},
+
+		"iac ga": {
+			data:    []byte{telnet.IAC, telnet.GA},
+			verdict: true,
+		},
+
+		"iac will echo": {
+			data:    []byte{telnet.IAC, telnet.Will, telnet.Echo},
+			verdict: true,
+		},
+
+		"iac will a": {
+			data:    []byte{telnet.IAC, telnet.Will, 'a'},
+			verdict: true,
+		},
+
+		"iac will echo a": {
+			data:    []byte{telnet.IAC, telnet.Will, telnet.Echo, 'a'},
+			verdict: false,
+		},
+
+		"iac wont echo": {
+			data:    []byte{telnet.IAC, telnet.Wont, telnet.Echo},
+			verdict: true,
+		},
+
+		"iac wont a": {
+			data:    []byte{telnet.IAC, telnet.Wont, 'a'},
+			verdict: true,
+		},
+
+		"iac wont echo a": {
+			data:    []byte{telnet.IAC, telnet.Wont, telnet.Echo, 'a'},
+			verdict: false,
+		},
+
+		"iac do echo": {
+			data:    []byte{telnet.IAC, telnet.Do, telnet.Echo},
+			verdict: true,
+		},
+
+		"iac do a": {
+			data:    []byte{telnet.IAC, telnet.Do, 'a'},
+			verdict: true,
+		},
+
+		"iac do echo a": {
+			data:    []byte{telnet.IAC, telnet.Do, telnet.Echo, 'a'},
+			verdict: false,
+		},
+
+		"iac dont echo": {
+			data:    []byte{telnet.IAC, telnet.Dont, telnet.Echo},
+			verdict: true,
+		},
+
+		"iac dont a": {
+			data:    []byte{telnet.IAC, telnet.Dont, 'a'},
+			verdict: true,
+		},
+
+		"iac dont echo a": {
+			data:    []byte{telnet.IAC, telnet.Dont, telnet.Echo, 'a'},
+			verdict: false,
+		},
+
+		"iac 239 echo": {
+			data:    []byte{telnet.IAC, 239, telnet.Echo},
+			verdict: false,
+		},
+
+		"iac 239 a": {
+			data:    []byte{telnet.IAC, 239, 'a'},
+			verdict: false,
+		},
+
+		"sub-negotiation empty": {
+			data:    []byte{telnet.IAC, telnet.SB, telnet.IAC, telnet.SE},
+			verdict: true,
+		},
+
+		"sub-negotiation complete": {
+			data:    []byte{telnet.IAC, telnet.SB, 'a', telnet.IAC, telnet.SE},
+			verdict: true,
+		},
+
+		"sub-negotiation unterminated": {
+			data:    []byte{telnet.IAC, telnet.SB, 'a', telnet.IAC},
+			verdict: false,
 		},
 	}
 
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
-			writer.Reset()
-			_ = tc.f(tc.noun)
-			assert.Equal([]byte{telnet.IAC, tc.verb, tc.noun}, writer.Bytes())
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.verdict, telnet.IsCommand(tc.data))
 		})
 	}
 }
 
-func TestSubneg(t *testing.T) {
-	tcs := []struct {
-		b     byte
-		value []byte
-		out   []byte
+func TestNegotiate(t *testing.T) {
+	tcs := map[string]struct {
+		serverOutput []byte
+		clientInput  []byte
+		writeErr     func([]byte) error
 	}{
-		{
-			b:     telnet.TTYPE,
-			value: []byte{},
-			out: []byte{
-				telnet.IAC, telnet.SB, telnet.TTYPE, 0,
-				telnet.IAC, telnet.SE,
+		"enable our echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, telnet.Echo},
+			clientInput:  []byte{telnet.IAC, telnet.Will, telnet.Echo},
+		},
+
+		"enable-fail our echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, telnet.Echo},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable our echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Dont, telnet.Echo},
+			clientInput:  nil,
+		},
+
+		"enable disable our echo": {
+			serverOutput: []byte{
+				telnet.IAC, telnet.Do, telnet.Echo,
+				telnet.IAC, telnet.Dont, telnet.Echo,
+			},
+			clientInput: []byte{
+				telnet.IAC, telnet.Will, telnet.Echo,
+				telnet.IAC, telnet.Wont, telnet.Echo,
 			},
 		},
-		{
-			b:     telnet.TTYPE,
-			value: []byte{'x', 'y'},
-			out: []byte{
-				telnet.IAC, telnet.SB, telnet.TTYPE, 1, 'x',
-				'y', telnet.IAC, telnet.SE,
+
+		"enable disable-fail our echo": {
+			serverOutput: []byte{
+				telnet.IAC, telnet.Do, telnet.Echo,
+				telnet.IAC, telnet.Dont, telnet.Echo,
 			},
-		},
-	}
-
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
-			reader := bytes.NewReader([]byte{})
-			writer := bytes.NewBuffer([]byte{})
-			stream := &mockStream{reader, writer, nil}
-
-			client := telnet.NewClient(stream)
-
-			_ = client.Subneg(tc.b, tc.value)
-			assert.Equal(tc.out, writer.Bytes())
-		})
-	}
-}
-
-func TestNegotiation(t *testing.T) {
-	tcs := []struct {
-		expectDo   byte
-		expectDont byte
-		expectWill byte
-		expectWont byte
-		serverDo   byte
-		serverDont byte
-		serverWill byte
-		serverWont byte
-		err        error
-	}{
-		{
-			serverWill: telnet.ECHO,
-			expectDo:   telnet.ECHO,
-		},
-		{
-			serverWill: telnet.GMCP,
-			expectDo:   telnet.GMCP,
-		},
-		{
-			serverWill: telnet.ATCP,
-			expectDont: telnet.ATCP,
-		},
-		{
-			serverWill: telnet.MCCP2,
-			expectDont: telnet.MCCP2,
-		},
-		{
-			serverWill: 123,
-			expectDont: 123,
-		},
-		{
-			serverWont: telnet.ECHO,
-			expectDont: telnet.ECHO,
-		},
-		{
-			serverDo:   telnet.TTYPE,
-			expectWont: telnet.TTYPE,
-		},
-		{
-			serverDo:   124,
-			expectWont: 124,
-		},
-		{
-			serverDont: telnet.TTYPE,
-			expectWont: telnet.TTYPE,
-		},
-		{
-			serverDont: 124,
-			expectWont: 124,
-		},
-	}
-
-	for i, tc := range tcs {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			assert := assert.New(t)
-
-			output := []byte{}
-			if tc.serverWill > 0 {
-				output = append(output, telnet.IAC, telnet.WILL, tc.serverWill)
-			}
-			if tc.serverWont > 0 {
-				output = append(output, telnet.IAC, telnet.WONT, tc.serverWont)
-			}
-			if tc.serverDo > 0 {
-				output = append(output, telnet.IAC, telnet.DO, tc.serverDo)
-			}
-			if tc.serverDont > 0 {
-				output = append(output, telnet.IAC, telnet.DONT, tc.serverDont)
-			}
-
-			input := []byte{}
-			if tc.expectWill > 0 {
-				input = append(input, telnet.IAC, telnet.WILL, tc.expectWill)
-			}
-			if tc.expectWont > 0 {
-				input = append(input, telnet.IAC, telnet.WONT, tc.expectWont)
-			}
-			if tc.expectDo > 0 {
-				input = append(input, telnet.IAC, telnet.DO, tc.expectDo)
-			}
-			if tc.expectDont > 0 {
-				input = append(input, telnet.IAC, telnet.DONT, tc.expectDont)
-			}
-
-			builder := &strings.Builder{}
-			stream := &mockStream{bytes.NewReader(output), builder, nil}
-
-			client := telnet.NewClient(stream)
-
-			var commands [][]byte
-			go func() {
-				for command := range client.Commands() {
-					commands = append(commands, command)
+			clientInput: []byte{
+				telnet.IAC, telnet.Will, telnet.Echo,
+			},
+			writeErr: func(cmd []byte) error {
+				if bytes.Equal(cmd, []byte{telnet.IAC, telnet.Wont, telnet.Echo}) {
+					return errMock
 				}
-			}()
+				return nil
+			},
+		},
 
-			_, err := ioutil.ReadAll(client)
+		"enable their echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, telnet.Echo},
+			clientInput:  []byte{telnet.IAC, telnet.Dont, telnet.Echo},
+		},
 
-			if tc.err != nil {
-				assert.Equal(tc.err, err)
-				return
+		"enable-fail their echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, telnet.Echo},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable their echo": {
+			serverOutput: []byte{telnet.IAC, telnet.Wont, telnet.Echo},
+			clientInput:  nil,
+		},
+
+		"enable our suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, telnet.SuppressGoAhead},
+			clientInput:  []byte{telnet.IAC, telnet.Wont, telnet.SuppressGoAhead},
+		},
+
+		"enable-fail our suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, telnet.SuppressGoAhead},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable our suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Dont, telnet.SuppressGoAhead},
+			clientInput:  nil,
+		},
+
+		"enable their suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, telnet.SuppressGoAhead},
+			clientInput:  []byte{telnet.IAC, telnet.Do, telnet.SuppressGoAhead},
+		},
+
+		"enable-fail their suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, telnet.SuppressGoAhead},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable their suppress-go-ahead": {
+			serverOutput: []byte{telnet.IAC, telnet.Wont, telnet.SuppressGoAhead},
+			clientInput:  nil,
+		},
+
+		"enable disable their suppress-go-ahead": {
+			serverOutput: []byte{
+				telnet.IAC, telnet.Will, telnet.SuppressGoAhead,
+				telnet.IAC, telnet.Wont, telnet.SuppressGoAhead,
+			},
+			clientInput: []byte{
+				telnet.IAC, telnet.Do, telnet.SuppressGoAhead,
+				telnet.IAC, telnet.Dont, telnet.SuppressGoAhead,
+			},
+		},
+
+		"enable disable-fail their suppress-go-ahead": {
+			serverOutput: []byte{
+				telnet.IAC, telnet.Will, telnet.SuppressGoAhead,
+				telnet.IAC, telnet.Wont, telnet.SuppressGoAhead,
+			},
+			clientInput: []byte{
+				telnet.IAC, telnet.Do, telnet.SuppressGoAhead,
+			},
+			writeErr: func(cmd []byte) error {
+				if bytes.Equal(cmd, []byte{telnet.IAC, telnet.Dont, telnet.SuppressGoAhead}) {
+					return errMock
+				}
+				return nil
+			},
+		},
+
+		"enable our nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, 'a'},
+			clientInput:  []byte{telnet.IAC, telnet.Wont, 'a'},
+		},
+
+		"enable-fail our nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Do, 'a'},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable our nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Dont, 'a'},
+			clientInput:  nil,
+		},
+
+		"enable their nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, 'a'},
+			clientInput:  []byte{telnet.IAC, telnet.Dont, 'a'},
+		},
+
+		"enable-fail their nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Will, 'a'},
+			writeErr:     func([]byte) error { return errMock },
+		},
+
+		"disable their nonsense": {
+			serverOutput: []byte{telnet.IAC, telnet.Wont, 'a'},
+			clientInput:  nil,
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			conn := NewMockConn(tc.serverOutput)
+			conn.WriteErr = tc.writeErr
+
+			client := telnet.NewNVT(conn)
+
+			_, err := io.ReadAll(client)
+
+			if tc.writeErr != nil {
+				require.ErrorIs(t, err, errMock)
+			} else {
+				require.Nil(t, err, err)
 			}
 
-			assert.Equal(string(input), builder.String())
+			assert.Equal(t, tc.clientInput, conn.Written)
 		})
 	}
 }

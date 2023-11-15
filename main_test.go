@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddress(t *testing.T) {
+func TestParseAddress(t *testing.T) {
 	tcs := []struct {
 		in  string
 		out string
@@ -49,7 +49,7 @@ func TestAddress(t *testing.T) {
 
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			out, err := address(tc.in)
+			out, err := parseAddress(tc.in)
 
 			if tc.err != "" {
 				assert.Equal(t, tc.err, err.Error())
