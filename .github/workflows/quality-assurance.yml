@@ -64,7 +64,7 @@ jobs:
 
   test:
     name: Test code
-    needs: [linting]
+    needs: [lint]
     timeout-minutes: 2
     runs-on: ubuntu-latest
     steps:
