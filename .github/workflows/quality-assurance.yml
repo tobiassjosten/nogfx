@@ -49,6 +49,7 @@ jobs:
 
       - name: Check Go formatting
         run: |
+          which gofmt
           GOFMT_OUTPUT="$(gofmt -l -e . | grep -v /mock/)"
           if [ -n "$GOFMT_OUTPUT" ]; then
             echo "The following code is not correctly formatted:"
