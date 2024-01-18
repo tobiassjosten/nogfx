@@ -57,6 +57,8 @@ jobs:
             echo "The following code is not correctly formatted:"
             echo "${GOFMT_OUTPUT}"
             exit 1
+          else
+            echo "'sall good man!"
           fi
 
       - name: Analyze Go code
