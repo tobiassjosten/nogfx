@@ -54,7 +54,7 @@ jobs:
           echo "two"
           gofmt -l -e .
           echo "three"
-          gofmt -l -e . | grep -v /mock/
+          gofmt -l -e . | grep -v '/mock/'
           echo "four"
           GOFMT_OUTPUT="$(gofmt -l -e . | grep -v /mock/)"
           if [ -n "$GOFMT_OUTPUT" ]; then
