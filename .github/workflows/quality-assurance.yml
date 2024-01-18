@@ -47,23 +47,6 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Check Go formatting
-        run: |
-          whoami
-          pwd
-          ls -la
-          echo "one"
-          gofmt -l -e . | grep --quiet -v /mock/ || true
-          echo "two"
-          GOFMT_OUTPUT="$(gofmt -l -e . | grep --quiet -v /mock/ || true)"
-          echo "output: $GOFMT_OUTPUT"
-          echo "three"
-          if [ -n "$GOFMT_OUTPUT" ]; then
-            echo "The following code is not correctly formatted:"
-            echo "${GOFMT_OUTPUT}"
-            exit 1
-          fi
-
       - name: Analyze Go code
         uses: golangci/golangci-lint-action@v3
         with:
