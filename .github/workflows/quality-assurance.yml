@@ -58,10 +58,12 @@ jobs:
           which grep
           gofmt -l -e . | cat
           echo "four"
-          echo asdf | grep -v '/mock/'
+          echo "asdf/mock/qwer" | grep -v '/mock/'
           echo "five"
+          gofmt -l -e . | grep -v 'mock'
+          echo "six"
           gofmt -l -e . | grep -v '/mock/'
-          echo "four"
+          echo "seven"
           GOFMT_OUTPUT="$(gofmt -l -e . | grep -v /mock/)"
           if [ -n "$GOFMT_OUTPUT" ]; then
             echo "five"
