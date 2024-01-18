@@ -49,30 +49,11 @@ jobs:
 
       - name: Check Go formatting
         run: |
-          echo "one"
-          which gofmt
-          echo asdf | cat
-          echo "two"
-          gofmt -l -e .
-          echo "three"
-          which grep
-          gofmt -l -e . | cat
-          echo "four"
-          echo "asdf/mock/qwer" | grep -v '/mock/'
-          echo "five"
-          gofmt -l -e . | grep -v 'mock'
-          echo "six"
-          gofmt -l -e . | grep -v '/mock/'
-          echo "seven"
-          GOFMT_OUTPUT="$(gofmt -l -e . | grep -v /mock/)"
+          GOFMT_OUTPUT="$(gofmt -l -e . | grep --quiet -v /mock/)"
           if [ -n "$GOFMT_OUTPUT" ]; then
-            echo "five"
             echo "The following code is not correctly formatted:"
             echo "${GOFMT_OUTPUT}"
             exit 1
-          else
-            echo "six"
-            echo "'sall good man!"
           fi
 
       - name: Analyze Go code
