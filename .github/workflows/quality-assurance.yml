@@ -51,11 +51,11 @@ jobs:
         run: |
           echo "one"
           which gofmt
+          echo asdf | cat
           echo "two"
           gofmt -l -e .
           echo "three"
           which grep
-          man grep
           gofmt -l -e . | grep -v '/mock/'
           echo "four"
           GOFMT_OUTPUT="$(gofmt -l -e . | grep -v /mock/)"
