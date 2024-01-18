@@ -49,7 +49,11 @@ jobs:
 
       - name: Check Go formatting
         run: |
-          GOFMT_OUTPUT="$(gofmt -l -e . | grep --quiet -v mock)"
+          echo "one"
+          gofmt -l -e . | grep --quiet -v mock || true
+          echo "two"
+          GOFMT_OUTPUT="$(gofmt -l -e . | grep --quiet -v mock || true)"
+          echo "three"
           if [ -n "$GOFMT_OUTPUT" ]; then
             echo "The following code is not correctly formatted:"
             echo "${GOFMT_OUTPUT}"
