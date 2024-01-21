@@ -8,8 +8,8 @@ linters:
     - staticcheck
     - typecheck
     - unused
-    
-      # Optional linters:
+
+    # Optional linters:
     - bodyclose
     - bidichk
     - containedctx
@@ -133,10 +133,10 @@ linters-settings:
       - name: error-strings
       - name: errorf
       - name: enforce-map-style
-        arguments: 
+        arguments:
           - literal
       - name: enforce-slice-style
-        arguments: 
+        arguments:
           - literal
       - name: exported
       - name: flag-parameter
