@@ -85,9 +85,6 @@ linters-settings:
       - uncheckedInlineErr
       - unnecessaryDefer
       - weakCond
-    settings:
-      commentedOutCode:
-        minLength: 5
 
   gofmt:
     rewrite-rules:
