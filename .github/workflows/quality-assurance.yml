@@ -33,6 +33,10 @@ jobs:
   lint:
     name: Lint code
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
