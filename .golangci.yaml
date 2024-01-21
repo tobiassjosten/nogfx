@@ -85,6 +85,10 @@ linters-settings:
       - uncheckedInlineErr
       - unnecessaryDefer
       - weakCond
+    # @todo Figure out why this isn't accepted in GitHub Actions.
+    # settings:
+    #   commentedOutCode:
+    #     minLength: 5
 
   gofmt:
     rewrite-rules:
@@ -132,9 +136,10 @@ linters-settings:
       - name: enforce-map-style
         arguments:
           - literal
-      - name: enforce-slice-style
-        arguments:
-          - literal
+      # @todo Figure out why this isn't accepted in GitHub Actions.
+      # - name: enforce-slice-style
+      #   arguments:
+      #     - literal
       - name: exported
       - name: flag-parameter
       - name: identical-branches
