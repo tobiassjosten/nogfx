@@ -14,6 +14,7 @@ func marshalCoreSupports(m map[string]int) string {
 	for module, version := range m {
 		list = append(list, fmt.Sprintf("%s %d", module, version))
 	}
+
 	sort.Strings(list)
 
 	data, _ := json.Marshal(list)
@@ -28,10 +29,11 @@ func unmarshalCoreSupports(data []byte, msg Message) (map[string]int, error) {
 	err := json.Unmarshal(data, &list)
 
 	cs := map[string]int{}
+
 	for _, item := range list {
 		parts := strings.SplitN(item, " ", 2)
-
 		version := 1
+
 		if len(parts) == 2 {
 			v, err := strconv.Atoi(parts[1])
 			if err != nil {
@@ -40,6 +42,7 @@ func unmarshalCoreSupports(data []byte, msg Message) (map[string]int, error) {
 					err,
 				)
 			}
+
 			version = v
 		}
 
@@ -60,13 +63,14 @@ func (msg *CoreSupportsSet) ID() string {
 // Marshal converts the message to a string.
 func (msg *CoreSupportsSet) Marshal() string {
 	data := marshalCoreSupports(map[string]int(*msg))
-	return fmt.Sprintf("%s %s", msg.ID(), string(data))
+	return fmt.Sprintf("%s %s", msg.ID(), data)
 }
 
 // Unmarshal populates the message with data.
 func (msg *CoreSupportsSet) Unmarshal(data []byte) error {
 	m, err := unmarshalCoreSupports(data, msg)
 	*msg = CoreSupportsSet(m)
+
 	return err
 }
 
@@ -81,13 +85,14 @@ func (msg *CoreSupportsAdd) ID() string {
 // Marshal converts the message to a string.
 func (msg *CoreSupportsAdd) Marshal() string {
 	data := marshalCoreSupports(map[string]int(*msg))
-	return fmt.Sprintf("%s %s", msg.ID(), string(data))
+	return fmt.Sprintf("%s %s", msg.ID(), data)
 }
 
 // Unmarshal populates the message with data.
 func (msg *CoreSupportsAdd) Unmarshal(data []byte) error {
 	m, err := unmarshalCoreSupports(data, msg)
 	*msg = CoreSupportsAdd(m)
+
 	return err
 }
 
@@ -102,12 +107,13 @@ func (msg *CoreSupportsRemove) ID() string {
 // Marshal converts the message to a string.
 func (msg *CoreSupportsRemove) Marshal() string {
 	data := marshalCoreSupports(map[string]int(*msg))
-	return fmt.Sprintf("%s %s", msg.ID(), string(data))
+	return fmt.Sprintf("%s %s", msg.ID(), data)
 }
 
 // Unmarshal populates the message with data.
 func (msg *CoreSupportsRemove) Unmarshal(data []byte) error {
 	m, err := unmarshalCoreSupports(data, msg)
 	*msg = CoreSupportsRemove(m)
+
 	return err
 }

@@ -31,6 +31,7 @@ func (msg *CharSkillsGet) Marshal() string {
 	if msg.Group == "" {
 		proxy.Name = ""
 	}
+
 	return Marshal(proxy)
 }
 
@@ -74,6 +75,7 @@ func (msg *CharSkillsGroups) Marshal() string {
 	}
 
 	data, _ := json.Marshal(proxies)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
@@ -97,6 +99,7 @@ func (msg *CharSkillsGroups) Unmarshal(data []byte) error {
 
 		progressStr := strings.Trim(parts[1], "(%)")
 		progress, err := strconv.Atoi(progressStr)
+
 		if err != nil {
 			return fmt.Errorf("failed parsing rank progress: %w", err)
 		}
@@ -132,6 +135,7 @@ func (msg *CharSkillsList) Marshal() string {
 	if msg.List == nil {
 		proxy.List = []string{}
 	}
+
 	if msg.Descriptions == nil {
 		proxy.Descriptions = []string{}
 	}

@@ -23,6 +23,7 @@ type Target struct {
 func NewTarget(client pkg.Client) *Target {
 	target := &Target{client: client}
 	target.Target = pkg.NewTarget(target.Set)
+
 	return target
 }
 
@@ -55,6 +56,7 @@ func (tgt *Target) FromRoomInfo(msg *gmcp.RoomInfo) {
 	if tgt.area != nil && room.Area.ID == tgt.area.ID {
 		return
 	}
+
 	tgt.area = room.Area
 
 	npcs := tgt.npcs()[room.Area.ID]
@@ -71,6 +73,7 @@ func (tgt *Target) FromCharItemsList(msg *gmcp.CharItemsList) {
 	for _, item := range msg.Items {
 		present = append(present, item.Name)
 	}
+
 	tgt.Target.SetPresent(present)
 }
 
@@ -133,7 +136,7 @@ func (tgt *Target) npcs() map[int][]string {
 	// where the most dangerous NPC is first and the rest in falling order.
 	return map[int][]string{
 		// The Keep of Belladona.
-		134: []string{
+		134: {
 			// Aggressive:
 			"grothgar", "crocodile", "guardian", "hound",
 			"minotaur",
@@ -142,6 +145,6 @@ func (tgt *Target) npcs() map[int][]string {
 		},
 
 		// The Village of Genji.
-		137: []string{"shaman", "warrior", "manticore", "villager"},
+		137: {"shaman", "warrior", "manticore", "villager"},
 	}
 }

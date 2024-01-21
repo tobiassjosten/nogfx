@@ -31,7 +31,9 @@ func Match(pattern []byte, text []byte) [][]byte {
 				}
 
 				pattern = pattern[1:]
+
 				tick()
+
 				continue
 			}
 
@@ -45,7 +47,9 @@ func Match(pattern []byte, text []byte) [][]byte {
 				}
 
 				pattern = pattern[1:]
+
 				tick()
+
 				continue
 			}
 
@@ -60,7 +64,9 @@ func Match(pattern []byte, text []byte) [][]byte {
 				}
 
 				pattern = pattern[1:]
+
 				tick()
+
 				continue
 			}
 
@@ -85,7 +91,9 @@ func Match(pattern []byte, text []byte) [][]byte {
 				}
 
 				pattern = pattern[1:]
+
 				tick()
+
 				continue
 			}
 
@@ -132,11 +140,14 @@ func Match(pattern []byte, text []byte) [][]byte {
 				}
 
 				pattern = pattern[1:]
+
 				tick()
+
 				continue
 			}
 
 			pattern[0] = text[0]
+
 			tick()
 
 		default:
@@ -175,6 +186,7 @@ func isnotspecial(r rune) bool {
 
 func isnot(b byte) func(r rune) bool {
 	r := rune(b)
+
 	return func(rr rune) bool {
 		return r != rr
 	}

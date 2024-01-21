@@ -79,6 +79,7 @@ func (msg *CorePing) Marshal() string {
 	if msg.Latency != nil {
 		return fmt.Sprintf("%s %d", msg.ID(), *msg.Latency)
 	}
+
 	return msg.ID()
 }
 

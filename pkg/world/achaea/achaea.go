@@ -73,6 +73,7 @@ func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 				inout.Output[1].Text...,
 			)
 		}
+
 		inout.Output = inout.Output.Omit(0)
 	}
 
@@ -80,6 +81,7 @@ func (world *World) OnInoutput(inout pkg.Inoutput) pkg.Inoutput {
 		if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
 			inout = trigger.Match(inout.Input.Bytes(), inout)
 		}
+
 		if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
 			inout = trigger.Match(inout.Output.Bytes(), inout)
 		}
@@ -108,8 +110,7 @@ func (world *World) OnCommand(cmd []byte) (inout pkg.Inoutput) {
 		return
 	}
 
-	switch {
-	case bytes.Equal(cmd, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}):
+	if bytes.Equal(cmd, []byte{telnet.IAC, telnet.WILL, telnet.GMCP}) {
 		err := world.SendGMCP(&gmcp.CoreSupportsSet{
 			"Char":         1,
 			"Char.Items":   1,
@@ -179,6 +180,7 @@ func (world *World) onGMCP(data []byte) error {
 		if world.Room != nil {
 			world.Room.HasPlayer = false
 		}
+
 		world.Room = navigation.RoomFromGMCP(msg)
 		world.Room.HasPlayer = true
 

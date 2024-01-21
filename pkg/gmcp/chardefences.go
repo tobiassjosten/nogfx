@@ -31,7 +31,7 @@ func (msg *CharDefencesList) Unmarshal(data []byte) error {
 	return Unmarshal(data, msg)
 }
 
-// CharDefencesAdd is a GMCP message detailing an additonal defense.
+// CharDefencesAdd is a GMCP message detailing an additional defense.
 type CharDefencesAdd CharDefence
 
 // ID is the prefix before the message's data.
@@ -66,6 +66,7 @@ func (msg *CharDefencesRemove) Marshal() string {
 	}
 
 	data, _ := json.Marshal(list)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 

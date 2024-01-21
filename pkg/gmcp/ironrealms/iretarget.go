@@ -62,6 +62,7 @@ func (msg *IRETargetInfo) Marshal() string {
 	}
 
 	data, _ := json.Marshal(proxy)
+
 	return fmt.Sprintf("IRE.Target.Info %s", string(data))
 }
 
@@ -81,7 +82,7 @@ func (msg *IRETargetInfo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = (IRETargetInfo)(*proxy.IRETargetInfo)
+	*msg = *proxy.IRETargetInfo
 
 	if proxy.CHealth != "" {
 		if proxy.CHealth[len(proxy.CHealth)-1] == '%' {

@@ -69,6 +69,7 @@ func Parse(data []byte) (Message, error) {
 	if _, ok := messages[parts[0]]; !ok {
 		return nil, fmt.Errorf("unknown message '%s'", parts[0])
 	}
+
 	msg := messages[parts[0]]()
 
 	if err := msg.Unmarshal(data); err != nil {
@@ -94,6 +95,7 @@ func Unwrap(data []byte) []byte {
 	if !bytes.HasPrefix(data, gmcpPrefix) {
 		return nil
 	}
+
 	if !bytes.HasSuffix(data, gmcpSuffix) {
 		return nil
 	}
@@ -120,7 +122,7 @@ func Unmarshal(data []byte, msg Message) error {
 }
 
 // SplitRank parses values like "Cityname (2)" into separate parts.
-func SplitRank(str string) (string, string) {
+func SplitRank(str string) (organization string, level string) {
 	parts := strings.SplitN(str, "(", 2)
 
 	if len(parts) == 1 {

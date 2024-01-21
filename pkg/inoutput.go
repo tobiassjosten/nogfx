@@ -26,9 +26,11 @@ func NewInoutput(input [][]byte, output [][]byte) (inout Inoutput) {
 	for _, data := range input {
 		inout.Input = inout.Input.Add(data)
 	}
+
 	for _, data := range output {
 		inout.Output = inout.Output.Add(data)
 	}
+
 	return
 }
 
@@ -75,24 +77,32 @@ type Text []byte
 func (txt Text) Clean() []byte {
 	clean := []byte{}
 
-	var escape byte = 27
-	escaped, escaping := false, false
+	var (
+		escape   byte = 27
+		escaped       = false
+		escaping      = false
+	)
+
 	for _, b := range txt {
 		if b == escape {
 			escaped = true
 			continue
 		}
+
 		if escaped {
 			escaped = false
+
 			if b == '[' {
 				escaping = true
 				continue
 			}
 		}
+
 		if escaping {
 			if b == 'm' {
 				escaping = false
 			}
+
 			continue
 		}
 
@@ -134,10 +144,11 @@ func (ex Exput) Inoutput(kind IOKind) Inoutput {
 	case Output:
 		return Inoutput{Output: ex}
 	}
+
 	return Inoutput{}
 }
 
-// Add appends a new Line to the Exput
+// Add appends a new Line to the Exput.
 func (ex Exput) Add(data []byte) Exput {
 	return append(ex, Line{Text: data})
 }
@@ -148,6 +159,7 @@ func (ex Exput) Add(data []byte) Exput {
 func (ex Exput) AddBefore(i int, data []byte) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].Before = append(newex[i].Before, data)
+
 	return newex
 }
 
@@ -157,6 +169,7 @@ func (ex Exput) AddBefore(i int, data []byte) Exput {
 func (ex Exput) AddAfter(i int, data []byte) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].After = append(newex[i].After, data)
+
 	return newex
 }
 
@@ -164,6 +177,7 @@ func (ex Exput) AddAfter(i int, data []byte) Exput {
 func (ex Exput) Omit(i int) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].omitted = true
+
 	return newex
 }
 
@@ -171,6 +185,7 @@ func (ex Exput) Omit(i int) Exput {
 func (ex Exput) Replace(i int, data []byte) Exput {
 	newex := append(Exput{}, ex...)
 	newex[i].Text = newex[i].Text.Replace(data)
+
 	return newex
 }
 
@@ -200,13 +215,17 @@ func (ex Exput) Bytes() (bs [][]byte) {
 		if ln.omitted {
 			continue
 		}
+
 		for _, text := range ln.Before {
 			bs = append(bs, text)
 		}
+
 		bs = append(bs, ln.Text)
+
 		for _, text := range ln.After {
 			bs = append(bs, text)
 		}
 	}
+
 	return
 }

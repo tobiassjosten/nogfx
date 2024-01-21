@@ -63,6 +63,7 @@ func (client *Client) Subneg(b byte, value []byte) error {
 		[]byte{IAC, SB, b, v},
 		value...,
 	), IAC, SE))
+
 	return err
 }
 
@@ -81,6 +82,7 @@ func (client *Client) processCommand(command []byte) (bool, [][]byte) {
 		}
 
 		responses = append(responses, []byte{IAC, DONT, command[2]})
+
 		return true, responses
 
 	case WONT:

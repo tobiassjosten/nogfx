@@ -32,6 +32,9 @@ var appHelpTemplate string
 func main() {
 log.SetOutput(io.Discard)
 
+	//en kommentar
+	log.Println("trololol")
+
 	fileFlags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
 	f, err := os.OpenFile("nogfx.log", fileFlags, 0644)
 	if err != nil {

@@ -86,7 +86,7 @@ func (msg *CommChannelPlayers) Unmarshal(data []byte) error {
 }
 
 // CommChannelText is a GMCP message with complete information about a
-// communication
+// communication.
 type CommChannelText struct {
 	Channel string `json:"channel"`
 	Talker  string `json:"talker"`

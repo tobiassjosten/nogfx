@@ -3,8 +3,9 @@ package navigation
 import (
 	"strings"
 
-	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
+	"github.com/icza/gox/gox"
 )
 
 // @todo Encapsulate in a struct, so as to avoid polluting global space.
@@ -80,6 +81,7 @@ func RoomFromGMCP(msg *gmcp.RoomInfo) *Room {
 		}
 		areas[msg.AreaNumber] = area
 	}
+
 	room.Area = area
 
 	return room
@@ -111,7 +113,7 @@ func (room *Room) HasAnyExits(directionses ...string) bool {
 
 // Displacement calculates the coordinate offset of the room at the given exit
 // or 0, 0 if an offset couldn't be calculated.
-func (room *Room) Displacement(direction string) (int, int) {
+func (room *Room) Displacement(direction string) (x int, y int) {
 	if !room.HasExit(direction) {
 		return 0, 0
 	}
@@ -157,12 +159,14 @@ func (room *Room) Displacement(direction string) (int, int) {
 		if !room.HasAnyExits("w", "n sw", "s nw") {
 			return -1, 0
 		}
+
 		return 0, 0
 
 	case "in":
 		if !room.HasAnyExits("e", "n se", "s ne") {
 			return 1, 0
 		}
+
 		return 0, 0
 	}
 
