@@ -17,7 +17,7 @@ type CharDefence struct {
 type CharDefencesList []CharDefence
 
 // ID is the prefix before the message's data.
-func (msg *CharDefencesList) ID() string {
+func (*CharDefencesList) ID() string {
 	return "Char.Defences.List"
 }
 
@@ -35,7 +35,7 @@ func (msg *CharDefencesList) Unmarshal(data []byte) error {
 type CharDefencesAdd CharDefence
 
 // ID is the prefix before the message's data.
-func (msg *CharDefencesAdd) ID() string {
+func (*CharDefencesAdd) ID() string {
 	return "Char.Defences.Add"
 }
 
@@ -53,7 +53,7 @@ func (msg *CharDefencesAdd) Unmarshal(data []byte) error {
 type CharDefencesRemove []CharDefence
 
 // ID is the prefix before the message's data.
-func (msg *CharDefencesRemove) ID() string {
+func (*CharDefencesRemove) ID() string {
 	return "Char.Defences.Remove"
 }
 

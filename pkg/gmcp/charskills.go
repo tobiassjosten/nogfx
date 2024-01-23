@@ -17,7 +17,7 @@ type CharSkillsGet struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharSkillsGet) ID() string {
+func (*CharSkillsGet) ID() string {
 	return "Char.Skills.Get"
 }
 
@@ -51,7 +51,7 @@ type charSkillsGroup struct {
 type CharSkillsGroups []charSkillsGroup
 
 // ID is the prefix before the message's data.
-func (msg *CharSkillsGroups) ID() string {
+func (*CharSkillsGroups) ID() string {
 	return "Char.Skills.Groups"
 }
 
@@ -120,7 +120,7 @@ type CharSkillsList struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharSkillsList) ID() string {
+func (*CharSkillsList) ID() string {
 	return "Char.Skills.List"
 }
 
@@ -156,7 +156,7 @@ type CharSkillsInfo struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharSkillsInfo) ID() string {
+func (*CharSkillsInfo) ID() string {
 	return "Char.Skills.Info"
 }
 

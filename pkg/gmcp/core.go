@@ -10,7 +10,7 @@ import (
 type CoreGoodbye struct{}
 
 // ID is the prefix before the message's data.
-func (msg *CoreGoodbye) ID() string {
+func (*CoreGoodbye) ID() string {
 	return "Core.Goodbye"
 }
 
@@ -20,7 +20,7 @@ func (msg *CoreGoodbye) Marshal() string {
 }
 
 // Unmarshal populates the message with data.
-func (msg *CoreGoodbye) Unmarshal(_ []byte) error {
+func (*CoreGoodbye) Unmarshal(_ []byte) error {
 	return nil
 }
 
@@ -32,7 +32,7 @@ type CoreHello struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CoreHello) ID() string {
+func (*CoreHello) ID() string {
 	return "Core.Hello"
 }
 
@@ -50,7 +50,7 @@ func (msg *CoreHello) Unmarshal(data []byte) error {
 type CoreKeepAlive struct{}
 
 // ID is the prefix before the message's data.
-func (msg *CoreKeepAlive) ID() string {
+func (*CoreKeepAlive) ID() string {
 	return "Core.KeepAlive"
 }
 
@@ -60,7 +60,7 @@ func (msg *CoreKeepAlive) Marshal() string {
 }
 
 // Unmarshal populates the message with data.
-func (msg *CoreKeepAlive) Unmarshal(_ []byte) error {
+func (*CoreKeepAlive) Unmarshal(_ []byte) error {
 	return nil
 }
 
@@ -70,7 +70,7 @@ type CorePing struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CorePing) ID() string {
+func (*CorePing) ID() string {
 	return "Core.Ping"
 }
 

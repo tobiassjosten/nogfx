@@ -26,7 +26,7 @@ func (mod RepeatInput) Triggers() []pkg.Trigger {
 	}
 }
 
-func (mod *RepeatInput) onRepeat(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
+func (*RepeatInput) onRepeat(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
 	for _, match := range matches {
 		i := match.Index
 

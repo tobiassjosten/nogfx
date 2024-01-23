@@ -131,7 +131,7 @@ func (tgt *Target) FromIRETargetInfo(msg *igmcp.IRETargetInfo) {
 	tgt.Health = msg.Health
 }
 
-func (tgt *Target) npcs() map[int][]string {
+func (*Target) npcs() map[int][]string {
 	// An important property of these lists is their order of importance,
 	// where the most dangerous NPC is first and the rest in falling order.
 	return map[int][]string{

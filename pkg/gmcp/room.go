@@ -71,7 +71,7 @@ func (msg *RoomInfo) IsWilderness() bool {
 }
 
 // ID is the prefix before the message's data.
-func (msg *RoomInfo) ID() string {
+func (*RoomInfo) ID() string {
 	return "Room.Info"
 }
 
@@ -188,7 +188,7 @@ type RoomPlayer struct {
 type RoomPlayers []RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomPlayers) ID() string {
+func (*RoomPlayers) ID() string {
 	return "Room.Players"
 }
 
@@ -207,7 +207,7 @@ func (msg *RoomPlayers) Unmarshal(data []byte) error {
 type RoomAddPlayer RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomAddPlayer) ID() string {
+func (*RoomAddPlayer) ID() string {
 	return "Room.AddPlayer"
 }
 
@@ -226,7 +226,7 @@ func (msg *RoomAddPlayer) Unmarshal(data []byte) error {
 type RoomRemovePlayer RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomRemovePlayer) ID() string {
+func (*RoomRemovePlayer) ID() string {
 	return "Room.RemovePlayer"
 }
 

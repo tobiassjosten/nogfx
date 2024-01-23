@@ -56,7 +56,7 @@ func unmarshalCoreSupports(data []byte, msg Message) (map[string]int, error) {
 type CoreSupportsSet map[string]int
 
 // ID is the prefix before the message's data.
-func (msg *CoreSupportsSet) ID() string {
+func (*CoreSupportsSet) ID() string {
 	return "Core.Supports.Set"
 }
 
@@ -78,7 +78,7 @@ func (msg *CoreSupportsSet) Unmarshal(data []byte) error {
 type CoreSupportsAdd map[string]int
 
 // ID is the prefix before the message's data.
-func (msg *CoreSupportsAdd) ID() string {
+func (*CoreSupportsAdd) ID() string {
 	return "Core.Supports.Add"
 }
 
@@ -100,7 +100,7 @@ func (msg *CoreSupportsAdd) Unmarshal(data []byte) error {
 type CoreSupportsRemove map[string]int
 
 // ID is the prefix before the message's data.
-func (msg *CoreSupportsRemove) ID() string {
+func (*CoreSupportsRemove) ID() string {
 	return "Core.Supports.Remove"
 }
 

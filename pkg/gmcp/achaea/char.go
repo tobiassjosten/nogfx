@@ -46,7 +46,7 @@ type CharStatus struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharStatus) ID() string {
+func (*CharStatus) ID() string {
 	return "Char.Status"
 }
 
@@ -67,7 +67,7 @@ func (msg *CharStatus) marshalLevel() *string {
 	)
 }
 
-func (msg *CharStatus) marshalValue(value *string, rank *int) *string {
+func (*CharStatus) marshalValue(value *string, rank *int) *string {
 	if value == nil {
 		return nil
 	}
@@ -233,11 +233,11 @@ type CharVitals struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharVitals) ID() string {
+func (*CharVitals) ID() string {
 	return "Char.Vitals"
 }
 
-func (msg *CharVitals) marshalBoolStringInt(b bool) string {
+func (*CharVitals) marshalBoolStringInt(b bool) string {
 	if b {
 		return "1"
 	}

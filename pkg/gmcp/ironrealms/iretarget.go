@@ -14,7 +14,7 @@ type IRETargetSet struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *IRETargetSet) ID() string {
+func (*IRETargetSet) ID() string {
 	return "IRE.Target.Set"
 }
 
@@ -44,7 +44,7 @@ type IRETargetInfo struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *IRETargetInfo) ID() string {
+func (*IRETargetInfo) ID() string {
 	return "IRE.Target.Info"
 }
 

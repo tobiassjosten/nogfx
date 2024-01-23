@@ -113,7 +113,7 @@ func (txt Text) Clean() []byte {
 }
 
 // Replace changes the visible parts of a Text while retaining ANSI colors.
-func (txt Text) Replace(data []byte) Text {
+func (Text) Replace(data []byte) Text {
 	// @todo Replace while keeping ANSI colors.
 	return data
 }

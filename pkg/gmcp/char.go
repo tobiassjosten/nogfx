@@ -7,7 +7,7 @@ type CharLogin struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharLogin) ID() string {
+func (*CharLogin) ID() string {
 	return "Char.Login"
 }
 
@@ -29,7 +29,7 @@ type CharName struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharName) ID() string {
+func (*CharName) ID() string {
 	return "Char.Name"
 }
 
@@ -47,7 +47,7 @@ func (msg *CharName) Unmarshal(data []byte) error {
 type CharStatusVars map[string]string
 
 // ID is the prefix before the message's data.
-func (msg *CharStatusVars) ID() string {
+func (*CharStatusVars) ID() string {
 	return "Char.StatusVars"
 }
 
