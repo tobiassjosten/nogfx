@@ -12,7 +12,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
 	amodule "github.com/tobiassjosten/nogfx/pkg/world/achaea/module"
-	"github.com/tobiassjosten/nogfx/pkg/world/module"
+	gmodule "github.com/tobiassjosten/nogfx/pkg/world/module"
 )
 
 // World is an Achaea-specific implementation of the pkg.World interface.
@@ -44,7 +44,7 @@ func NewWorld(client pkg.Client, ui pkg.UI) pkg.World {
 	// @todo Make sure these are ordered correctly. Potentially by adding a weight
 	// property for sorting?
 	var modules = []pkg.Module{
-		module.NewRepeatInput(),
+		gmodule.NewRepeatInput(),
 		amodule.NewLearnMultipleLessons(),
 	}
 

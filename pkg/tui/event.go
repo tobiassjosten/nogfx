@@ -103,9 +103,9 @@ func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
 	}
 
 	tui.setCache(paneInput, nil)
-	delete := false
+	del := false
 	for i := tui.input.cursoroff - 1; i > 0; i-- {
-		if delete && tui.input.buffer[i] == ' ' {
+		if del && tui.input.buffer[i] == ' ' {
 			tui.input.buffer = append(
 				tui.input.buffer[:i+1],
 				tui.input.buffer[tui.input.cursoroff:]...,
@@ -113,8 +113,8 @@ func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
 			tui.input.cursoroff = i + 1
 			return true
 		}
-		if !delete && tui.input.buffer[i] != ' ' {
-			delete = true
+		if !del && tui.input.buffer[i] != ' ' {
+			del = true
 		}
 	}
 	tui.input.buffer = tui.input.buffer[tui.input.cursoroff:]
