@@ -86,6 +86,8 @@ type IOTestCase struct {
 
 // Eval plays the TestCase's inputs/outputs and asserts its desired states.
 func (tc IOTestCase) Eval(t *testing.T, mod pkg.Module) {
+	t.Helper()
+
 	var inouts []pkg.Inoutput
 
 	for _, event := range tc.Events {
