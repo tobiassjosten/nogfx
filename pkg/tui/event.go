@@ -103,7 +103,9 @@ func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
 	}
 
 	tui.setCache(paneInput, nil)
+
 	del := false
+
 	for i := tui.input.cursoroff - 1; i > 0; i-- {
 		if del && tui.input.buffer[i] == ' ' {
 			tui.input.buffer = append(
@@ -111,14 +113,18 @@ func (tui *TUI) handleOptBackspaceInput(_ rune) bool {
 				tui.input.buffer[tui.input.cursoroff:]...,
 			)
 			tui.input.cursoroff = i + 1
+
 			return true
 		}
+
 		if !del && tui.input.buffer[i] != ' ' {
 			del = true
 		}
 	}
+
 	tui.input.buffer = tui.input.buffer[tui.input.cursoroff:]
 	tui.input.cursoroff = 0
+
 	return true
 }
 
@@ -130,6 +136,7 @@ func (tui *TUI) handleCmdBackspaceInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
 	tui.input.buffer = tui.input.buffer[tui.input.cursoroff:]
 	tui.input.cursoroff = 0
+
 	return true
 }
 
@@ -167,6 +174,7 @@ func (tui *TUI) handleEscInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
 	tui.setCache(paneOutput, nil)
 	tui.output.offset = 0
+
 	return true
 }
 
@@ -175,6 +183,7 @@ func (tui *TUI) handleCtrlCInput(_ rune) bool {
 	tui.input.buffer = []rune{}
 	tui.input.cursoroff = 0
 	tui.input.inputted = false
+
 	return true
 }
 
@@ -182,6 +191,7 @@ func (tui *TUI) handleLeftInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
 	tui.input.cursoroff = int(max(0, tui.input.cursoroff-1))
 	tui.input.inputted = false
+
 	return true
 }
 
@@ -189,36 +199,43 @@ func (tui *TUI) handleRightInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
 	tui.input.cursoroff = int(min(len(tui.input.buffer), tui.input.cursoroff+1))
 	tui.input.inputted = false
+
 	return true
 }
 
 func (tui *TUI) handleUpInput(_ rune) bool {
 	tui.setCache(paneOutput, nil)
 	tui.output.offset++
+
 	return true
 }
 
 func (tui *TUI) handleAltUpInput(_ rune) bool {
 	tui.setCache(paneOutput, nil)
 	tui.output.offset += 5
+
 	return true
 }
 
 func (tui *TUI) handleDownInput(_ rune) bool {
 	tui.setCache(paneOutput, nil)
 	tui.output.offset--
+
 	if tui.output.offset < 0 {
 		tui.output.offset = 0
 	}
+
 	return true
 }
 
 func (tui *TUI) handleAltDownInput(_ rune) bool {
 	tui.setCache(paneOutput, nil)
 	tui.output.offset -= 5
+
 	if tui.output.offset < 0 {
 		tui.output.offset = 0
 	}
+
 	return true
 }
 

@@ -95,12 +95,14 @@ func (tui *TUI) RenderVitals(width int) Rows {
 	// Add missing vitals.
 	for name := range tui.character.Vitals {
 		exists := false
+
 		for _, nname := range vorder {
 			if name == nname {
 				exists = true
 				break
 			}
 		}
+
 		if !exists {
 			vorder = append(vorder, name)
 		}
@@ -109,6 +111,7 @@ func (tui *TUI) RenderVitals(width int) Rows {
 	gapStyle := (tcell.Style{}).Background(tcell.Color235)
 
 	row := Row{}
+
 	for i, name := range vorder {
 		styles, ok := vitalStyles[name]
 		if !ok {

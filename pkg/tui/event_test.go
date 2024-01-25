@@ -13,6 +13,7 @@ func TestHandleEvent(t *testing.T) {
 		for i := 0; i < c; i++ {
 			bs = append(bs, b)
 		}
+
 		return
 	}
 

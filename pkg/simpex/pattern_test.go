@@ -277,6 +277,7 @@ var (
 
 func BenchmarkMatch(b *testing.B) {
 	var r [][]byte
+
 	for name, benchmark := range benchmarks {
 		b.Run(name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -284,5 +285,6 @@ func BenchmarkMatch(b *testing.B) {
 			}
 		})
 	}
+
 	benchresult = r
 }

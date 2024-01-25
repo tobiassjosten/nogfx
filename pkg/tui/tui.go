@@ -265,5 +265,6 @@ func makeNumpad(ev *tcell.EventKey) *tcell.EventKey {
 	if key, ok := numpadKeys[int(ev.Rune())]; ok {
 		return tcell.NewEventKey(key, 0, 0)
 	}
+
 	return ev
 }

@@ -28,6 +28,7 @@ func wrapGMCP(msgs []string) []byte {
 		bs = append(bs, []byte(msg)...)
 		bs = append(bs, gmcpSuffix...)
 	}
+
 	return bs
 }
 

@@ -67,6 +67,7 @@ func RenderOutput(output *Output, width, height int) Rows {
 	if output.pwidth > 0 && output.pwidth != width {
 		output.offset = 0
 	}
+
 	output.pwidth = width
 
 	// Make sure to render enough for a history scrollback split.
@@ -94,6 +95,7 @@ func RenderOutput(output *Output, width, height int) Rows {
 	if height <= 2 || length <= height || output.offset == 0 {
 		rows = rows[max(0, length-height):]
 		rows = append(NewRows(width, height-length, padding), rows...)
+
 		return rows
 	}
 

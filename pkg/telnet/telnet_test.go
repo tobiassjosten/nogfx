@@ -27,6 +27,7 @@ func (mock mockStream) Write(p []byte) (int, error) {
 	if mock.writeErr != nil {
 		return 0, mock.writeErr
 	}
+
 	return mock.writer.Write(p)
 }
 
