@@ -87,7 +87,7 @@ func (tui *TUI) handleBackspaceInput(_ rune) bool {
 	}
 
 	tui.setCache(paneInput, nil)
-	cursor := int(max(0, tui.input.cursoroff-1))
+	cursor := max(0, tui.input.cursoroff-1)
 	tui.input.buffer = append(
 		tui.input.buffer[:cursor],
 		tui.input.buffer[tui.input.cursoroff:]...,
@@ -189,7 +189,7 @@ func (tui *TUI) handleCtrlCInput(_ rune) bool {
 
 func (tui *TUI) handleLeftInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
-	tui.input.cursoroff = int(max(0, tui.input.cursoroff-1))
+	tui.input.cursoroff = max(0, tui.input.cursoroff-1)
 	tui.input.inputted = false
 
 	return true
@@ -197,7 +197,7 @@ func (tui *TUI) handleLeftInput(_ rune) bool {
 
 func (tui *TUI) handleRightInput(_ rune) bool {
 	tui.setCache(paneInput, nil)
-	tui.input.cursoroff = int(min(len(tui.input.buffer), tui.input.cursoroff+1))
+	tui.input.cursoroff = min(len(tui.input.buffer), tui.input.cursoroff+1)
 	tui.input.inputted = false
 
 	return true

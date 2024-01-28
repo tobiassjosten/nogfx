@@ -19,7 +19,7 @@ func (*CommChannelEnable) ID() string {
 
 // Marshal converts the message to a string.
 func (msg *CommChannelEnable) Marshal() string {
-	return fmt.Sprintf(`%s "%s"`, msg.ID(), msg.Channel)
+	return fmt.Sprintf("%s %q", msg.ID(), msg.Channel)
 }
 
 // Unmarshal populates the message with data.

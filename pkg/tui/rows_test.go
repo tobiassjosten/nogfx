@@ -3,10 +3,10 @@ package tui_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func rowToString(row tui.Row) (str string) {

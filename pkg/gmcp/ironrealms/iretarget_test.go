@@ -45,7 +45,7 @@ func TestIRETargetMessages(t *testing.T) {
 			msg:         &ironrealms.IRETargetInfo{},
 			data:        `IRE.Target.Info {}`,
 			unmarshaled: &ironrealms.IRETargetInfo{},
-			marshaled: makeGMCP("IRE.Target.Info", map[string]interface{}{
+			marshaled: makeGMCP("IRE.Target.Info", map[string]any{
 				"id":         "",
 				"hpperc":     "",
 				"short_desc": "",
@@ -54,7 +54,7 @@ func TestIRETargetMessages(t *testing.T) {
 
 		"IRE.Target.Info hydrated": {
 			msg: &ironrealms.IRETargetInfo{},
-			data: makeGMCP("IRE.Target.Info", map[string]interface{}{
+			data: makeGMCP("IRE.Target.Info", map[string]any{
 				"id":         "1234",
 				"hpperc":     "69%",
 				"short_desc": "a target",
@@ -64,7 +64,7 @@ func TestIRETargetMessages(t *testing.T) {
 				Health:      69,
 				Description: "a target",
 			},
-			marshaled: makeGMCP("IRE.Target.Info", map[string]interface{}{
+			marshaled: makeGMCP("IRE.Target.Info", map[string]any{
 				"id":         "1234",
 				"hpperc":     "69%",
 				"short_desc": "a target",
@@ -79,7 +79,7 @@ func TestIRETargetMessages(t *testing.T) {
 
 		"IRE.Target.Info invalid health": {
 			msg: &ironrealms.IRETargetInfo{},
-			data: makeGMCP("IRE.Target.Info", map[string]interface{}{
+			data: makeGMCP("IRE.Target.Info", map[string]any{
 				"hpperc": "asdf",
 			}),
 			err: `strconv.Atoi: parsing "asdf": invalid syntax`,

@@ -3,8 +3,9 @@ package testing
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type IOEvent struct {

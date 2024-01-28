@@ -4,10 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
 func TestCoreMessages(t *testing.T) {
@@ -29,7 +30,7 @@ func TestCoreMessages(t *testing.T) {
 			msg:         &gmcp.CoreHello{},
 			data:        "Core.Hello {}",
 			unmarshaled: &gmcp.CoreHello{},
-			marshaled: makeGMCP("Core.Hello", map[string]interface{}{
+			marshaled: makeGMCP("Core.Hello", map[string]any{
 				"client":  "",
 				"version": "",
 			}),
@@ -37,7 +38,7 @@ func TestCoreMessages(t *testing.T) {
 
 		"Core.Hello hydrated": {
 			msg: &gmcp.CoreHello{},
-			data: makeGMCP("Core.Hello", map[string]interface{}{
+			data: makeGMCP("Core.Hello", map[string]any{
 				"client":  "nogfx",
 				"version": "1.0.0",
 			}),
@@ -45,7 +46,7 @@ func TestCoreMessages(t *testing.T) {
 				Client:  "nogfx",
 				Version: "1.0.0",
 			},
-			marshaled: makeGMCP("Core.Hello", map[string]interface{}{
+			marshaled: makeGMCP("Core.Hello", map[string]any{
 				"client":  "nogfx",
 				"version": "1.0.0",
 			}),

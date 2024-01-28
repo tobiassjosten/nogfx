@@ -3,9 +3,10 @@ package tui
 import (
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/mock"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/tobiassjosten/nogfx/pkg/mock"
 )
 
 func TestHandleEvent(t *testing.T) {

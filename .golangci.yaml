@@ -39,11 +39,6 @@ linters-settings:
   errcheck:
     check-type-assertions: true
 
-  forbidigo:
-    forbid:
-      - ^print.*$
-      - ^fmt\.Print.*$
-
   gci:
     sections:
       - standard

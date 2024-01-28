@@ -14,6 +14,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func wrapGMCP(msg string, data any) (bs []byte) {
@@ -76,10 +77,11 @@ func TestInputOutput(t *testing.T) {
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			world := achaea.NewWorld(
+			world, ok := achaea.NewWorld(
 				&mock.ClientMock{},
 				&mock.UIMock{},
 			).(*achaea.World)
+			require.True(t, ok)
 
 			var inouts []pkg.Inoutput
 
@@ -263,22 +265,23 @@ func TestCommandsMutateWorld(t *testing.T) {
 				SetTargetFunc:    func(_ *pkg.Target) {},
 			}
 
-			aworld := achaea.NewWorld(client, ui).(*achaea.World)
+			world, ok := achaea.NewWorld(client, ui).(*achaea.World)
+			require.True(t, ok)
 
 			if len(tc.command) > 0 {
-				aworld.OnCommand(tc.command)
+				world.OnCommand(tc.command)
 			}
 
 			for _, message := range tc.messages {
-				aworld.OnCommand(wrapGMCP(message.Marshal(), nil))
+				world.OnCommand(wrapGMCP(message.Marshal(), nil))
 			}
 
 			if tc.character != nil {
-				assert.Equal(t, tc.character, aworld.Character)
+				assert.Equal(t, tc.character, world.Character)
 			}
 
 			if tc.target != nil {
-				assert.Equal(t, *tc.target, aworld.Target.PkgTarget())
+				assert.Equal(t, *tc.target, world.Target.PkgTarget())
 			}
 		})
 	}

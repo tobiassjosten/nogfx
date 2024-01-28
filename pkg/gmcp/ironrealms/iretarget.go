@@ -20,7 +20,7 @@ func (*IRETargetSet) ID() string {
 
 // Marshal converts the message to a string.
 func (msg *IRETargetSet) Marshal() string {
-	return fmt.Sprintf(`IRE.Target.Set "%s"`, msg.Target)
+	return fmt.Sprintf("IRE.Target.Set %q", msg.Target)
 }
 
 // Unmarshal populates the message with data.

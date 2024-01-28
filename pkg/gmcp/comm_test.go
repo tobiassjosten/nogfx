@@ -49,7 +49,7 @@ func TestCommMessages(t *testing.T) {
 
 		"Comm.Channel.List hydrated": {
 			msg: &gmcp.CommChannelList{},
-			data: makeGMCP("Comm.Channel.List", []map[string]interface{}{
+			data: makeGMCP("Comm.Channel.List", []map[string]any{
 				{
 					"name":    "ct",
 					"caption": "Some city",
@@ -63,7 +63,7 @@ func TestCommMessages(t *testing.T) {
 					Command: "ct",
 				},
 			},
-			marshaled: makeGMCP("Comm.Channel.List", []map[string]interface{}{
+			marshaled: makeGMCP("Comm.Channel.List", []map[string]any{
 				{
 					"name":    "ct",
 					"caption": "Some city",
@@ -81,7 +81,7 @@ func TestCommMessages(t *testing.T) {
 
 		"Comm.Channel.Players hydrated": {
 			msg: &gmcp.CommChannelPlayers{},
-			data: makeGMCP("Comm.Channel.Players", []map[string]interface{}{
+			data: makeGMCP("Comm.Channel.Players", []map[string]any{
 				{
 					"name":     "Durak",
 					"channels": []string{"Some city"},
@@ -93,7 +93,7 @@ func TestCommMessages(t *testing.T) {
 					Channels: []string{"Some city"},
 				},
 			},
-			marshaled: makeGMCP("Comm.Channel.Players", []map[string]interface{}{
+			marshaled: makeGMCP("Comm.Channel.Players", []map[string]any{
 				{
 					"name":     "Durak",
 					"channels": []string{"Some city"},
@@ -105,7 +105,7 @@ func TestCommMessages(t *testing.T) {
 			msg:         &gmcp.CommChannelText{},
 			data:        `Comm.Channel.Text {}`,
 			unmarshaled: &gmcp.CommChannelText{},
-			marshaled: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+			marshaled: makeGMCP("Comm.Channel.Text", map[string]any{
 				"channel": "",
 				"talker":  "",
 				"text":    "",
@@ -114,7 +114,7 @@ func TestCommMessages(t *testing.T) {
 
 		"Comm.Channel.Text hydrated": {
 			msg: &gmcp.CommChannelText{},
-			data: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+			data: makeGMCP("Comm.Channel.Text", map[string]any{
 				"channel": "ct",
 				"talker":  "Durak",
 				"text":    `(Somecity): Durak says, "Yo!"`,
@@ -124,7 +124,7 @@ func TestCommMessages(t *testing.T) {
 				Talker:  "Durak",
 				Text:    `(Somecity): Durak says, "Yo!"`,
 			},
-			marshaled: makeGMCP("Comm.Channel.Text", map[string]interface{}{
+			marshaled: makeGMCP("Comm.Channel.Text", map[string]any{
 				"channel": "ct",
 				"talker":  "Durak",
 				"text":    `(Somecity): Durak says, "Yo!"`,

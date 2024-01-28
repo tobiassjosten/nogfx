@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/icza/gox/gox"
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	"github.com/tobiassjosten/nogfx/pkg/telnet"
+
+	"github.com/icza/gox/gox"
+	"github.com/stretchr/testify/assert"
 )
 
-func makeGMCP(id string, data interface{}) string {
+func makeGMCP(id string, data any) string {
 	jsondata, _ := json.Marshal(data)
 	return fmt.Sprintf("%s %s", id, string(jsondata))
 }
@@ -197,7 +198,7 @@ func TestParse(t *testing.T) {
 			msgs:  []gmcp.Message{&gmcp.RoomRemovePlayer{}},
 		},
 
-		"non-existant": {
+		"non-existent": {
 			datas: []string{"Non.Existant"},
 			errs:  []string{"unknown message 'Non.Existant'"},
 		},
