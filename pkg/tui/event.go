@@ -239,42 +239,42 @@ func (tui *TUI) handleAltDownInput(_ rune) bool {
 	return true
 }
 
-func (tui *TUI) handleNum1(r rune) bool {
+func (tui *TUI) handleNum1(_ rune) bool {
 	tui.inputs <- []byte{'s', 'w'}
 	return true
 }
 
-func (tui *TUI) handleNum2(r rune) bool {
+func (tui *TUI) handleNum2(_ rune) bool {
 	tui.inputs <- []byte{'s'}
 	return true
 }
 
-func (tui *TUI) handleNum3(r rune) bool {
+func (tui *TUI) handleNum3(_ rune) bool {
 	tui.inputs <- []byte{'s', 'e'}
 	return true
 }
 
-func (tui *TUI) handleNum4(r rune) bool {
+func (tui *TUI) handleNum4(_ rune) bool {
 	tui.inputs <- []byte{'w'}
 	return true
 }
 
-func (tui *TUI) handleNum6(r rune) bool {
+func (tui *TUI) handleNum6(_ rune) bool {
 	tui.inputs <- []byte{'e'}
 	return true
 }
 
-func (tui *TUI) handleNum7(r rune) bool {
+func (tui *TUI) handleNum7(_ rune) bool {
 	tui.inputs <- []byte{'n', 'w'}
 	return true
 }
 
-func (tui *TUI) handleNum8(r rune) bool {
+func (tui *TUI) handleNum8(_ rune) bool {
 	tui.inputs <- []byte{'n'}
 	return true
 }
 
-func (tui *TUI) handleNum9(r rune) bool {
+func (tui *TUI) handleNum9(_ rune) bool {
 	tui.inputs <- []byte{'n', 'e'}
 	return true
 }

@@ -133,7 +133,7 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 
 	switch {
 	case proxy.PCoords == "":
-		break
+		// Noop.
 
 	case len(coords) >= 4:
 		building, err := strconv.Atoi(coords[3])

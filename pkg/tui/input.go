@@ -32,7 +32,7 @@ type Input struct {
 }
 
 // RenderInput renders the current Input.
-func (tui *TUI) RenderInput(width, height int) (Rows, int, int) {
+func (tui *TUI) RenderInput(width, height int) (rows Rows, x int, y int) {
 	if rows, ok := tui.getCache(paneInput); ok {
 		return rows, tui.input.cursorpos[0], tui.input.cursorpos[1]
 	}
@@ -46,7 +46,7 @@ func (tui *TUI) RenderInput(width, height int) (Rows, int, int) {
 }
 
 // RenderInput renders the given Input.
-func RenderInput(input *Input, width, height int) (Rows, int, int) {
+func RenderInput(input *Input, width, height int) (rows Rows, x int, y int) {
 	if width == 0 {
 		return nil, 0, 0
 	}
@@ -71,7 +71,7 @@ func RenderInput(input *Input, width, height int) (Rows, int, int) {
 	}
 
 	row := NewRowFromRunes(buffer, style)
-	rows := row.Wrap(width, padding)
+	rows = row.Wrap(width, padding)
 
 	// Add a new, empty line if the last one is full, to show ahead where
 	// new input will show up.

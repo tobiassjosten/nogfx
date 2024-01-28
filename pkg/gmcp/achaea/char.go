@@ -237,12 +237,9 @@ func (*CharVitals) ID() string {
 	return "Char.Vitals"
 }
 
-func (*CharVitals) marshalBoolStringInt(b bool) string {
-	if b {
-		return "1"
-	}
-
-	return "0"
+var boolStringInts = map[bool]string{
+	true:  "1",
+	false: "0",
 }
 
 // Marshal converts the message to a string.
@@ -255,8 +252,8 @@ func (msg *CharVitals) Marshal() string {
 		CharVitals: msg,
 	}
 
-	proxy.PBal = msg.marshalBoolStringInt(msg.Bal)
-	proxy.PEq = msg.marshalBoolStringInt(msg.Eq)
+	proxy.PBal = boolStringInts[msg.Bal]
+	proxy.PEq = boolStringInts[msg.Eq]
 
 	data, _ := json.Marshal(proxy)
 
