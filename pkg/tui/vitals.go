@@ -4,8 +4,9 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/tobiassjosten/nogfx/pkg"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 var (
@@ -83,7 +84,7 @@ func (tui *TUI) RenderVitals(width int) Rows {
 
 	vorder := []string{"health", "mana", "endurance", "willpower", "energy"}
 
-	// Remove non-existant vitals.
+	// Remove non-existent vitals.
 	for i := 0; i < len(vorder); {
 		if _, ok := tui.character.Vitals[vorder[i]]; !ok {
 			vorder = append(vorder[:i], vorder[i+1:]...)
@@ -95,12 +96,14 @@ func (tui *TUI) RenderVitals(width int) Rows {
 	// Add missing vitals.
 	for name := range tui.character.Vitals {
 		exists := false
+
 		for _, nname := range vorder {
 			if name == nname {
 				exists = true
 				break
 			}
 		}
+
 		if !exists {
 			vorder = append(vorder, name)
 		}
@@ -109,6 +112,7 @@ func (tui *TUI) RenderVitals(width int) Rows {
 	gapStyle := (tcell.Style{}).Background(tcell.Color235)
 
 	row := Row{}
+
 	for i, name := range vorder {
 		styles, ok := vitalStyles[name]
 		if !ok {
@@ -136,10 +140,8 @@ func RenderVital(vital pkg.CharacterVital, width int, styles []tcell.Style) Row 
 		(float64(width) * float64(vital.Value) / float64(vital.Max)) - 0.01,
 	))
 
-	full := NewRow(fullWidth, NewCell(' ', styles[0]))
-	empty := NewRow(width-len(full), NewCell(' ', styles[1]))
-
-	row := append(full, empty...)
+	row := NewRow(fullWidth, NewCell(' ', styles[0]))
+	row = append(row, NewRow(width-len(row), NewCell(' ', styles[1]))...)
 
 	value := strconv.Itoa(vital.Value)
 

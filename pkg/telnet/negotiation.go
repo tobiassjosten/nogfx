@@ -63,10 +63,11 @@ func (client *Client) Subneg(b byte, value []byte) error {
 		[]byte{IAC, SB, b, v},
 		value...,
 	), IAC, SE))
+
 	return err
 }
 
-func (client *Client) processCommand(command []byte) (bool, [][]byte) {
+func (*Client) processCommand(command []byte) (bool, [][]byte) {
 	var responses [][]byte
 
 	if len(command) < 3 {
@@ -81,6 +82,7 @@ func (client *Client) processCommand(command []byte) (bool, [][]byte) {
 		}
 
 		responses = append(responses, []byte{IAC, DONT, command[2]})
+
 		return true, responses
 
 	case WONT:

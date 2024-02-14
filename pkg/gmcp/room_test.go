@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
 func TestRoomInfoDetails(t *testing.T) {
@@ -90,7 +91,7 @@ func TestRoomMessages(t *testing.T) {
 			msg:         &gmcp.RoomInfo{},
 			data:        "Room.Info {}",
 			unmarshaled: &gmcp.RoomInfo{},
-			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+			marshaled: makeGMCP("Room.Info", map[string]any{
 				"num":         0,
 				"name":        "",
 				"area":        "",
@@ -104,7 +105,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info hydrated": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"num":         1234,
 				"name":        "A room",
 				"area":        "An area",
@@ -131,7 +132,7 @@ func TestRoomMessages(t *testing.T) {
 				},
 				Details: []string{"shop", "bank"},
 			},
-			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+			marshaled: makeGMCP("Room.Info", map[string]any{
 				"num":         1234,
 				"name":        "A room",
 				"area":        "An area",
@@ -147,13 +148,13 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info only area number": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1",
 			}),
 			unmarshaled: &gmcp.RoomInfo{
 				AreaNumber: 1,
 			},
-			marshaled: makeGMCP("Room.Info", map[string]interface{}{
+			marshaled: makeGMCP("Room.Info", map[string]any{
 				"num":         0,
 				"name":        "",
 				"area":        "",
@@ -173,7 +174,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info no building": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1,2,3",
 			}),
 			unmarshaled: &gmcp.RoomInfo{
@@ -186,7 +187,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info invalid building": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1,2,3,b",
 			}),
 			err: `failed parsing building from coords: strconv.Atoi: parsing "b": invalid syntax`,
@@ -194,7 +195,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info invalid area": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "a,2,3,4",
 			}),
 			err: `failed parsing area number from coords: strconv.Atoi: parsing "a": invalid syntax`,
@@ -202,7 +203,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info invalid x": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1,x,3,4",
 			}),
 			err: `failed parsing x from coords: strconv.Atoi: parsing "x": invalid syntax`,
@@ -210,7 +211,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info invalid y": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1,2,y,4",
 			}),
 			err: `failed parsing y from coords: strconv.Atoi: parsing "y": invalid syntax`,
@@ -218,7 +219,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Info invalid coords": {
 			msg: &gmcp.RoomInfo{},
-			data: makeGMCP("Room.Info", map[string]interface{}{
+			data: makeGMCP("Room.Info", map[string]any{
 				"coords": "1,2",
 			}),
 			err: "failed parsing coords '[1 2]'",
@@ -233,7 +234,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.Players hydrated": {
 			msg: &gmcp.RoomPlayers{},
-			data: makeGMCP("Room.Players", []map[string]interface{}{
+			data: makeGMCP("Room.Players", []map[string]any{
 				{
 					"name":     "Durak",
 					"fullname": "Mason Durak",
@@ -245,7 +246,7 @@ func TestRoomMessages(t *testing.T) {
 					Fullname: "Mason Durak",
 				},
 			},
-			marshaled: makeGMCP("Room.Players", []map[string]interface{}{
+			marshaled: makeGMCP("Room.Players", []map[string]any{
 				{
 					"name":     "Durak",
 					"fullname": "Mason Durak",
@@ -257,7 +258,7 @@ func TestRoomMessages(t *testing.T) {
 			msg:         &gmcp.RoomAddPlayer{},
 			data:        "Room.AddPlayer {}",
 			unmarshaled: &gmcp.RoomAddPlayer{},
-			marshaled: makeGMCP("Room.AddPlayer", map[string]interface{}{
+			marshaled: makeGMCP("Room.AddPlayer", map[string]any{
 				"name":     "",
 				"fullname": "",
 			}),
@@ -265,7 +266,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.AddPlayer hydrated": {
 			msg: &gmcp.RoomAddPlayer{},
-			data: makeGMCP("Room.AddPlayer", map[string]interface{}{
+			data: makeGMCP("Room.AddPlayer", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),
@@ -273,7 +274,7 @@ func TestRoomMessages(t *testing.T) {
 				Name:     "Durak",
 				Fullname: "Mason Durak",
 			},
-			marshaled: makeGMCP("Room.AddPlayer", map[string]interface{}{
+			marshaled: makeGMCP("Room.AddPlayer", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),
@@ -283,7 +284,7 @@ func TestRoomMessages(t *testing.T) {
 			msg:         &gmcp.RoomRemovePlayer{},
 			data:        "Room.RemovePlayer {}",
 			unmarshaled: &gmcp.RoomRemovePlayer{},
-			marshaled: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+			marshaled: makeGMCP("Room.RemovePlayer", map[string]any{
 				"name":     "",
 				"fullname": "",
 			}),
@@ -291,7 +292,7 @@ func TestRoomMessages(t *testing.T) {
 
 		"Room.RemovePlayer hydrated": {
 			msg: &gmcp.RoomRemovePlayer{},
-			data: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+			data: makeGMCP("Room.RemovePlayer", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),
@@ -299,7 +300,7 @@ func TestRoomMessages(t *testing.T) {
 				Name:     "Durak",
 				Fullname: "Mason Durak",
 			},
-			marshaled: makeGMCP("Room.RemovePlayer", map[string]interface{}{
+			marshaled: makeGMCP("Room.RemovePlayer", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),

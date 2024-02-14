@@ -13,7 +13,7 @@ type IRERiftItem struct {
 type IRERiftChange IRERiftItem
 
 // ID is the prefix before the message's data.
-func (msg *IRERiftChange) ID() string {
+func (*IRERiftChange) ID() string {
 	return "IRE.Rift.Change"
 }
 
@@ -31,7 +31,7 @@ func (msg *IRERiftChange) Unmarshal(data []byte) error {
 type IRERiftList []IRERiftItem
 
 // ID is the prefix before the message's data.
-func (msg *IRERiftList) ID() string {
+func (*IRERiftList) ID() string {
 	return "IRE.Rift.List"
 }
 
@@ -50,16 +50,16 @@ func (msg *IRERiftList) Unmarshal(data []byte) error {
 type IRERiftRequest struct{}
 
 // ID is the prefix before the message's data.
-func (msg *IRERiftRequest) ID() string {
+func (*IRERiftRequest) ID() string {
 	return "IRE.Rift.Request"
 }
 
 // Marshal converts the message to a string.
-func (msg *IRERiftRequest) Marshal() string {
+func (*IRERiftRequest) Marshal() string {
 	return "IRE.Rift.Request"
 }
 
 // Unmarshal populates the message with data.
-func (msg *IRERiftRequest) Unmarshal(_ []byte) error {
+func (*IRERiftRequest) Unmarshal(_ []byte) error {
 	return nil
 }

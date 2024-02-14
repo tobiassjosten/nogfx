@@ -13,7 +13,7 @@ type CharItemsContents struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsContents) ID() string {
+func (*CharItemsContents) ID() string {
 	return "Char.Items.Contents"
 }
 
@@ -41,7 +41,7 @@ func (msg *CharItemsContents) Unmarshal(data []byte) error {
 type CharItemsInv struct{}
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsInv) ID() string {
+func (*CharItemsInv) ID() string {
 	return "Char.Items.Inv"
 }
 
@@ -51,7 +51,7 @@ func (msg *CharItemsInv) Marshal() string {
 }
 
 // Unmarshal populates the message with data.
-func (msg *CharItemsInv) Unmarshal(_ []byte) error {
+func (*CharItemsInv) Unmarshal(_ []byte) error {
 	return nil
 }
 
@@ -60,7 +60,7 @@ func (msg *CharItemsInv) Unmarshal(_ []byte) error {
 type CharItemsRoom struct{}
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsRoom) ID() string {
+func (*CharItemsRoom) ID() string {
 	return "Char.Items.Room"
 }
 
@@ -70,7 +70,7 @@ func (msg *CharItemsRoom) Marshal() string {
 }
 
 // Unmarshal populates the message with data.
-func (msg *CharItemsRoom) Unmarshal(_ []byte) error {
+func (*CharItemsRoom) Unmarshal(_ []byte) error {
 	return nil
 }
 
@@ -217,7 +217,7 @@ type CharItemsList struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsList) ID() string {
+func (*CharItemsList) ID() string {
 	return "Char.Items.List"
 }
 
@@ -251,7 +251,7 @@ type CharItemsAdd struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsAdd) ID() string {
+func (*CharItemsAdd) ID() string {
 	return "Char.Items.Add"
 }
 
@@ -273,7 +273,7 @@ type CharItemsRemove struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsRemove) ID() string {
+func (*CharItemsRemove) ID() string {
 	return "Char.Items.Remove"
 }
 
@@ -295,7 +295,7 @@ type CharItemsUpdate struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharItemsUpdate) ID() string {
+func (*CharItemsUpdate) ID() string {
 	return "Char.Items.Update"
 }
 

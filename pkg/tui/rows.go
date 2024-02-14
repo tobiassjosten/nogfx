@@ -73,6 +73,7 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 	if len(styles) == 0 {
 		styles = []tcell.Style{{}}
 	}
+
 	style := styles[0]
 
 	escaped := false
@@ -91,7 +92,9 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 			} else {
 				row = row.append(NewCell('^', style), NewCell(r, style))
 			}
+
 			escaped = false
+
 			continue
 		}
 
@@ -110,6 +113,7 @@ func NewRowFromBytes(bs []byte, styles ...tcell.Style) (Row, tcell.Style) {
 			} else {
 				ansi = append(ansi, r)
 			}
+
 			continue
 		}
 
@@ -124,6 +128,7 @@ func (row Row) String() (str string) {
 	for _, c := range row {
 		str += string(c.Content)
 	}
+
 	return
 }
 
@@ -182,6 +187,7 @@ func (row Row) Wrap(width int, padding ...Cell) Rows {
 		if len(padding) > 0 {
 			row = row.Pad(width, padding[0])
 		}
+
 		return Rows{row}
 	}
 
@@ -246,6 +252,7 @@ func (row Row) Pad(width int, padding Cell) Row {
 	for i := len(newrow); i < width; i++ {
 		newrow = append(newrow, padding)
 	}
+
 	return newrow
 }
 
@@ -273,6 +280,7 @@ func (rows Rows) Strings() (strs []string) {
 	for _, row := range rows {
 		strs = append(strs, row.String())
 	}
+
 	return
 }
 

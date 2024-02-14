@@ -11,7 +11,6 @@ import (
 func TestLearnMultipleLessons(t *testing.T) {
 	// @todo Figure out how best to mock time, so we can properly test the
 	// timeout functionality.
-
 	tcs := map[string]tst.IOTestCase{
 		"learn 20": {
 			Events: []tst.IOEvent{

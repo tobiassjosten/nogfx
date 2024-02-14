@@ -15,6 +15,7 @@ func TestRenderOutput(t *testing.T) {
 		for _, c := range row {
 			str += string(c.Content)
 		}
+
 		return
 	}
 
@@ -22,19 +23,20 @@ func TestRenderOutput(t *testing.T) {
 		for _, row := range rows {
 			strs = append(strs, rowToString(row))
 		}
+
 		return
 	}
 
 	tcs := map[string]struct {
-		buffer string
-		datas  [][]byte
-		prints [][]byte
-		width  int
-		height int
-		pwidth int
-		offset int
-		cache  Rows
-		rows   []string
+		buffer    string
+		datas     [][]byte
+		printouts [][]byte
+		width     int
+		height    int
+		pwidth    int
+		offset    int
+		cache     Rows
+		rows      []string
 	}{
 		"empty": {
 			width:  1,
@@ -119,11 +121,11 @@ func TestRenderOutput(t *testing.T) {
 		},
 
 		"print message": {
-			buffer: "asdf",
-			prints: [][]byte{[]byte("xy")},
-			width:  2,
-			height: 3,
-			rows:   []string{"as", "df", "xy"},
+			buffer:    "asdf",
+			printouts: [][]byte{[]byte("xy")},
+			width:     2,
+			height:    3,
+			rows:      []string{"as", "df", "xy"},
 		},
 
 		"cache rendition": {
@@ -156,8 +158,8 @@ func TestRenderOutput(t *testing.T) {
 				}
 			}
 
-			for _, print := range tc.prints {
-				tui.Print(print)
+			for _, printout := range tc.printouts {
+				tui.Print(printout)
 			}
 
 			if tc.cache != nil {

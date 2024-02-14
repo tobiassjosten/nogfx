@@ -23,7 +23,7 @@ func TestIRERiftMessages(t *testing.T) {
 			msg:         &ironrealms.IRERiftChange{},
 			data:        `IRE.Rift.Change {}`,
 			unmarshaled: &ironrealms.IRERiftChange{},
-			marshaled: makeGMCP("IRE.Rift.Change", map[string]interface{}{
+			marshaled: makeGMCP("IRE.Rift.Change", map[string]any{
 				"amount": "0",
 				"desc":   "",
 				"name":   "",
@@ -32,7 +32,7 @@ func TestIRERiftMessages(t *testing.T) {
 
 		"IRE.Rift.Change hydrated": {
 			msg: &ironrealms.IRERiftChange{},
-			data: makeGMCP("IRE.Rift.Change", map[string]interface{}{
+			data: makeGMCP("IRE.Rift.Change", map[string]any{
 				"amount": "1234",
 				"desc":   "alchemical silver",
 				"name":   "asilver",
@@ -42,7 +42,7 @@ func TestIRERiftMessages(t *testing.T) {
 				Description: "alchemical silver",
 				Name:        "asilver",
 			},
-			marshaled: makeGMCP("IRE.Rift.Change", map[string]interface{}{
+			marshaled: makeGMCP("IRE.Rift.Change", map[string]any{
 				"amount": "1234",
 				"desc":   "alchemical silver",
 				"name":   "asilver",
@@ -59,12 +59,12 @@ func TestIRERiftMessages(t *testing.T) {
 			msg:         &ironrealms.IRERiftList{},
 			data:        `IRE.Rift.List []`,
 			unmarshaled: &ironrealms.IRERiftList{},
-			marshaled:   makeGMCP("IRE.Rift.List", []map[string]interface{}{}),
+			marshaled:   makeGMCP("IRE.Rift.List", []map[string]any{}),
 		},
 
 		"IRE.Rift.List hydrated": {
 			msg: &ironrealms.IRERiftList{},
-			data: makeGMCP("IRE.Rift.List", []map[string]interface{}{
+			data: makeGMCP("IRE.Rift.List", []map[string]any{
 				{
 					"amount": "1234",
 					"desc":   "alchemical silver",
@@ -78,7 +78,7 @@ func TestIRERiftMessages(t *testing.T) {
 					Name:        "asilver",
 				},
 			},
-			marshaled: makeGMCP("IRE.Rift.List", []map[string]interface{}{
+			marshaled: makeGMCP("IRE.Rift.List", []map[string]any{
 				{
 					"amount": "1234",
 					"desc":   "alchemical silver",

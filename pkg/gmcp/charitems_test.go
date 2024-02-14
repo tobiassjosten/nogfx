@@ -4,9 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
 func TestCharItemsMessages(t *testing.T) {
@@ -50,7 +51,7 @@ func TestCharItemsMessages(t *testing.T) {
 			msg:         &gmcp.CharItemsList{},
 			data:        "Char.Items.List {}",
 			unmarshaled: &gmcp.CharItemsList{},
-			marshaled: makeGMCP("Char.Items.List", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.List", map[string]any{
 				"location": "",
 				"items":    []string{},
 			}),
@@ -58,9 +59,9 @@ func TestCharItemsMessages(t *testing.T) {
 
 		"Char.Items.List hydrated": {
 			msg: &gmcp.CharItemsList{},
-			data: makeGMCP("Char.Items.List", map[string]interface{}{
+			data: makeGMCP("Char.Items.List", map[string]any{
 				"location": "room",
-				"items": []map[string]interface{}{
+				"items": []map[string]any{
 					{
 						"id":     "1234",
 						"name":   "an item",
@@ -94,9 +95,9 @@ func TestCharItemsMessages(t *testing.T) {
 					},
 				},
 			},
-			marshaled: makeGMCP("Char.Items.List", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.List", map[string]any{
 				"location": "room",
-				"items": []map[string]interface{}{
+				"items": []map[string]any{
 					{
 						"id":     "1234",
 						"name":   "an item",
@@ -109,9 +110,9 @@ func TestCharItemsMessages(t *testing.T) {
 
 		"Char.Items.List invalid attribute": {
 			msg: &gmcp.CharItemsList{},
-			data: makeGMCP("Char.Items.List", map[string]interface{}{
+			data: makeGMCP("Char.Items.List", map[string]any{
 				"location": "room",
-				"items": []map[string]interface{}{
+				"items": []map[string]any{
 					{
 						"id":     "1234",
 						"name":   "an item",
@@ -127,9 +128,9 @@ func TestCharItemsMessages(t *testing.T) {
 			msg:         &gmcp.CharItemsAdd{},
 			data:        "Char.Items.Add {}",
 			unmarshaled: &gmcp.CharItemsAdd{},
-			marshaled: makeGMCP("Char.Items.Add", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Add", map[string]any{
 				"location": "",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "0",
 					"name":   "",
 					"attrib": "",
@@ -140,9 +141,9 @@ func TestCharItemsMessages(t *testing.T) {
 
 		"Char.Items.Add hydrated": {
 			msg: &gmcp.CharItemsAdd{},
-			data: makeGMCP("Char.Items.Add", map[string]interface{}{
+			data: makeGMCP("Char.Items.Add", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
@@ -172,9 +173,9 @@ func TestCharItemsMessages(t *testing.T) {
 					Icon: "item",
 				},
 			},
-			marshaled: makeGMCP("Char.Items.Add", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Add", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",
@@ -187,9 +188,9 @@ func TestCharItemsMessages(t *testing.T) {
 			msg:         &gmcp.CharItemsRemove{},
 			data:        "Char.Items.Remove {}",
 			unmarshaled: &gmcp.CharItemsRemove{},
-			marshaled: makeGMCP("Char.Items.Remove", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Remove", map[string]any{
 				"location": "",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "0",
 					"name":   "",
 					"attrib": "",
@@ -200,9 +201,9 @@ func TestCharItemsMessages(t *testing.T) {
 
 		"Char.Items.Remove hydrated": {
 			msg: &gmcp.CharItemsRemove{},
-			data: makeGMCP("Char.Items.Remove", map[string]interface{}{
+			data: makeGMCP("Char.Items.Remove", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
@@ -232,9 +233,9 @@ func TestCharItemsMessages(t *testing.T) {
 					Icon: "item",
 				},
 			},
-			marshaled: makeGMCP("Char.Items.Remove", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Remove", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",
@@ -247,9 +248,9 @@ func TestCharItemsMessages(t *testing.T) {
 			msg:         &gmcp.CharItemsUpdate{},
 			data:        "Char.Items.Update {}",
 			unmarshaled: &gmcp.CharItemsUpdate{},
-			marshaled: makeGMCP("Char.Items.Update", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Update", map[string]any{
 				"location": "",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "0",
 					"name":   "",
 					"attrib": "",
@@ -260,9 +261,9 @@ func TestCharItemsMessages(t *testing.T) {
 
 		"Char.Items.Update hydrated": {
 			msg: &gmcp.CharItemsUpdate{},
-			data: makeGMCP("Char.Items.Update", map[string]interface{}{
+			data: makeGMCP("Char.Items.Update", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "wWlLgcrfemdtx",
@@ -292,9 +293,9 @@ func TestCharItemsMessages(t *testing.T) {
 					Icon: "item",
 				},
 			},
-			marshaled: makeGMCP("Char.Items.Update", map[string]interface{}{
+			marshaled: makeGMCP("Char.Items.Update", map[string]any{
 				"location": "room",
-				"item": map[string]interface{}{
+				"item": map[string]any{
 					"id":     "1234",
 					"name":   "an item",
 					"attrib": "cdefglLmrtwWx",

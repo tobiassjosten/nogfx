@@ -46,7 +46,7 @@ type CharStatus struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharStatus) ID() string {
+func (*CharStatus) ID() string {
 	return "Char.Status"
 }
 
@@ -57,6 +57,7 @@ func (msg *CharStatus) marshalLevel() *string {
 
 	progress := fmt.Sprintf("%.4f", math.Mod(*msg.Level, 1)*100)
 	progress = strings.TrimRight(progress, ".0")
+
 	if progress == "" {
 		progress = "0"
 	}
@@ -66,7 +67,7 @@ func (msg *CharStatus) marshalLevel() *string {
 	)
 }
 
-func (msg *CharStatus) marshalValue(value *string, rank *int) *string {
+func (*CharStatus) marshalValue(value *string, rank *int) *string {
 	if value == nil {
 		return nil
 	}
@@ -119,6 +120,7 @@ func (msg *CharStatus) Marshal() string {
 	proxy.PTarget = msg.marshalTarget()
 
 	data, _ := json.Marshal(proxy)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
@@ -142,7 +144,7 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = (CharStatus)(*proxy.CharStatus)
+	*msg = *proxy.CharStatus
 
 	if proxy.PCity != nil {
 		if *proxy.PCity == "(None)" {
@@ -175,6 +177,7 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 		if len(parts) == 2 {
 			progressStr := strings.Trim(parts[1], "(%)")
 			progress, err := strconv.ParseFloat(progressStr, 64)
+
 			if err != nil {
 				return fmt.Errorf("failed parsing level progress: %w", err)
 			}
@@ -200,6 +203,7 @@ func (msg *CharStatus) Unmarshal(data []byte) error {
 		if target == "None" {
 			target = ""
 		}
+
 		msg.Target = &target
 	}
 
@@ -229,15 +233,13 @@ type CharVitals struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CharVitals) ID() string {
+func (*CharVitals) ID() string {
 	return "Char.Vitals"
 }
 
-func (msg *CharVitals) marshalBoolStringInt(b bool) string {
-	if b {
-		return "1"
-	}
-	return "0"
+var boolStringInts = map[bool]string{
+	true:  "1",
+	false: "0",
 }
 
 // Marshal converts the message to a string.
@@ -250,10 +252,11 @@ func (msg *CharVitals) Marshal() string {
 		CharVitals: msg,
 	}
 
-	proxy.PBal = msg.marshalBoolStringInt(msg.Bal)
-	proxy.PEq = msg.marshalBoolStringInt(msg.Eq)
+	proxy.PBal = boolStringInts[msg.Bal]
+	proxy.PEq = boolStringInts[msg.Eq]
 
 	data, _ := json.Marshal(proxy)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
@@ -275,7 +278,7 @@ func (msg *CharVitals) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = (CharVitals)(*proxy.CharVitals)
+	*msg = *proxy.CharVitals
 
 	msg.Bal = proxy.PBal == "1"
 	msg.Eq = proxy.PEq == "1"
@@ -319,15 +322,19 @@ func (stats *CharVitalsStats) MarshalJSON() ([]byte, error) {
 	if stats.Ferocity != nil {
 		list = append(list, fmt.Sprintf("Ferocity: %d", *stats.Ferocity))
 	}
+
 	if stats.Kai != nil {
 		list = append(list, fmt.Sprintf("Kai: %d%%", *stats.Kai))
 	}
+
 	if stats.Karma != nil {
 		list = append(list, fmt.Sprintf("Karma: %d%%", *stats.Karma))
 	}
+
 	if stats.Spec != nil {
 		list = append(list, fmt.Sprintf("Spec: %s", *stats.Spec))
 	}
+
 	if stats.Stance != nil {
 		list = append(list, fmt.Sprintf("Stance: %s", *stats.Stance))
 	}
@@ -355,6 +362,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
+
 			stats.Bleed = value
 
 		case "Rage":
@@ -362,6 +370,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
+
 			stats.Rage = value
 
 		case "Ferocity":
@@ -369,6 +378,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
+
 			stats.Ferocity = gox.NewInt(value)
 
 		case "Kai":
@@ -376,6 +386,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
+
 			stats.Kai = gox.NewInt(value)
 
 		case "Karma":
@@ -383,6 +394,7 @@ func (stats *CharVitalsStats) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return fmt.Errorf("invalid charstat '%s'", item)
 			}
+
 			stats.Karma = gox.NewInt(value)
 
 		case "Spec":

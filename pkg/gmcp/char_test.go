@@ -22,7 +22,7 @@ func TestCharMessages(t *testing.T) {
 			msg:         &gmcp.CharLogin{},
 			data:        "Char.Login {}",
 			unmarshaled: &gmcp.CharLogin{},
-			marshaled: makeGMCP("Char.Login", map[string]interface{}{
+			marshaled: makeGMCP("Char.Login", map[string]any{
 				"name":     "",
 				"password": "",
 			}),
@@ -30,7 +30,7 @@ func TestCharMessages(t *testing.T) {
 
 		"Char.Login hydrated": {
 			msg: &gmcp.CharLogin{},
-			data: makeGMCP("Char.Login", map[string]interface{}{
+			data: makeGMCP("Char.Login", map[string]any{
 				"name":     "durak",
 				"password": "secret",
 			}),
@@ -38,7 +38,7 @@ func TestCharMessages(t *testing.T) {
 				Name:     "durak",
 				Password: "secret",
 			},
-			marshaled: makeGMCP("Char.Login", map[string]interface{}{
+			marshaled: makeGMCP("Char.Login", map[string]any{
 				"name":     "durak",
 				"password": "secret",
 			}),
@@ -53,7 +53,7 @@ func TestCharMessages(t *testing.T) {
 
 		"Char.Name hydrated": {
 			msg: &gmcp.CharName{},
-			data: makeGMCP("Char.Name", map[string]interface{}{
+			data: makeGMCP("Char.Name", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),
@@ -61,7 +61,7 @@ func TestCharMessages(t *testing.T) {
 				Name:     "Durak",
 				Fullname: "Mason Durak",
 			},
-			marshaled: makeGMCP("Char.Name", map[string]interface{}{
+			marshaled: makeGMCP("Char.Name", map[string]any{
 				"name":     "Durak",
 				"fullname": "Mason Durak",
 			}),

@@ -13,13 +13,13 @@ type CommChannelEnable struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CommChannelEnable) ID() string {
+func (*CommChannelEnable) ID() string {
 	return "Comm.Channel.Enable"
 }
 
 // Marshal converts the message to a string.
 func (msg *CommChannelEnable) Marshal() string {
-	return fmt.Sprintf(`%s "%s"`, msg.ID(), msg.Channel)
+	return fmt.Sprintf("%s %q", msg.ID(), msg.Channel)
 }
 
 // Unmarshal populates the message with data.
@@ -46,7 +46,7 @@ type CommChannel struct {
 type CommChannelList []CommChannel
 
 // ID is the prefix before the message's data.
-func (msg *CommChannelList) ID() string {
+func (*CommChannelList) ID() string {
 	return "Comm.Channel.List"
 }
 
@@ -71,7 +71,7 @@ type CommChannelPlayer struct {
 type CommChannelPlayers []CommChannelPlayer
 
 // ID is the prefix before the message's data.
-func (msg *CommChannelPlayers) ID() string {
+func (*CommChannelPlayers) ID() string {
 	return "Comm.Channel.Players"
 }
 
@@ -86,7 +86,7 @@ func (msg *CommChannelPlayers) Unmarshal(data []byte) error {
 }
 
 // CommChannelText is a GMCP message with complete information about a
-// communication
+// communication.
 type CommChannelText struct {
 	Channel string `json:"channel"`
 	Talker  string `json:"talker"`
@@ -94,7 +94,7 @@ type CommChannelText struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *CommChannelText) ID() string {
+func (*CommChannelText) ID() string {
 	return "Comm.Channel.Text"
 }
 

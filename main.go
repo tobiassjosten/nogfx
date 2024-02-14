@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -30,14 +29,14 @@ const (
 var appHelpTemplate string
 
 func main() {
-	log.SetOutput(io.Discard)
-
 	fileFlags := os.O_APPEND | os.O_CREATE | os.O_WRONLY
 	f, err := os.OpenFile("nogfx.log", fileFlags, 0644)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
+
 	log.SetOutput(f)
 
 	cli.AppHelpTemplate = appHelpTemplate
@@ -70,7 +69,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 }
 
@@ -115,6 +114,7 @@ func run(address string) error {
 	}
 
 	engine := world.NewEngine(client, ui, address)
+
 	return engine.Run(ctx)
 }
 

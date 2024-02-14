@@ -87,6 +87,7 @@ func (client *Client) Read(buffer []byte) (count int, err error) {
 		if bytes.Equal(command, []byte{IAC, GA}) {
 			buffer[count] = b
 			count++
+
 			return count, nil
 		}
 
@@ -136,6 +137,7 @@ func (client *Client) Commands() <-chan []byte {
 // CommandToString creates a string representation of a telnet command sequence.
 func CommandToString(command []byte) string {
 	var chars []string
+
 	for _, b := range command {
 		switch b {
 		case ECHO:

@@ -3,16 +3,17 @@ package tui_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg/tui"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 func rowToString(row tui.Row) (str string) {
 	for _, c := range row {
 		str += string(c.Content)
 	}
+
 	return
 }
 
@@ -20,6 +21,7 @@ func rowsToStrings(rows tui.Rows) (strs []string) {
 	for _, row := range rows {
 		strs = append(strs, rowToString(row))
 	}
+
 	return
 }
 

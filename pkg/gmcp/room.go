@@ -71,7 +71,7 @@ func (msg *RoomInfo) IsWilderness() bool {
 }
 
 // ID is the prefix before the message's data.
-func (msg *RoomInfo) ID() string {
+func (*RoomInfo) ID() string {
 	return "Room.Info"
 }
 
@@ -107,6 +107,7 @@ func (msg *RoomInfo) Marshal() string {
 	}
 
 	data, _ := json.Marshal(proxy)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 
@@ -126,18 +127,20 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = (RoomInfo)(*proxy.RoomInfo)
+	*msg = *proxy.RoomInfo
 
 	coords := strings.Split(proxy.PCoords, ",")
+
 	switch {
 	case proxy.PCoords == "":
-		break
+		// Noop.
 
 	case len(coords) >= 4:
 		building, err := strconv.Atoi(coords[3])
 		if err != nil {
 			return fmt.Errorf("failed parsing building from coords: %w", err)
 		}
+
 		msg.Building = building
 
 		fallthrough
@@ -147,12 +150,14 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 		if err != nil {
 			return fmt.Errorf("failed parsing x from coords: %w", err)
 		}
+
 		msg.X = x
 
 		y, err := strconv.Atoi(coords[2])
 		if err != nil {
 			return fmt.Errorf("failed parsing y from coords: %w", err)
 		}
+
 		msg.Y = y
 
 		fallthrough
@@ -162,6 +167,7 @@ func (msg *RoomInfo) Unmarshal(data []byte) error {
 		if err != nil {
 			return fmt.Errorf("failed parsing area number from coords: %w", err)
 		}
+
 		msg.AreaNumber = areaNumber
 
 	default:
@@ -182,7 +188,7 @@ type RoomPlayer struct {
 type RoomPlayers []RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomPlayers) ID() string {
+func (*RoomPlayers) ID() string {
 	return "Room.Players"
 }
 
@@ -201,7 +207,7 @@ func (msg *RoomPlayers) Unmarshal(data []byte) error {
 type RoomAddPlayer RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomAddPlayer) ID() string {
+func (*RoomAddPlayer) ID() string {
 	return "Room.AddPlayer"
 }
 
@@ -220,7 +226,7 @@ func (msg *RoomAddPlayer) Unmarshal(data []byte) error {
 type RoomRemovePlayer RoomPlayer
 
 // ID is the prefix before the message's data.
-func (msg *RoomRemovePlayer) ID() string {
+func (*RoomRemovePlayer) ID() string {
 	return "Room.RemovePlayer"
 }
 

@@ -96,11 +96,13 @@ func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
 			if room.HasExit("d") {
 				mmap.rows[y][x].Content = '='
 				mmap.rows[y][x].Foreground(tcell.Color245)
+
 				continue
 			}
 
 			mmap.rows[y][x].Content = '^'
 			mmap.rows[y][x].Foreground(tcell.Color245)
+
 			continue
 
 		case "d":
@@ -114,6 +116,7 @@ func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
 
 			mmap.rows[y][x].Content = 'v'
 			mmap.rows[y][x].Foreground(tcell.Color245)
+
 			continue
 
 		case "in":
@@ -143,6 +146,7 @@ func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
 		}
 
 		var dirchar rune
+
 		switch direction {
 		case "n":
 			dirchar = '|'
@@ -178,10 +182,12 @@ func (mmap Minimap) render(room *navigation.Room, x, y int) []maproom {
 		steps := max(1, max(abs(diffx), abs(diffy)))
 		steps = (steps-1)*2 + 1
 
-		// One point offset, when rendered, equals four or two cells.
+		// One point offset renders four cells on the x axis.
 		if diffx > 0 || diffx < 0 {
 			diffx = diffx*4 - rel(3, diffx)
 		}
+
+		// One point offset renders two cells on the y axis.
 		if diffy > 0 || diffy < 0 {
 			diffy = diffy*2 - rel(1, diffy)
 		}

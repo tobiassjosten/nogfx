@@ -82,6 +82,7 @@ func (tgt *Target) RemovePresent(name string) {
 // Queue counts valid targets in the same location.
 func (tgt *Target) Queue() int {
 	queue := 0
+
 	for _, present := range tgt.present {
 		if tgt.Name != "" && strings.Contains(present, tgt.Name) {
 			queue++

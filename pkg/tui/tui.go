@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/tobiassjosten/nogfx/pkg"
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 // TUI orchestrates different panes to make up the primary user interface.
@@ -265,5 +266,6 @@ func makeNumpad(ev *tcell.EventKey) *tcell.EventKey {
 	if key, ok := numpadKeys[int(ev.Rune())]; ok {
 		return tcell.NewEventKey(key, 0, 0)
 	}
+
 	return ev
 }

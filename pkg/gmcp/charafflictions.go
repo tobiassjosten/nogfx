@@ -17,7 +17,7 @@ type CharAffliction struct {
 type CharAfflictionsList []CharAffliction
 
 // ID is the prefix before the message's data.
-func (msg *CharAfflictionsList) ID() string {
+func (*CharAfflictionsList) ID() string {
 	return "Char.Afflictions.List"
 }
 
@@ -35,7 +35,7 @@ func (msg *CharAfflictionsList) Unmarshal(data []byte) error {
 type CharAfflictionsAdd CharAffliction
 
 // ID is the prefix before the message's data.
-func (msg *CharAfflictionsAdd) ID() string {
+func (*CharAfflictionsAdd) ID() string {
 	return "Char.Afflictions.Add"
 }
 
@@ -53,7 +53,7 @@ func (msg *CharAfflictionsAdd) Unmarshal(data []byte) error {
 type CharAfflictionsRemove []CharAffliction
 
 // ID is the prefix before the message's data.
-func (msg *CharAfflictionsRemove) ID() string {
+func (*CharAfflictionsRemove) ID() string {
 	return "Char.Afflictions.Remove"
 }
 
@@ -66,6 +66,7 @@ func (msg *CharAfflictionsRemove) Marshal() string {
 	}
 
 	data, _ := json.Marshal(list)
+
 	return fmt.Sprintf("%s %s", msg.ID(), string(data))
 }
 

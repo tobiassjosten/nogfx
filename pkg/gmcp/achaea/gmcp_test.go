@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeGMCP(id string, data interface{}) string {
+func makeGMCP(id string, data any) string {
 	jsondata, _ := json.Marshal(data)
 	return fmt.Sprintf("%s %s", id, string(jsondata))
 }
@@ -32,7 +32,7 @@ func TestParse(t *testing.T) {
 			msg:  &agmcp.CharVitals{},
 		},
 
-		"non-existant": {
+		"non-existent": {
 			data: "Non.Existant",
 			err:  "unknown message 'Non.Existant'",
 		},

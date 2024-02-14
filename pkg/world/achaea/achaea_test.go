@@ -1,6 +1,7 @@
 package achaea_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -13,15 +14,21 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func wrapGMCP(msgs ...string) []byte {
-	var bs []byte
-	for _, msg := range msgs {
-		bs = append(bs, telnet.IAC, telnet.SB, telnet.GMCP)
-		bs = append(bs, []byte(msg)...)
-		bs = append(bs, telnet.IAC, telnet.SE)
+func wrapGMCP(msg string, data any) (bs []byte) {
+	content := []byte(msg)
+
+	if data != nil {
+		mdata, _ := json.Marshal(data)
+		content = append(content, append([]byte{' '}, mdata...)...)
 	}
+
+	bs = append(bs, telnet.IAC, telnet.SB, telnet.GMCP)
+	bs = append(bs, content...)
+	bs = append(bs, telnet.IAC, telnet.SE)
+
 	return bs
 }
 
@@ -70,10 +77,11 @@ func TestInputOutput(t *testing.T) {
 
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
-			world := achaea.NewWorld(
+			world, ok := achaea.NewWorld(
 				&mock.ClientMock{},
 				&mock.UIMock{},
 			).(*achaea.World)
+			require.True(t, ok)
 
 			var inouts []pkg.Inoutput
 
@@ -101,9 +109,11 @@ func TestCommandsReply(t *testing.T) {
 	}{
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
-			sent: wrapGMCP(
-				`Core.Supports.Set ["Char 1","Char.Items 1","Char.Skills 1","Comm.Channel 1","IRE.Rift 1","IRE.Target 1","Room 1"]`,
-			),
+			sent: wrapGMCP("Core.Supports.Set", []string{
+				"Char 1", "Char.Items 1", "Char.Skills 1",
+				"Comm.Channel 1", "IRE.Rift 1", "IRE.Target 1",
+				"Room 1",
+			}),
 		},
 		{
 			command: []byte{telnet.IAC, telnet.WILL, telnet.GMCP},
@@ -111,25 +121,24 @@ func TestCommandsReply(t *testing.T) {
 		},
 
 		{
-			command: wrapGMCP(
-				`Char.Name {"name":"Durak","fullname":"Mason Durak"}`,
-			),
-			sent: wrapGMCP(
-				`Char.Items.Inv`,
-				`Comm.Channel.Players`,
-				`IRE.Rift.Request`,
-			),
+			command: wrapGMCP("Char.Name", map[string]string{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+			}),
+			sent: append(wrapGMCP("Char.Items.Inv", nil),
+				append(wrapGMCP("Comm.Channel.Players", nil),
+					wrapGMCP("IRE.Rift.Request", nil)...)...),
 		},
 		{
-			command: wrapGMCP(`Char.Name {}`),
+			command: wrapGMCP("Char.Name", map[int]int{}),
 			errs:    []bool{true},
 		},
 		{
-			command: wrapGMCP(`Char.Name {}`),
+			command: wrapGMCP("Char.Name", map[int]int{}),
 			errs:    []bool{false, true},
 		},
 		{
-			command: wrapGMCP(`Char.Name {}`),
+			command: wrapGMCP("Char.Name", map[int]int{}),
 			errs:    []bool{false, false, true},
 		},
 	}
@@ -186,10 +195,12 @@ func TestCommandsMutateWorld(t *testing.T) {
 		},
 
 		{
-			// @todo Replace with []gmcp.Message.
-			command: wrapGMCP(
-				`Char.Status {"name":"Durak","fullname":"Mason Durak","class":"Monk","level":"68 (19%)"}`,
-			),
+			command: wrapGMCP("Char.Status", map[string]string{
+				"name":     "Durak",
+				"fullname": "Mason Durak",
+				"class":    "Monk",
+				"level":    "68 (19%)",
+			}),
 			character: &achaea.Character{
 				Name:  "Durak",
 				Title: "Mason Durak",
@@ -199,8 +210,23 @@ func TestCommandsMutateWorld(t *testing.T) {
 		},
 
 		{
-			// @todo Replace with []gmcp.Message.
-			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "bal": "1", "eq": "1", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
+			command: wrapGMCP("Char.Vitals", map[string]any{
+				"hp":    "3904",
+				"maxhp": "3905",
+				"mp":    "3845",
+				"maxmp": "3846",
+				"ep":    "15020",
+				"maxep": "15021",
+				"wp":    "12980",
+				"maxwp": "12981",
+				"bal":   "1",
+				"eq":    "1",
+				"charstats": []string{
+					"Bleed: 1", "Rage: 2", "Kai: 4%",
+					"Karma: 5%", "Stance: Crane",
+					"Ferocity: 3", "Spec: Sword and Shield",
+				},
+			}),
 			character: &achaea.Character{
 				Balance:     true,
 				Equilibrium: true,
@@ -239,22 +265,23 @@ func TestCommandsMutateWorld(t *testing.T) {
 				SetTargetFunc:    func(_ *pkg.Target) {},
 			}
 
-			aworld := achaea.NewWorld(client, ui).(*achaea.World)
+			world, ok := achaea.NewWorld(client, ui).(*achaea.World)
+			require.True(t, ok)
 
 			if len(tc.command) > 0 {
-				aworld.OnCommand(tc.command)
+				world.OnCommand(tc.command)
 			}
 
 			for _, message := range tc.messages {
-				aworld.OnCommand(wrapGMCP(message.Marshal()))
+				world.OnCommand(wrapGMCP(message.Marshal(), nil))
 			}
 
 			if tc.character != nil {
-				assert.Equal(t, tc.character, aworld.Character)
+				assert.Equal(t, tc.character, world.Character)
 			}
 
 			if tc.target != nil {
-				assert.Equal(t, *tc.target, aworld.Target.PkgTarget())
+				assert.Equal(t, *tc.target, world.Target.PkgTarget())
 			}
 		})
 	}
@@ -266,7 +293,26 @@ func TestCommandsMutateVitals(t *testing.T) {
 		character pkg.Character
 	}{
 		{
-			command: wrapGMCP(`Char.Vitals { "hp": "3904", "maxhp": "3905", "mp": "3845", "maxmp": "3846", "ep": "15020", "maxep": "15021", "wp": "12980", "maxwp": "12981", "nl": "19", "bal": "1", "eq": "1", "vote": "1", "string": "H:3904/3905 M:3845/3846 E:15020/15021 W:12980/12981 NL:19/100 ", "charstats": [ "Bleed: 1", "Rage: 2", "Kai: 4%", "Karma: 5%", "Stance: Crane", "Ferocity: 3", "Spec: Sword and Shield" ] }`),
+			command: wrapGMCP("Char.Vitals", map[string]any{
+				"hp":     "3904",
+				"maxhp":  "3905",
+				"mp":     "3845",
+				"maxmp":  "3846",
+				"ep":     "15020",
+				"maxep":  "15021",
+				"wp":     "12980",
+				"maxwp":  "12981",
+				"nl":     "19",
+				"bal":    "1",
+				"eq":     "1",
+				"vote":   "1",
+				"string": "H:3904/3905 M:3845/3846 E:15020/15021 W:12980/12981 NL:19/100 ",
+				"charstats": []string{
+					"Bleed: 1", "Rage: 2", "Kai: 4%",
+					"Karma: 5%", "Stance: Crane",
+					"Ferocity: 3", "Spec: Sword and Shield",
+				},
+			}),
 			character: pkg.Character{
 				Vitals: map[string]pkg.CharacterVital{
 					"health":    {Value: 3904, Max: 3905},

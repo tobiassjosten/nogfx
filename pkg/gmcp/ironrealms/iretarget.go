@@ -14,13 +14,13 @@ type IRETargetSet struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *IRETargetSet) ID() string {
+func (*IRETargetSet) ID() string {
 	return "IRE.Target.Set"
 }
 
 // Marshal converts the message to a string.
 func (msg *IRETargetSet) Marshal() string {
-	return fmt.Sprintf(`IRE.Target.Set "%s"`, msg.Target)
+	return fmt.Sprintf("IRE.Target.Set %q", msg.Target)
 }
 
 // Unmarshal populates the message with data.
@@ -44,7 +44,7 @@ type IRETargetInfo struct {
 }
 
 // ID is the prefix before the message's data.
-func (msg *IRETargetInfo) ID() string {
+func (*IRETargetInfo) ID() string {
 	return "IRE.Target.Info"
 }
 
@@ -62,6 +62,7 @@ func (msg *IRETargetInfo) Marshal() string {
 	}
 
 	data, _ := json.Marshal(proxy)
+
 	return fmt.Sprintf("IRE.Target.Info %s", string(data))
 }
 
@@ -81,7 +82,7 @@ func (msg *IRETargetInfo) Unmarshal(data []byte) error {
 		return err
 	}
 
-	*msg = (IRETargetInfo)(*proxy.IRETargetInfo)
+	*msg = *proxy.IRETargetInfo
 
 	if proxy.CHealth != "" {
 		if proxy.CHealth[len(proxy.CHealth)-1] == '%' {

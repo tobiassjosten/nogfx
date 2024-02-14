@@ -4,10 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/gmcp"
+
 	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 )
 
 func TestCharSkillsMessages(t *testing.T) {
@@ -27,20 +28,20 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Get group": {
 			msg: &gmcp.CharSkillsGet{},
-			data: makeGMCP("Char.Skills.Get", map[string]interface{}{
+			data: makeGMCP("Char.Skills.Get", map[string]any{
 				"group": "tekura",
 			}),
 			unmarshaled: &gmcp.CharSkillsGet{
 				Group: "tekura",
 			},
-			marshaled: makeGMCP("Char.Skills.Get", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Get", map[string]any{
 				"group": "tekura",
 			}),
 		},
 
 		"Char.Skills.Get name": {
 			msg: &gmcp.CharSkillsGet{},
-			data: makeGMCP("Char.Skills.Get", map[string]interface{}{
+			data: makeGMCP("Char.Skills.Get", map[string]any{
 				"name": "sidekick",
 			}),
 			unmarshaled: &gmcp.CharSkillsGet{
@@ -51,7 +52,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Get group and name": {
 			msg: &gmcp.CharSkillsGet{},
-			data: makeGMCP("Char.Skills.Get", map[string]interface{}{
+			data: makeGMCP("Char.Skills.Get", map[string]any{
 				"group": "tekura",
 				"name":  "sidekick",
 			}),
@@ -59,7 +60,7 @@ func TestCharSkillsMessages(t *testing.T) {
 				Group: "tekura",
 				Name:  "sidekick",
 			},
-			marshaled: makeGMCP("Char.Skills.Get", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Get", map[string]any{
 				"group": "tekura",
 				"name":  "sidekick",
 			}),
@@ -74,7 +75,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Group hydrated": {
 			msg: &gmcp.CharSkillsGroups{},
-			data: makeGMCP("Char.Skills.Groups", []map[string]interface{}{
+			data: makeGMCP("Char.Skills.Groups", []map[string]any{
 				{
 					"name": "Tekura",
 					"rank": "Adept (40%)",
@@ -87,7 +88,7 @@ func TestCharSkillsMessages(t *testing.T) {
 					Progress: gox.NewInt(40),
 				},
 			},
-			marshaled: makeGMCP("Char.Skills.Groups", []map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Groups", []map[string]any{
 				{
 					"name": "Tekura",
 					"rank": "Adept (40%)",
@@ -97,7 +98,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Group no progress": {
 			msg: &gmcp.CharSkillsGroups{},
-			data: makeGMCP("Char.Skills.Groups", []map[string]interface{}{
+			data: makeGMCP("Char.Skills.Groups", []map[string]any{
 				{
 					"name": "Tekura",
 					"rank": "Adept",
@@ -109,7 +110,7 @@ func TestCharSkillsMessages(t *testing.T) {
 					Rank: "Adept",
 				},
 			},
-			marshaled: makeGMCP("Char.Skills.Groups", []map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Groups", []map[string]any{
 				{
 					"name": "Tekura",
 					"rank": "Adept",
@@ -125,7 +126,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Group invalid progress": {
 			msg: &gmcp.CharSkillsGroups{},
-			data: makeGMCP("Char.Skills.Groups", []map[string]interface{}{
+			data: makeGMCP("Char.Skills.Groups", []map[string]any{
 				{
 					"name": "Tekura",
 					"rank": "Adept (xy%)",
@@ -138,7 +139,7 @@ func TestCharSkillsMessages(t *testing.T) {
 			msg:         &gmcp.CharSkillsList{},
 			data:        "Char.Skills.List {}",
 			unmarshaled: &gmcp.CharSkillsList{},
-			marshaled: makeGMCP("Char.Skills.List", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.List", map[string]any{
 				"group": "",
 				"list":  []string{},
 				"descs": []string{},
@@ -147,7 +148,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.List hydrated": {
 			msg: &gmcp.CharSkillsList{},
-			data: makeGMCP("Char.Skills.List", map[string]interface{}{
+			data: makeGMCP("Char.Skills.List", map[string]any{
 				"group": "Tekura",
 				"list":  []string{"sidekick"},
 				"descs": []string{"A kick to the side"},
@@ -157,7 +158,7 @@ func TestCharSkillsMessages(t *testing.T) {
 				List:         []string{"sidekick"},
 				Descriptions: []string{"A kick to the side"},
 			},
-			marshaled: makeGMCP("Char.Skills.List", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.List", map[string]any{
 				"group": "Tekura",
 				"list":  []string{"sidekick"},
 				"descs": []string{"A kick to the side"},
@@ -168,7 +169,7 @@ func TestCharSkillsMessages(t *testing.T) {
 			msg:         &gmcp.CharSkillsInfo{},
 			data:        "Char.Skills.Info {}",
 			unmarshaled: &gmcp.CharSkillsInfo{},
-			marshaled: makeGMCP("Char.Skills.Info", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Info", map[string]any{
 				"group": "",
 				"skill": "",
 				"info":  "",
@@ -177,7 +178,7 @@ func TestCharSkillsMessages(t *testing.T) {
 
 		"Char.Skills.Info hydrated": {
 			msg: &gmcp.CharSkillsInfo{},
-			data: makeGMCP("Char.Skills.Info", map[string]interface{}{
+			data: makeGMCP("Char.Skills.Info", map[string]any{
 				"group": "Tekura",
 				"skill": "sidekick",
 				"info":  "A kick to the side",
@@ -187,7 +188,7 @@ func TestCharSkillsMessages(t *testing.T) {
 				Skill: "sidekick",
 				Info:  "A kick to the side",
 			},
-			marshaled: makeGMCP("Char.Skills.Info", map[string]interface{}{
+			marshaled: makeGMCP("Char.Skills.Info", map[string]any{
 				"group": "Tekura",
 				"skill": "sidekick",
 				"info":  "A kick to the side",

@@ -20,6 +20,7 @@ func Parse(data []byte) (gmcp.Message, error) {
 	if _, ok := messages[parts[0]]; !ok {
 		return ironrealms.Parse(data)
 	}
+
 	msg := messages[parts[0]]()
 
 	if err := msg.Unmarshal(data); err != nil {

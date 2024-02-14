@@ -3,7 +3,6 @@ package achaea_test
 import (
 	"testing"
 
-	"github.com/icza/gox/gox"
 	"github.com/tobiassjosten/nogfx/pkg/gmcp"
 	agmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/achaea"
 	igmcp "github.com/tobiassjosten/nogfx/pkg/gmcp/ironrealms"
@@ -11,6 +10,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg/navigation"
 	"github.com/tobiassjosten/nogfx/pkg/world/achaea"
 
+	"github.com/icza/gox/gox"
 	"github.com/stretchr/testify/assert"
 )
 

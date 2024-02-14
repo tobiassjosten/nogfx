@@ -3,8 +3,9 @@ package testing
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/tobiassjosten/nogfx/pkg"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type IOEvent struct {
@@ -72,6 +73,7 @@ func (te IOEvent) Inoutput() pkg.Inoutput {
 	for _, data := range te.Input {
 		inout.Input = inout.Input.Add([]byte(data))
 	}
+
 	for _, data := range te.Output {
 		inout.Output = inout.Output.Add([]byte(data))
 	}
@@ -86,6 +88,8 @@ type IOTestCase struct {
 
 // Eval plays the TestCase's inputs/outputs and asserts its desired states.
 func (tc IOTestCase) Eval(t *testing.T, mod pkg.Module) {
+	t.Helper()
+
 	var inouts []pkg.Inoutput
 
 	for _, event := range tc.Events {
@@ -95,6 +99,7 @@ func (tc IOTestCase) Eval(t *testing.T, mod pkg.Module) {
 			if trigger.Kind == pkg.Input && len(inout.Input) > 0 {
 				inout = trigger.Match(event.Bytes(), inout)
 			}
+
 			if trigger.Kind == pkg.Output && len(inout.Output) > 0 {
 				inout = trigger.Match(event.Bytes(), inout)
 			}
@@ -104,10 +109,12 @@ func (tc IOTestCase) Eval(t *testing.T, mod pkg.Module) {
 	}
 
 	assert.Equal(t, len(tc.Inoutputs), len(inouts))
+
 	for i, inout := range tc.Inoutputs {
 		if i >= len(inouts) {
 			break
 		}
+
 		assert.Equal(t, inout, inouts[i])
 	}
 }

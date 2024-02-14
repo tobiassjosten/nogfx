@@ -87,12 +87,15 @@ func (c *Character) FromCharStatus(msg *agmcp.CharStatus) {
 	if msg.Name != nil {
 		c.Name = *msg.Name
 	}
+
 	if msg.Fullname != nil {
 		c.Title = *msg.Fullname
 	}
+
 	if msg.Class != nil {
 		c.Class = *msg.Class
 	}
+
 	if msg.Level != nil {
 		c.Level = int(*msg.Level)
 	}
@@ -120,15 +123,19 @@ func (c *Character) FromCharVitals(msg *agmcp.CharVitals) {
 	if msg.Stats.Ferocity != nil {
 		c.Ferocity = *msg.Stats.Ferocity
 	}
+
 	if msg.Stats.Kai != nil {
 		c.Kai = *msg.Stats.Kai
 	}
+
 	if msg.Stats.Karma != nil {
 		c.Karma = *msg.Stats.Karma
 	}
+
 	if msg.Stats.Spec != nil {
 		c.Spec = *msg.Stats.Spec
 	}
+
 	if msg.Stats.Stance != nil {
 		c.Stance = *msg.Stats.Stance
 	}

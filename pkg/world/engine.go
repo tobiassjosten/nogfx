@@ -50,6 +50,7 @@ func (engine *Engine) Run(pctx context.Context) error {
 	serverOutput := make(chan []byte)
 	serverErrs := make(chan error)
 	serverDone := make(chan struct{})
+
 	go engine.RunClient(serverOutput, serverErrs, serverDone)
 
 	uiErrs := make(chan error)
@@ -144,6 +145,7 @@ func (engine *Engine) RunClient(outputs chan []byte, errs chan error, done chan 
 		// Scanner.Bytes() returns a byte slice, a reference type. We
 		// dereference here to allow for later modification.
 		var output = make([]byte, len(scanner.Bytes()))
+
 		copy(output, scanner.Bytes())
 		outputs <- output
 	}
@@ -213,6 +215,7 @@ func (engine *Engine) SendGMCP(msg gmcp.Message) error {
 func (engine *Engine) openGamelog(ctx context.Context) *os.File {
 	ctxLogdir := ctx.Value(pkg.CtxLogdir)
 	logdir, ok := ctxLogdir.(string)
+
 	if !ok || logdir == "" {
 		log.Printf("missing logdir context: '%s'", logdir)
 		return nil

@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/tobiassjosten/nogfx/pkg/telnet"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/tobiassjosten/nogfx/pkg/telnet"
 )
 
 type mockStream struct {
@@ -27,6 +27,7 @@ func (mock mockStream) Write(p []byte) (int, error) {
 	if mock.writeErr != nil {
 		return 0, mock.writeErr
 	}
+
 	return mock.writer.Write(p)
 }
 
@@ -133,7 +134,7 @@ func TestScanner(t *testing.T) {
 		},
 		{
 			data:   append([]byte("xyz\n"), telnet.GA),
-			output: [][]byte{[]byte("xyz\n"), []byte{telnet.GA}},
+			output: [][]byte{[]byte("xyz\n"), {telnet.GA}},
 		},
 	}
 

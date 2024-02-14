@@ -28,6 +28,7 @@ func wrapGMCP(msgs []string) []byte {
 		bs = append(bs, []byte(msg)...)
 		bs = append(bs, gmcpSuffix...)
 	}
+
 	return bs
 }
 
@@ -90,8 +91,8 @@ func TestCommandsReply(t *testing.T) {
 }
 
 func TestMasking(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
+	a := assert.New(t)
+	r := require.New(t)
 
 	client := &mock.ClientMock{}
 
@@ -109,12 +110,12 @@ func TestMasking(t *testing.T) {
 	engine := world.NewEngine(client, ui, "example.com:1337")
 
 	err := engine.ProcessCommand(willEcho)
-	require.Nil(err)
+	r.Nil(err)
 
-	assert.Equal(true, masked)
+	a.Equal(true, masked)
 
 	err = engine.ProcessCommand(wontEcho)
-	require.Nil(err)
+	r.Nil(err)
 
-	assert.Equal(false, masked)
+	a.Equal(false, masked)
 }

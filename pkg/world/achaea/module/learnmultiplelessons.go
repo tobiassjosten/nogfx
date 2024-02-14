@@ -9,8 +9,7 @@ import (
 	"github.com/tobiassjosten/nogfx/pkg"
 )
 
-// @todo Make this use 20 lessons at a time with the myrrh/bisemutum defense:
-// "Your mind is racing with enhanced speed."
+// @todo Make this use 20 lessons at a time with the myrrh/bisemutum defense.
 var maxLessons = 15
 
 // LearnMultipleLessons lets players learn an unlimited amount of lessons in
@@ -34,6 +33,7 @@ func (mod *LearnMultipleLessons) Triggers() []pkg.Trigger {
 		if mod.timer == nil {
 			return pkg.NoopCallback
 		}
+
 		return callback
 	}
 
@@ -74,7 +74,6 @@ func (mod *LearnMultipleLessons) Triggers() []pkg.Trigger {
 			Callback: whenActive(mod.onFinish),
 		},
 	}
-
 }
 
 func (mod *LearnMultipleLessons) onStart(matches []pkg.Match, inout pkg.Inoutput) pkg.Inoutput {
@@ -104,6 +103,7 @@ func (mod *LearnMultipleLessons) onBegin(matches []pkg.Match, inout pkg.Inoutput
 		if mod.total-mod.remaining == maxLessons {
 			continue
 		}
+
 		inout = mod.onUpdate([]pkg.Match{match}, inout)
 	}
 
@@ -143,6 +143,7 @@ func (mod *LearnMultipleLessons) onFinish(matches []pkg.Match, inout pkg.Inoutpu
 			timeleft += fmt.Sprintf("%.0f minutes ", mins)
 			estimate -= time.Duration(mins) * time.Minute
 		}
+
 		timeleft += fmt.Sprintf("%.0f seconds", estimate.Seconds())
 
 		inout.Output = inout.Output.Replace(match.Index, []byte(fmt.Sprintf(
@@ -185,6 +186,7 @@ func (mod *LearnMultipleLessons) learn() []byte {
 	if mod.remaining < count {
 		count = mod.remaining
 	}
+
 	mod.remaining -= count
 
 	return []byte(fmt.Sprintf("learn %d %s", count, mod.target))
